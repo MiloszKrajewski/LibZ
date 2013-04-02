@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -24,23 +23,18 @@ namespace LibZ.Bootstrap
 
 	public class LibZResolver
 	{
-		#region consts
+		#region static fields
 
-		private const string AssemblyResolverId = "EA585A2C-974E-4F00-8855-3AD377D30322";
+		private static readonly GlobalVariable<bool> VMTInitialized =
+			new GlobalVariable<bool>("LibZResolver.71c503c0-c082-4d97-85f4-994d5034c8a0");
+		private static readonly GlobalVariable<Action<Stream>> VMTAddStream =
+			new GlobalVariable<Action<Stream>>("LibZResolver.7144cba0-0ae6-4afc-9cd0-6b9576cfbccf");
+		private static readonly GlobalVariable<List<string>> VMTSearchPath =
+			new GlobalVariable<List<string>>("LibZResolver.5671e4f8-dda0-4bb7-a63a-018950c9a79f");
+		private static readonly GlobalVariable<string> VMTExecutableFolder =
+			new GlobalVariable<string>("LibZResolver.3df709ce-dda9-44b5-9c56-8a5ac4d0a5d0");
 
-		#endregion
-
-		#region fields
-
-		private readonly static string s_ExecutableFolder;
-		private readonly static string[] _searchPaths;
-
-		private readonly static Action<Stream> _addFile;
-		private readonly static Func<ResolveEventArgs, Assembly> _resolve;
-		private readonly static Action<Type> _addAnchor;
-
-		private static LinkedList<LibZReader> _containers;
-		private static LinkedList<Type> _anchors;
+		private static readonly List<LibZReader> Containers;
 
 		#endregion
 
@@ -48,125 +42,69 @@ namespace LibZ.Bootstrap
 
 		static LibZResolver()
 		{
-			// initialize VMT table
-
-			var vmt = AppDomain.CurrentDomain.GetData(AssemblyResolverId) as object[];
-
-			if (vmt == null)
+			lock (GlobalVariable.Lock) 
 			{
-				_addFile = AddFile;
-				_addAnchor = AddAnchor;
-				_resolve = Resolve;
+				if (VMTInitialized.Value) return;
 
-				vmt = new object[] 
-				{
-					/* 0 */ null,
-					/* 1 */ _addFile, 
-					/* 2 */ _addAnchor,
-					/* 3 */ _resolve,
-				};
+				VMTAddStream.Value = InternalAddStream;
 
-				AppDomain.CurrentDomain.SetData(AssemblyResolverId, vmt);
-				AppDomain.CurrentDomain.AssemblyResolve += (s, e) => _resolve(e);
+				Containers = new List<LibZReader>();
+
+				// intialize paths
+
+				var assembly = Assembly.GetEntryAssembly() ?? typeof (LibZResolver).Assembly;
+				VMTExecutableFolder.Value = Path.GetDirectoryName(assembly.Location);
+				var systemPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+				VMTSearchPath.Value = new List<string> {ExecutableFolder};
+				VMTSearchPath.Value.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
+
+				AppDomain.CurrentDomain.AssemblyResolve += (s, e) => Resolve(e);
+
+				VMTInitialized.Value = true;
 			}
-			else
-			{
-				// attaching to first LibZResolver
-				_lock = vmt[0];
-				_addFile = vmt[1] as Action<Stream>;
-				_addAnchor = vmt[2] as Action<Type>;
-				_resolve = vmt[3] as Func<ResolveEventArgs, Assembly>;
-			}
-
-			// intialize paths
-
-			var assembly = Assembly.GetEntryAssembly() ?? typeof(LibZResolver).Assembly;
-			s_ExecutableFolder = Path.GetDirectoryName(assembly.Location);
-			var paths = new List<string>();
-
-			paths.Add(s_ExecutableFolder);
-			string systemPathVariable = Environment.GetEnvironmentVariable("PATH");
-			if (systemPathVariable != null)
-			{
-				paths.AddRange(systemPathVariable.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
-			}
-
-			_searchPaths = paths.ToArray();
-		}
-
-		#endregion
-
-		#region engine
-
-		private static void AddFile(Stream stream)
-		{
-			if (_containers == null) _containers = new LinkedList<LibZReader>();
-			var container = new LibZReader(stream);
-			if (_containers.Any(c => c.ContainerId == container.ContainerId)) return;
-			_containers.AddLast(container);
-		}
-
-		private static void AddAnchor(Type type)
-		{
-			if (_anchors == null) _anchors = new LinkedList<Type>();
-			if (_anchors.Contains(type)) return;
-			_anchors.AddLast(type);
-		}
-
-		private static Assembly Resolve(ResolveEventArgs args)
-		{
-			if (_containers == null) return null;
-			var fullName = args.Name.ToLower();
-			var guid = LibZReader.CreateHash(fullName);
-
-			foreach (var container in _containers)
-			{
-				if (container.HasEntry(guid))
-				{
-					return Assembly.Load(container.GetBytes(guid));
-				}
-			}
-
-			return null;
 		}
 
 		#endregion
 
 		#region public interface
 
-		public static void Initialize()
+		public static string ExecutableFolder { get { return VMTExecutableFolder.Value; } }
+		public static List<string> SearchPath { get { return VMTSearchPath.Value; } }
+
+		public static void RegisterStream(Stream stream, bool optional = true)
 		{
-			// do nothing, but trigger static constructor
-			while (false) ; // supress "no implementation" warning
-		}
-
-		public static void RegisterS
-
-		public static void RegisterFile(string libzFileName, bool optional = true)
-		{
-			libzFileName = FindFile(libzFileName);
-
-			if (libzFileName == null)
-			{
-				if (optional) return;
-				throw new FileNotFoundException("LibZ library cannot be found", libzFileName);
-			}
-
 			try
 			{
-				var stream = File.Open(libzFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-				_addFile(stream);
+				VMTAddStream.Value(stream);
 			}
 			catch
 			{
-				if (optional) return;
-				throw;
+				if (!optional) throw;
+			}
+		}
+
+		public static void RegisterFile(string libzFileName, bool optional = true)
+		{
+			try
+			{
+				var fileName = FindFile(libzFileName);
+
+				if (fileName == null)
+					throw new FileNotFoundException(string.Format("LibZ library '{0}' cannot be found", libzFileName));
+
+				var stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+				RegisterStream(stream);
+			}
+			catch
+			{
+				if (!optional) throw;
 			}
 		}
 
 		public static void RegisterFiles(string folder, string libzFilePattern, bool optional = true)
 		{
-			var folderInfo = new DirectoryInfo(Path.Combine(s_ExecutableFolder, folder));
+			var folderInfo = new DirectoryInfo(Path.Combine(ExecutableFolder, folder));
 			if (!folderInfo.Exists) return;
 			foreach (var file in folderInfo.GetFiles(libzFilePattern))
 			{
@@ -174,14 +112,30 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		public static void RegisterDecoder(string codec, Action<byte[], byte[]> decoder, bool overwrite = false)
-		{
-			LibZReader.RegisterDecoder(codec, decoder, overwrite);
-		}
-
 		#endregion
 
 		#region private implementation
+
+		private static void InternalAddStream(Stream stream)
+		{
+			var container = new LibZReader(stream);
+			if (Containers.Any(c => c.ContainerId == container.ContainerId)) return;
+			Containers.Add(container);
+		}
+
+		private static Assembly Resolve(ResolveEventArgs args)
+		{
+			var fullName = args.Name.ToLower();
+			var guid = LibZReader.CreateHash(fullName);
+
+			foreach (var container in Containers)
+			{
+				if (container.HasEntry(guid))
+					return Assembly.Load(container.GetBytes(guid));
+			}
+
+			return null;
+		}
 
 		private static string FindFile(string libzFileName)
 		{
@@ -190,7 +144,7 @@ namespace LibZ.Bootstrap
 				return File.Exists(libzFileName) ? libzFileName : null;
 			}
 
-			foreach (var candidate in _searchPaths)
+			foreach (var candidate in SearchPath)
 			{
 				var temp = Path.GetFullPath(Path.Combine(candidate, libzFileName));
 				if (File.Exists(temp)) return temp;
@@ -211,7 +165,7 @@ namespace LibZ.Bootstrap
 		#region enum EntryFlags
 
 		[Flags]
-		protected enum EntryFlags: int
+		protected enum EntryFlags
 		{
 			None = 0x00,
 		}
@@ -243,14 +197,13 @@ namespace LibZ.Bootstrap
 
 		#region static fields
 
-		private readonly static MD5 _md5 = MD5CryptoServiceProvider.Create();
+		private readonly static MD5 HashProvider = MD5.Create();
+		private readonly static Dictionary<uint, Func<byte[], int, byte[]>> Decoders
+			= new Dictionary<uint, Func<byte[], int, byte[]>>();
 
 		#endregion
 
 		#region fields
-
-		private readonly static Dictionary<uint, Action<byte[], byte[]>> _decoders
-				= new Dictionary<uint, Action<byte[], byte[]>>();
 
 		protected Guid _containerId = Guid.Empty;
 		protected long _magicOffset;
@@ -259,6 +212,9 @@ namespace LibZ.Bootstrap
 
 		protected Stream _stream;
 		protected BinaryReader _reader;
+
+		/// <summary>Indicates if object has been already disposed.</summary>
+		protected bool _disposed;
 
 		#endregion
 
@@ -321,7 +277,7 @@ namespace LibZ.Bootstrap
 
 		#region codec management
 
-		public static void RegisterDecoder(string codec, Action<byte[], byte[]> decoder, bool overwrite = false)
+		public static void RegisterDecoder(string codec, Func<byte[], int, byte[]> decoder, bool overwrite = false)
 		{
 			if (String.IsNullOrEmpty(codec))
 				throw new ArgumentException("codec is null or empty.", "codec");
@@ -332,13 +288,13 @@ namespace LibZ.Bootstrap
 
 			if (overwrite)
 			{
-				_decoders[codecId] = decoder;
+				Decoders[codecId] = decoder;
 			}
 			else
 			{
 				try
 				{
-					_decoders.Add(codecId, decoder);
+					Decoders.Add(codecId, decoder);
 				}
 				catch (ArgumentException e)
 				{
@@ -359,13 +315,10 @@ namespace LibZ.Bootstrap
 		protected static byte[] Decode(uint codec, byte[] data, int outputLength)
 		{
 			if (codec == 0) return data;
-			Action<byte[], byte[]> decoder;
-			if (!_decoders.TryGetValue(codec, out decoder))
+			Func<byte[], int, byte[]> decoder;
+			if (!Decoders.TryGetValue(codec, out decoder))
 				throw new ArgumentException(string.Format("Unknown codec id '{0}'", codec));
-
-			var result = new byte[outputLength];
-			decoder(data, result);
-			return result;
+			return decoder(data, outputLength);
 		}
 
 		#endregion
@@ -376,8 +329,7 @@ namespace LibZ.Bootstrap
 		{
 			lock (_stream)
 			{
-				var entry = new Entry
-				{
+				var entry = new Entry {
 					Hash = new Guid(_reader.ReadBytes(GuidLength)),
 					Flags = (EntryFlags)_reader.ReadInt32(),
 					Offset = _reader.ReadInt64(),
@@ -389,7 +341,7 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		private byte[] ReadData(Entry entry, string password = null)
+		private byte[] ReadData(Entry entry)
 		{
 			byte[] buffer;
 
@@ -407,14 +359,14 @@ namespace LibZ.Bootstrap
 
 		#region access
 
-		public byte[] GetBytes(Guid hash, string password = null)
+		public byte[] GetBytes(Guid hash)
 		{
-			return ReadData(_entries[hash], password);
+			return ReadData(_entries[hash]);
 		}
 
-		public byte[] GetBytes(string resourceName, string password = null)
+		public byte[] GetBytes(string resourceName)
 		{
-			return GetBytes(CreateHash(resourceName), password);
+			return GetBytes(CreateHash(resourceName));
 		}
 
 		public bool HasEntry(Guid hash) { return _entries.ContainsKey(hash); }
@@ -426,17 +378,7 @@ namespace LibZ.Bootstrap
 
 		public static Guid CreateHash(string resourceName)
 		{
-			return new Guid(_md5.ComputeHash(Encoding.UTF8.GetBytes(resourceName)));
-		}
-
-		protected static byte[] Isolate(byte[] buffer, int index = 0, int length = int.MaxValue)
-		{
-			if (buffer == null) return null;
-			if (index == 0 && length >= buffer.Length) return buffer;
-			length = Math.Min(length, buffer.Length - index);
-			var result = new byte[length];
-			System.Buffer.BlockCopy(buffer, index, result, 0, length);
-			return buffer;
+			return new Guid(HashProvider.ComputeHash(Encoding.UTF8.GetBytes(resourceName)));
 		}
 
 		protected static byte[] ReadBytes(Stream stream, int length)
@@ -459,13 +401,8 @@ namespace LibZ.Bootstrap
 		}
 
 		/// <summary>
-		/// Indicates if object has been already disposed.
-		/// </summary>
-		protected bool m_Disposed;
-
-		/// <summary>
 		/// Releases unmanaged resources and performs other cleanup operations before the
-		/// <see cref="TemporaryFile"/> is reclaimed by garbage collection.
+		/// object is reclaimed by garbage collection.
 		/// </summary>
 		~LibZReader()
 		{
@@ -488,36 +425,38 @@ namespace LibZ.Bootstrap
 		/// <c>false</c> to release only unmanaged resources.</param>
 		private void Dispose(bool disposing)
 		{
-			if (!m_Disposed)
+			if (_disposed) return;
+
+			try
 			{
 				if (disposing)
 					DisposeManaged();
 				DisposeUnmanaged();
 			}
-			m_Disposed = true;
+			finally
+			{
+				_disposed = true;
+			}
 		}
 
-		/// <summary>
-		/// Disposes the managed resources.
-		/// </summary>
+		/// <summary>Disposes the managed resources.</summary>
 		protected virtual void DisposeManaged()
 		{
 			Clear();
 		}
 
-		protected static void TryDispose<T>(ref T subject) where T: class, IDisposable
-		{
-			if (object.ReferenceEquals(subject, null)) return;
-			subject.Dispose();
-			subject = null;
-		}
-
-		/// <summary>
-		/// Disposes the unmanaged resources.
-		/// </summary>
 		protected virtual void DisposeUnmanaged()
 		{
-			/* unmanaged resources */
+			// do nothing
+		}
+
+		protected static void TryDispose<T>(ref T subject) where T: class
+		{
+			if (ReferenceEquals(subject, null)) return;
+			var disposable = subject as IDisposable;
+			if (ReferenceEquals(disposable, null)) return;
+			disposable.Dispose();
+			subject = null;
 		}
 
 		#endregion
@@ -529,71 +468,49 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
-		#region class IsolatingStream
+		#region class GlobalVariable
 
-		public class IsolatingStream: Stream
+		public class GlobalVariable
 		{
-			private readonly Stream m_InnerStream;
+			public static readonly object Lock;
 
-			public IsolatingStream(Stream other) { m_InnerStream = other; }
-			public override bool CanRead { get { return m_InnerStream.CanRead; } }
-			public override bool CanSeek { get { return m_InnerStream.CanSeek; } }
-			public override bool CanWrite { get { return m_InnerStream.CanWrite; } }
-			public override bool CanTimeout { get { return m_InnerStream.CanTimeout; } }
-			public override void Flush() { m_InnerStream.Flush(); }
-			public override long Length { get { return m_InnerStream.Length; } }
-
-			public override long Position
+			static GlobalVariable()
 			{
-				get { return m_InnerStream.Position; }
-				set { m_InnerStream.Position = value; }
+				// this is VERY bad, I know
+				// there are potentially 2 GlobalVariable classes, they have same name, they should
+				// share same data, but they are not the SAME class, so to interlock them
+				// I need something known to both of them
+				lock (typeof(object))
+				{
+					const string name = "GlobalVariable.a3eef3d0-4ad1-4cef-9bf6-6c795ac345ef";
+					Lock = AppDomain.CurrentDomain.GetData(name);
+					if (Lock == null) AppDomain.CurrentDomain.SetData(name, Lock = new object());
+				}
 			}
 
-			public override int Read(byte[] buffer, int offset, int count)
+		}
+
+		public class GlobalVariable<T>
+		{
+			private readonly string _name;
+
+			public GlobalVariable(string name)
 			{
-				return m_InnerStream.Read(buffer, offset, count);
+				_name = name;
 			}
 
-			public override long Seek(long offset, SeekOrigin origin)
+			public T Value
 			{
-				return m_InnerStream.Seek(offset, origin);
-			}
-
-			public override void SetLength(long value)
-			{
-				m_InnerStream.SetLength(value);
-			}
-
-			public override void Write(byte[] buffer, int offset, int count)
-			{
-				m_InnerStream.Write(buffer, offset, count);
-			}
-
-			public override int ReadTimeout
-			{
-				get { return m_InnerStream.ReadTimeout; }
-				set { m_InnerStream.ReadTimeout = value; }
-			}
-
-			public override int WriteTimeout
-			{
-				get { return m_InnerStream.WriteTimeout; }
-				set { m_InnerStream.WriteTimeout = value; }
-			}
-
-			public override int ReadByte()
-			{
-				return m_InnerStream.ReadByte();
-			}
-
-			public override void WriteByte(byte value)
-			{
-				m_InnerStream.WriteByte(value);
-			}
-
-			public override void Close()
-			{
-				m_InnerStream.Flush();
+				get
+				{
+					var value = AppDomain.CurrentDomain.GetData(_name);
+					if (value == null) return default(T);
+					return (T) value;
+				}
+				set
+				{
+					AppDomain.CurrentDomain.SetData(_name, value);
+				}
 			}
 		}
 
@@ -603,32 +520,28 @@ namespace LibZ.Bootstrap
 
 		public class Crc32
 		{
-			private static uint[] s_Crc32Table;
+			private static readonly uint[] Crc32Table;
 
 			public static uint Compute(byte[] bytes)
 			{
-				uint crc = 0xffffffff;
-				for (int i = 0; i < bytes.Length; ++i)
+				var crc = 0xffffffffu;
+				for (var i = 0; i < bytes.Length; ++i)
 				{
-					byte index = (byte)(((crc) & 0xff) ^ bytes[i]);
-					crc = (uint)((crc >> 8) ^ s_Crc32Table[index]);
+					var index = (byte)(((crc) & 0xff) ^ bytes[i]);
+					crc = (crc >> 8) ^ Crc32Table[index];
 				}
 				return ~crc;
 			}
 
 			static Crc32()
 			{
-				uint poly = 0xedb88320;
-				s_Crc32Table = new uint[256];
-				uint temp = 0;
-				for (uint i = 0; i < s_Crc32Table.Length; ++i)
+				const uint poly = 0xedb88320;
+				Crc32Table = new uint[256];
+				for (uint i = 0; i < Crc32Table.Length; ++i)
 				{
-					temp = i;
-					for (int j = 8; j > 0; --j)
-					{
-						temp = (uint)((temp & 1) == 1 ? (uint)((temp >> 1) ^ poly) : temp >> 1);
-					}
-					s_Crc32Table[i] = temp;
+					var temp = i;
+					for (var j = 8; j > 0; --j) temp = (temp & 1) == 1 ? (temp >> 1) ^ poly : temp >> 1;
+					Crc32Table[i] = temp;
 				}
 			}
 		}
