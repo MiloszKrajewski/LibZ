@@ -1,4 +1,4 @@
-﻿namespace Softpark.LibZ
+﻿namespace LibZ.Manager
 {
 	public class LibZOptions
 	{

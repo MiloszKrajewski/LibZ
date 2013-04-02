@@ -5,7 +5,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using Softpark.LibZ.Internal;
 
-namespace Softpark.LibZ
+namespace LibZ.Manager
 {
 	#region class LibZContainer
 
