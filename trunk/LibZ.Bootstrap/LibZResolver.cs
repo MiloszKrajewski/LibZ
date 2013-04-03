@@ -1,4 +1,52 @@
-﻿using System;
+﻿#region License
+
+/*
+ * Copyright (c) 2013, Milosz Krajewski
+ * 
+ * Microsoft Public License (Ms-PL)
+ * This license governs use of the accompanying software. 
+ * If you use the software, you accept this license. 
+ * If you do not accept the license, do not use the software.
+ * 
+ * 1. Definitions
+ * The terms "reproduce," "reproduction," "derivative works," and "distribution" have the same 
+ * meaning here as under U.S. copyright law.
+ * A "contribution" is the original software, or any additions or changes to the software.
+ * A "contributor" is any person that distributes its contribution under this license.
+ * "Licensed patents" are a contributor's patent claims that read directly on its contribution.
+ * 
+ * 2. Grant of Rights
+ * (A) Copyright Grant- Subject to the terms of this license, including the license conditions 
+ * and limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
+ * royalty-free copyright license to reproduce its contribution, prepare derivative works of 
+ * its contribution, and distribute its contribution or any derivative works that you create.
+ * (B) Patent Grant- Subject to the terms of this license, including the license conditions and 
+ * limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
+ * royalty-free license under its licensed patents to make, have made, use, sell, offer for sale, 
+ * import, and/or otherwise dispose of its contribution in the software or derivative works of 
+ * the contribution in the software.
+ * 
+ * 3. Conditions and Limitations
+ * (A) No Trademark License- This license does not grant you rights to use any contributors' name, 
+ * logo, or trademarks.
+ * (B) If you bring a patent claim against any contributor over patents that you claim are infringed 
+ * by the software, your patent license from such contributor to the software ends automatically.
+ * (C) If you distribute any portion of the software, you must retain all copyright, patent, trademark, 
+ * and attribution notices that are present in the software.
+ * (D) If you distribute any portion of the software in source code form, you may do so only under this 
+ * license by including a complete copy of this license with your distribution. If you distribute 
+ * any portion of the software in compiled or object code form, you may only do so under a license 
+ * that complies with this license.
+ * (E) The software is licensed "as-is." You bear the risk of using it. The contributors give no express
+ * warranties, guarantees or conditions. You may have additional consumer rights under your local 
+ * laws which this license cannot change. To the extent permitted under your local laws, the 
+ * contributors exclude the implied warranties of merchantability, fitness for a particular 
+ * purpose and non-infringement.
+ */
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +56,8 @@ using System.Text;
 
 /*
  * NOTE: This files contains multiple classes and namespaces for easy embedding into other assemblies.
- * Just drag this file into assebly and you will have access to fully functional decoder.
+ * It does not look nice, but makes embedding LibZResolver easy. Just drag this file into assembly 
+ * and you will have access to fully functional LibZResolver.
  */
 
 #if LIBZ_MANAGER
@@ -25,45 +74,85 @@ namespace LibZ.Bootstrap
 	{
 		#region static fields
 
-		private static readonly GlobalVariable<bool> VMTInitialized =
-			new GlobalVariable<bool>(@"LibZResolver.71c503c0c0824d9785f4994d5034c8a0");
-		private static readonly GlobalVariable<Action<Stream>> VMTAddStream =
-			new GlobalVariable<Action<Stream>>(@"LibZResolver.7144cba00ae64afc9cd06b9576cfbccf");
-		private static readonly GlobalVariable<List<string>> VMTSearchPath =
-			new GlobalVariable<List<string>>(@"LibZResolver.5671e4f8dda04bb7a63a018950c9a79f");
-		private static readonly GlobalVariable<string> VMTExecutableFolder =
-			new GlobalVariable<string>(@"LibZResolver.3df709cedda944b59c568a5ac4d0a5d0");
-		private static readonly GlobalVariable<Dictionary<uint, Func<byte[], int, byte[]>>> VMTDecoders =
-			new GlobalVariable<Dictionary<uint, Func<byte[], int, byte[]>>>(@"LibZResolver.74caa8d9f778403db930fda1a9cd5d3f");
-
+		/// <summary>The containers</summary>
 		private static readonly List<LibZReader> Containers;
+
+		#endregion
+
+		#region shared static properies
+
+		/// <summary>The shared dictionary.</summary>
+		private static readonly GlobalDictionary SharedData = 
+			new GlobalDictionary("LibZResolver.71c503c0c0824d9785f4994d5034c8a0");
+
+		/// <summary>Gets or sets the register stream callback.</summary>
+		/// <value>The register stream callback.</value>
+		private static Action<Stream> RegisterStream
+		{
+			get { return SharedData.Get<Action<Stream>>(0); }
+			set { SharedData.Set(0, value); }
+		}
+
+		/// <summary>Gets or sets the decoders dictionary.</summary>
+		/// <value>The decoders dictionary.</value>
+		private static Dictionary<uint, Func<byte[], int, byte[]>> Decoders
+		{
+			get { return SharedData.Get<Dictionary<uint, Func<byte[], int, byte[]>>>(1); }
+			set { SharedData.Set(1, value); }
+		}
+
+		/// <summary>Gets or sets the executable folder.</summary>
+		/// <value>The executable folder.</value>
+		private static string ExecutableFolder
+		{
+			get { return SharedData.Get<string>(2); }
+			set { SharedData.Set(2, value); }
+		}
+
+		/// <summary>Gets or sets the search path.</summary>
+		/// <value>The search path.</value>
+		private static List<string> SearchPath
+		{
+			get { return SharedData.Get<List<string>>(3); }
+			set { SharedData.Set(3, value); }
+		}
 
 		#endregion
 
 		#region static constructor
 
+		/// <summary>Initializes the <see cref="LibZResolver"/> class.</summary>
 		static LibZResolver()
 		{
-			lock (GlobalVariable.Lock) 
+			// this is VERY bad, I know
+			// there are potentially 2 classes, they have same name, they should
+			// share same data, but they are not the SAME class, so to interlock them
+			// I need something known to both of them
+			lock (typeof(object))
 			{
-				if (VMTInitialized.Value) return;
-
-				VMTAddStream.Value = InternalAddStream;
-				VMTDecoders.Value = new Dictionary<uint, Func<byte[], int, byte[]>>();
+				if (!SharedData.IsOwner) return;
 
 				Containers = new List<LibZReader>();
 
 				// intialize paths
-
-				var assembly = Assembly.GetEntryAssembly() ?? typeof (LibZResolver).Assembly;
-				VMTExecutableFolder.Value = Path.GetDirectoryName(assembly.Location);
+				var assembly = Assembly.GetEntryAssembly() ?? typeof(LibZResolver).Assembly;
+				var executableFolder = Path.GetDirectoryName(assembly.Location);
+				var searchPath = new List<string>();
+				if (executableFolder != null) searchPath.Add(executableFolder);
 				var systemPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-				VMTSearchPath.Value = new List<string> {ExecutableFolder};
-				VMTSearchPath.Value.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
+				searchPath.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
 
+				RegisterStream = (stream) => {
+					var container = new LibZReader(stream);
+					if (Containers.Any(c => c.ContainerId == container.ContainerId)) return;
+					Containers.Add(container);
+				};
+				Decoders = new Dictionary<uint, Func<byte[], int, byte[]>>();
+				ExecutableFolder = executableFolder;
+				SearchPath = searchPath;
+
+				// initialize assembly resolver
 				AppDomain.CurrentDomain.AssemblyResolve += (s, e) => Resolve(e);
-
-				VMTInitialized.Value = true;
 			}
 		}
 
@@ -71,14 +160,15 @@ namespace LibZ.Bootstrap
 
 		#region public interface
 
-		public static string ExecutableFolder { get { return VMTExecutableFolder.Value; } }
-		public static IList<string> SearchPath { get { return VMTSearchPath.Value; } }
-
-		public static void RegisterStream(Stream stream, bool optional = true)
+		/// <summary>Registers the container.</summary>
+		/// <param name="stream">The stream.</param>
+		/// <param name="optional">if set to <c>true</c> container is optional, 
+		/// so failure to load does not cause exception.</param>
+		public static void RegisterContainer(Stream stream, bool optional = true)
 		{
 			try
 			{
-				VMTAddStream.Value(stream);
+				RegisterStream(stream);
 			}
 			catch
 			{
@@ -86,7 +176,12 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		public static void RegisterFile(string libzFileName, bool optional = true)
+		/// <summary>Registers the container from file.</summary>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		/// <param name="optional">if set to <c>true</c> container is optional, 
+		/// so failure to load does not cause exception.</param>
+		/// <exception cref="System.IO.FileNotFoundException"/>
+		public static void RegisterContainer(string libzFileName, bool optional = true)
 		{
 			try
 			{
@@ -97,7 +192,7 @@ namespace LibZ.Bootstrap
 
 				var stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-				RegisterStream(stream);
+				RegisterContainer(stream);
 			}
 			catch
 			{
@@ -105,13 +200,46 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		public static void RegisterFiles(string folder, string libzFilePattern, bool optional = true)
+		/// <summary>Registers the containers from folder.</summary>
+		/// <param name="folder">The folder.</param>
+		/// <param name="libzFilePattern">The libz file pattern.</param>
+		/// <param name="optional">if set to <c>true</c> containers are optional, 
+		/// so failure to load does not cause exception.</param>
+		public static void RegisterContainer(string folder, string libzFilePattern, bool optional = true)
 		{
 			var folderInfo = new DirectoryInfo(Path.Combine(ExecutableFolder, folder));
 			if (!folderInfo.Exists) return;
 			foreach (var file in folderInfo.GetFiles(libzFilePattern))
 			{
-				RegisterFile(file.FullName, optional);
+				RegisterContainer(file.FullName, optional);
+			}
+		}
+
+		public static void RegisterDecoder(string codec, Func<byte[], int, byte[]> decoder, bool overwrite = false)
+		{
+			if (String.IsNullOrEmpty(codec))
+				throw new ArgumentException("codec is null or empty.", "codec");
+			if (decoder == null)
+				throw new ArgumentNullException("decoder", "decoder is null.");
+
+			var codecId = HashProvider.CRC(codec);
+			var decoders = Decoders;
+
+			if (overwrite)
+			{
+				lock (decoders) decoders[codecId] = decoder;
+			}
+			else
+			{
+				try
+				{
+					lock (decoders) decoders.Add(codecId, decoder);
+				}
+				catch (ArgumentException e)
+				{
+					throw new ArgumentException(
+						string.Format("Codec '{0}' ({1}) already registered", codec, codecId), e);
+				}
 			}
 		}
 
@@ -119,27 +247,26 @@ namespace LibZ.Bootstrap
 
 		#region private implementation
 
-		private static void InternalAddStream(Stream stream)
-		{
-			var container = new LibZReader(stream);
-			if (Containers.Any(c => c.ContainerId == container.ContainerId)) return;
-			Containers.Add(container);
-		}
-
+		/// <summary>Tries to load missing assembly from LibZ containers.</summary>
+		/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
+		/// <returns>Loaded assembly (or <c>null</c>)</returns>
 		private static Assembly Resolve(ResolveEventArgs args)
 		{
 			var fullName = args.Name.ToLower();
-			var guid = LibZReader.CreateHash(fullName);
+			var guid = HashProvider.MD5(fullName);
 
 			foreach (var container in Containers)
 			{
 				if (container.HasEntry(guid))
-					return Assembly.Load(container.GetBytes(guid, VMTDecoders.Value));
+					return Assembly.Load(container.GetBytes(guid, Decoders));
 			}
 
 			return null;
 		}
 
+		/// <summary>Finds the file on search path.</summary>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		/// <returns>Full path of found LibZ file, or <c>null</c>.</returns>
 		private static string FindFile(string libzFileName)
 		{
 			if (Path.IsPathRooted(libzFileName))
@@ -200,7 +327,6 @@ namespace LibZ.Bootstrap
 
 		#region static fields
 
-		private readonly static MD5 HashProvider = MD5.Create();
 		private readonly static Dictionary<uint, Func<byte[], int, byte[]>> Decoders
 			= new Dictionary<uint, Func<byte[], int, byte[]>>();
 
@@ -287,7 +413,7 @@ namespace LibZ.Bootstrap
 			if (decoder == null)
 				throw new ArgumentNullException("decoder", "decoder is null.");
 
-			var codecId = StringToCodec(codec);
+			var codecId = HashProvider.CRC(codec);
 			var decoders = Decoders;
 
 			if (overwrite)
@@ -308,16 +434,8 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		protected static uint StringToCodec(string codec)
-		{
-			uint result = Crc32.Compute(Encoding.UTF8.GetBytes(codec));
-			if (result != 0) return result;
-
-			throw new ArgumentException(string.Format("Invalid codec name '{0}', cannot produce valid CRC", codec));
-		}
-
 		protected static byte[] Decode(
-			uint codec, byte[] data, int outputLength, 
+			uint codec, byte[] data, int outputLength,
 			IDictionary<uint, Func<byte[], int, byte[]>> decoders = null)
 		{
 			if (codec == 0) return data;
@@ -376,20 +494,15 @@ namespace LibZ.Bootstrap
 
 		public byte[] GetBytes(string resourceName, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
 		{
-			return GetBytes(CreateHash(resourceName), decoders);
+			return GetBytes(HashProvider.MD5(resourceName), decoders);
 		}
 
 		public bool HasEntry(Guid hash) { return _entries.ContainsKey(hash); }
-		public bool HasEntry(string resourceName) { return HasEntry(CreateHash(resourceName)); }
+		//public bool HasEntry(string resourceName) { return HasEntry(HashProvider.MD5(resourceName)); }
 
 		#endregion
 
 		#region utility
-
-		public static Guid CreateHash(string resourceName)
-		{
-			return new Guid(HashProvider.ComputeHash(Encoding.UTF8.GetBytes(resourceName)));
-		}
 
 		protected static byte[] ReadBytes(Stream stream, int length)
 		{
@@ -478,98 +591,59 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
-		#region class GlobalVariable
+		#region GlobalDictionary
 
-		internal class GlobalVariable
+		public class GlobalDictionary
 		{
-			#region consts
+			private readonly Dictionary<int, object> _vmt;
 
-			/// <summary>Name of lock object.</summary>
-			private const string LockName = "GlobalVariable.a3eef3d0-4ad1-4cef-9bf6-6c795ac345ef";
-
-			/// <summary>Lock for GlobalVariable access.</summary>
-			public static readonly object Lock;
-			
-			#endregion
-
-			#region static constructor
-
-			/// <summary>Initializes the <see cref="GlobalVariable"/> class.</summary>
-			static GlobalVariable()
+			public GlobalDictionary(string name)
 			{
-				// this is VERY bad, I know
-				// there are potentially 2 GlobalVariable classes, they have same name, they should
-				// share same data, but they are not the SAME class, so to interlock them
-				// I need something known to both of them
 				lock (typeof(object))
 				{
-					Lock = AppDomain.CurrentDomain.GetData(LockName);
-					if (Lock == null) AppDomain.CurrentDomain.SetData(LockName, Lock = new object());
+					_vmt = AppDomain.CurrentDomain.GetData(name) as Dictionary<int, object>;
+					if (_vmt != null) return;
+
+					_vmt = new Dictionary<int, object>();
+					AppDomain.CurrentDomain.SetData(name, _vmt);
+					IsOwner = true;
 				}
 			}
 
-			#endregion
-		}
+			public bool IsOwner { get; private set; }
 
-		internal class GlobalVariable<T>
-		{
-			#region fields
-
-			/// <summary>Variable name.</summary>
-			private readonly string _name;
-
-			#endregion
-
-			#region constructor
-
-			/// <summary>Initializes a new instance of the <see cref="GlobalVariable&lt;T&gt;"/> class.</summary>
-			/// <param name="name">The name.</param>
-			public GlobalVariable(string name)
+			public T Get<T>(int slot, T defaultValue = default (T))
 			{
-				_name = name;
+				object result;
+				if (!_vmt.TryGetValue(slot, out result)) return defaultValue;
+				return (T)result;
 			}
 
-			#endregion
-
-			#region public interface
-
-			/// <summary>Gets or sets the value.</summary>
-			/// <value>The value.</value>
-			public T Value
+			public void Set(int slot, object value)
 			{
-				get
-				{
-					var value = AppDomain.CurrentDomain.GetData(_name);
-					if (value == null) return default(T);
-					return (T) value;
-				}
-				set
-				{
-					AppDomain.CurrentDomain.SetData(_name, value);
-				}
+				_vmt[slot] = value;
 			}
-
-			#endregion
 		}
 
 		#endregion
 
-		#region class Crc32
+		#region class HashProvider
 
 		/// <summary>CRC32 calculator.</summary>
-		internal class Crc32
+		internal class HashProvider
 		{
 			#region fields
 
 			/// <summary>CRC Table.</summary>
 			private static readonly uint[] Crc32Table;
+			private readonly static MD5 MD5Provider = System.Security.Cryptography.MD5.Create();
 
 			#endregion
 
 			#region constructor
 
-			/// <summary>Initializes the <see cref="Crc32"/> class.</summary>
-			static Crc32()
+			/// <summary>Initializes the <see cref="HashProvider"/> class.</summary>
+			static HashProvider()
 			{
 				const uint poly = 0xedb88320;
 				Crc32Table = new uint[256];
@@ -588,7 +662,7 @@ namespace LibZ.Bootstrap
 			/// <summary>Computes the CRC for specified byte array.</summary>
 			/// <param name="bytes">The bytes.</param>
 			/// <returns>CRC.</returns>
-			public static uint Compute(byte[] bytes)
+			public static uint CRC(byte[] bytes)
 			{
 				var crc = 0xffffffffu;
 				for (var i = 0; i < bytes.Length; ++i)
@@ -598,6 +672,14 @@ namespace LibZ.Bootstrap
 				}
 				return ~crc;
 			}
+
+			public static Guid MD5(byte[] bytes)
+			{
+				return new Guid(MD5Provider.ComputeHash(bytes));
+			}
+
+			public static uint CRC(string text) { return CRC(Encoding.UTF8.GetBytes(text)); }
+			public static Guid MD5(string text) { return MD5(Encoding.UTF8.GetBytes(text)); }
 
 			#endregion
 		}
