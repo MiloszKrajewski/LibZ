@@ -26,13 +26,15 @@ namespace LibZ.Bootstrap
 		#region static fields
 
 		private static readonly GlobalVariable<bool> VMTInitialized =
-			new GlobalVariable<bool>("LibZResolver.71c503c0-c082-4d97-85f4-994d5034c8a0");
+			new GlobalVariable<bool>(@"LibZResolver.71c503c0c0824d9785f4994d5034c8a0");
 		private static readonly GlobalVariable<Action<Stream>> VMTAddStream =
-			new GlobalVariable<Action<Stream>>("LibZResolver.7144cba0-0ae6-4afc-9cd0-6b9576cfbccf");
+			new GlobalVariable<Action<Stream>>(@"LibZResolver.7144cba00ae64afc9cd06b9576cfbccf");
 		private static readonly GlobalVariable<List<string>> VMTSearchPath =
-			new GlobalVariable<List<string>>("LibZResolver.5671e4f8-dda0-4bb7-a63a-018950c9a79f");
+			new GlobalVariable<List<string>>(@"LibZResolver.5671e4f8dda04bb7a63a018950c9a79f");
 		private static readonly GlobalVariable<string> VMTExecutableFolder =
-			new GlobalVariable<string>("LibZResolver.3df709ce-dda9-44b5-9c56-8a5ac4d0a5d0");
+			new GlobalVariable<string>(@"LibZResolver.3df709cedda944b59c568a5ac4d0a5d0");
+		private static readonly GlobalVariable<Dictionary<uint, Func<byte[], int, byte[]>>> VMTDecoders =
+			new GlobalVariable<Dictionary<uint, Func<byte[], int, byte[]>>>(@"LibZResolver.74caa8d9f778403db930fda1a9cd5d3f");
 
 		private static readonly List<LibZReader> Containers;
 
@@ -47,6 +49,7 @@ namespace LibZ.Bootstrap
 				if (VMTInitialized.Value) return;
 
 				VMTAddStream.Value = InternalAddStream;
+				VMTDecoders.Value = new Dictionary<uint, Func<byte[], int, byte[]>>();
 
 				Containers = new List<LibZReader>();
 
@@ -69,7 +72,7 @@ namespace LibZ.Bootstrap
 		#region public interface
 
 		public static string ExecutableFolder { get { return VMTExecutableFolder.Value; } }
-		public static List<string> SearchPath { get { return VMTSearchPath.Value; } }
+		public static IList<string> SearchPath { get { return VMTSearchPath.Value; } }
 
 		public static void RegisterStream(Stream stream, bool optional = true)
 		{
@@ -131,7 +134,7 @@ namespace LibZ.Bootstrap
 			foreach (var container in Containers)
 			{
 				if (container.HasEntry(guid))
-					return Assembly.Load(container.GetBytes(guid));
+					return Assembly.Load(container.GetBytes(guid, VMTDecoders.Value));
 			}
 
 			return null;
@@ -285,16 +288,17 @@ namespace LibZ.Bootstrap
 				throw new ArgumentNullException("decoder", "decoder is null.");
 
 			var codecId = StringToCodec(codec);
+			var decoders = Decoders;
 
 			if (overwrite)
 			{
-				Decoders[codecId] = decoder;
+				lock (decoders) decoders[codecId] = decoder;
 			}
 			else
 			{
 				try
 				{
-					Decoders.Add(codecId, decoder);
+					lock (decoders) decoders.Add(codecId, decoder);
 				}
 				catch (ArgumentException e)
 				{
@@ -312,12 +316,18 @@ namespace LibZ.Bootstrap
 			throw new ArgumentException(string.Format("Invalid codec name '{0}', cannot produce valid CRC", codec));
 		}
 
-		protected static byte[] Decode(uint codec, byte[] data, int outputLength)
+		protected static byte[] Decode(
+			uint codec, byte[] data, int outputLength, 
+			IDictionary<uint, Func<byte[], int, byte[]>> decoders = null)
 		{
 			if (codec == 0) return data;
+			if (decoders == null) decoders = Decoders;
 			Func<byte[], int, byte[]> decoder;
-			if (!Decoders.TryGetValue(codec, out decoder))
-				throw new ArgumentException(string.Format("Unknown codec id '{0}'", codec));
+			lock (decoders)
+			{
+				if (!decoders.TryGetValue(codec, out decoder))
+					throw new ArgumentException(string.Format("Unknown codec id '{0}'", codec));
+			}
 			return decoder(data, outputLength);
 		}
 
@@ -341,7 +351,7 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		private byte[] ReadData(Entry entry)
+		private byte[] ReadData(Entry entry, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
 		{
 			byte[] buffer;
 
@@ -352,21 +362,21 @@ namespace LibZ.Bootstrap
 			}
 
 			// this needs to be outside lock!
-			return Decode(entry.Codec, buffer, entry.StorageLength);
+			return Decode(entry.Codec, buffer, entry.StorageLength, decoders);
 		}
 
 		#endregion
 
 		#region access
 
-		public byte[] GetBytes(Guid hash)
+		public byte[] GetBytes(Guid hash, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
 		{
-			return ReadData(_entries[hash]);
+			return ReadData(_entries[hash], decoders);
 		}
 
-		public byte[] GetBytes(string resourceName)
+		public byte[] GetBytes(string resourceName, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
 		{
-			return GetBytes(CreateHash(resourceName));
+			return GetBytes(CreateHash(resourceName), decoders);
 		}
 
 		public bool HasEntry(Guid hash) { return _entries.ContainsKey(hash); }
@@ -470,10 +480,21 @@ namespace LibZ.Bootstrap
 	{
 		#region class GlobalVariable
 
-		public class GlobalVariable
+		internal class GlobalVariable
 		{
-			public static readonly object Lock;
+			#region consts
 
+			/// <summary>Name of lock object.</summary>
+			private const string LockName = "GlobalVariable.a3eef3d0-4ad1-4cef-9bf6-6c795ac345ef";
+
+			/// <summary>Lock for GlobalVariable access.</summary>
+			public static readonly object Lock;
+			
+			#endregion
+
+			#region static constructor
+
+			/// <summary>Initializes the <see cref="GlobalVariable"/> class.</summary>
 			static GlobalVariable()
 			{
 				// this is VERY bad, I know
@@ -482,23 +503,38 @@ namespace LibZ.Bootstrap
 				// I need something known to both of them
 				lock (typeof(object))
 				{
-					const string name = "GlobalVariable.a3eef3d0-4ad1-4cef-9bf6-6c795ac345ef";
-					Lock = AppDomain.CurrentDomain.GetData(name);
-					if (Lock == null) AppDomain.CurrentDomain.SetData(name, Lock = new object());
+					Lock = AppDomain.CurrentDomain.GetData(LockName);
+					if (Lock == null) AppDomain.CurrentDomain.SetData(LockName, Lock = new object());
 				}
 			}
 
+			#endregion
 		}
 
-		public class GlobalVariable<T>
+		internal class GlobalVariable<T>
 		{
+			#region fields
+
+			/// <summary>Variable name.</summary>
 			private readonly string _name;
 
+			#endregion
+
+			#region constructor
+
+			/// <summary>Initializes a new instance of the <see cref="GlobalVariable&lt;T&gt;"/> class.</summary>
+			/// <param name="name">The name.</param>
 			public GlobalVariable(string name)
 			{
 				_name = name;
 			}
 
+			#endregion
+
+			#region public interface
+
+			/// <summary>Gets or sets the value.</summary>
+			/// <value>The value.</value>
 			public T Value
 			{
 				get
@@ -512,27 +548,27 @@ namespace LibZ.Bootstrap
 					AppDomain.CurrentDomain.SetData(_name, value);
 				}
 			}
+
+			#endregion
 		}
 
 		#endregion
 
 		#region class Crc32
 
-		public class Crc32
+		/// <summary>CRC32 calculator.</summary>
+		internal class Crc32
 		{
+			#region fields
+
+			/// <summary>CRC Table.</summary>
 			private static readonly uint[] Crc32Table;
 
-			public static uint Compute(byte[] bytes)
-			{
-				var crc = 0xffffffffu;
-				for (var i = 0; i < bytes.Length; ++i)
-				{
-					var index = (byte)(((crc) & 0xff) ^ bytes[i]);
-					crc = (crc >> 8) ^ Crc32Table[index];
-				}
-				return ~crc;
-			}
+			#endregion
 
+			#region constructor
+
+			/// <summary>Initializes the <see cref="Crc32"/> class.</summary>
 			static Crc32()
 			{
 				const uint poly = 0xedb88320;
@@ -544,6 +580,26 @@ namespace LibZ.Bootstrap
 					Crc32Table[i] = temp;
 				}
 			}
+
+			#endregion
+
+			#region public interface
+
+			/// <summary>Computes the CRC for specified byte array.</summary>
+			/// <param name="bytes">The bytes.</param>
+			/// <returns>CRC.</returns>
+			public static uint Compute(byte[] bytes)
+			{
+				var crc = 0xffffffffu;
+				for (var i = 0; i < bytes.Length; ++i)
+				{
+					var index = (byte)((crc & 0xff) ^ bytes[i]);
+					crc = (crc >> 8) ^ Crc32Table[index];
+				}
+				return ~crc;
+			}
+
+			#endregion
 		}
 
 		#endregion
