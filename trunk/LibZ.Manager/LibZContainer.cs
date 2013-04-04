@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Security.Cryptography;
-using Softpark.LibZ.Internal;
+using LibZ.Manager.Internal;
 
 namespace LibZ.Manager
 {
@@ -11,13 +9,17 @@ namespace LibZ.Manager
 
 	public class LibZContainer: LibZReader
 	{
-		#region fields
+		#region static fields
 
-		private readonly static Dictionary<uint, Func<byte[], byte[]>> m_Encoders
+		private readonly static Dictionary<uint, Func<byte[], byte[]>> Encoders
 			= new Dictionary<uint, Func<byte[], byte[]>>();
 
-		private BinaryWriter m_Writer;
-		protected bool m_Dirty;
+		#endregion
+
+		#region fields
+
+		private BinaryWriter _writer;
+		protected bool _dirty;
 
 		#endregion
 
@@ -25,12 +27,12 @@ namespace LibZ.Manager
 
 		public LibZContainer(Stream stream)
 		{
-			m_Stream = stream;
-			m_Reader = new BinaryReader(m_Stream);
-			bool writable = m_Stream.CanWrite;
-			m_Writer = writable ? new BinaryWriter(m_Stream) : null;
+			_stream = stream;
+			_reader = new BinaryReader(_stream);
+			var writable = _stream.CanWrite;
+			_writer = writable ? new BinaryWriter(_stream) : null;
 
-			if (m_Stream.Length == 0 && writable)
+			if (_stream.Length == 0 && writable)
 			{
 				CreateFile();
 			}
@@ -45,11 +47,11 @@ namespace LibZ.Manager
 			var mode = writable ? (reset ? FileMode.Create : FileMode.OpenOrCreate) : FileMode.Open;
 			var access = writable ? FileAccess.ReadWrite : FileAccess.Read;
 			var share = writable ? FileShare.None : FileShare.Read;
-			m_Stream = new FileStream(fileName, mode, access, share);
-			m_Reader = new BinaryReader(m_Stream);
-			m_Writer = writable ? new BinaryWriter(m_Stream) : null;
+			_stream = new FileStream(fileName, mode, access, share);
+			_reader = new BinaryReader(_stream);
+			_writer = writable ? new BinaryWriter(_stream) : null;
 
-			if (m_Stream.Length == 0 && writable)
+			if (_stream.Length == 0 && writable)
 			{
 				CreateFile();
 			}
@@ -65,16 +67,16 @@ namespace LibZ.Manager
 
 		private void CreateFile()
 		{
-			lock (m_Stream)
+			lock (_stream)
 			{
-				m_ContainerId = Guid.NewGuid();
+				_containerId = Guid.NewGuid();
 
-				m_Stream.Position = 0;
-				m_Stream.SetLength(0);
+				_stream.Position = 0;
+				_stream.SetLength(0);
 				WriteHead();
-				m_MagicOffset = m_Stream.Position;
+				_magicOffset = _stream.Position;
 				WriteTail();
-				m_Dirty = false;
+				_dirty = false;
 			}
 		}
 
@@ -82,44 +84,39 @@ namespace LibZ.Manager
 
 		#region codec management
 
-		public static void RegisterCodec(uint codec, Func<byte[], byte[]> encoder, Func<byte[], byte[]> decoder)
+		//public static void RegisterCodec(uint codec, Func<byte[], byte[]> encoder, Func<byte[], byte[]> decoder)
+		//{
+		//	RegisterDecoder(codec, decoder);
+		//	RegisterEncoder(codec, encoder);
+		//}
+
+		public static void RegisterCodec(string codec, Func<byte[], byte[]> encoder, Func<byte[], int, byte[]> decoder, bool overwrite = false)
 		{
-			RegisterDecoder(codec, decoder);
-			RegisterEncoder(codec, encoder);
+			RegisterDecoder(codec, decoder, overwrite);
+			RegisterEncoder(codec, encoder, overwrite);
 		}
 
-		public static void RegisterCodec(string codec, Func<byte[], byte[]> encoder, Func<byte[], byte[]> decoder)
-		{
-			RegisterCodec(StringToCodec(codec), encoder, decoder);
-		}
-
-		public static void RegisterEncoder(uint codec, Func<byte[], byte[]> encoder)
-		{
-			if (encoder == null)
-				throw new ArgumentNullException("encoder", "encoder is null.");
-
-			try
-			{
-				m_Encoders.Add(codec, encoder);
-			}
-			catch (ArgumentException e)
-			{
-				throw new ArgumentException(string.Format("Codec {0} already registered", codec), e);
-			}
-		}
-
-		public static void RegisterEncoder(string codec, Func<byte[], byte[]> encoder)
+		public static void RegisterEncoder(string codec, Func<byte[], byte[]> encoder, bool overwrite = false)
 		{
 			if (String.IsNullOrEmpty(codec))
 				throw new ArgumentException("codec is null or empty.", "codec");
 
-			try
+			var crc = HashProvider.CRC(codec);
+
+			if (overwrite)
 			{
-				m_Encoders.Add(StringToCodec(codec), encoder);
+				lock (Encoders) Encoders[crc] = encoder;
 			}
-			catch (ArgumentException e)
+			else
 			{
-				throw new ArgumentException(string.Format("Cannot register codec '{0}'", codec), e);
+				try
+				{
+					lock (Encoders) Encoders.Add(crc, encoder);
+				}
+				catch (ArgumentException e)
+				{
+					throw new ArgumentException(string.Format("Cannot register codec '{0}'", codec), e);
+				}
 			}
 		}
 
@@ -127,8 +124,11 @@ namespace LibZ.Manager
 		{
 			if (codec == 0) return data;
 			Func<byte[], byte[]> encoder;
-			if (!m_Encoders.TryGetValue(codec, out encoder))
-				throw new ArgumentException(string.Format("Unknown codec {0}", codec));
+			lock (Encoders)
+			{
+				if (!Encoders.TryGetValue(codec, out encoder))
+					throw new ArgumentException(string.Format("Unknown codec {0}", codec));
+			}
 			return encoder(data);
 		}
 
@@ -138,150 +138,108 @@ namespace LibZ.Manager
 
 		private void WriteHead()
 		{
-			lock (m_Stream)
+			lock (_stream)
 			{
-				m_Stream.Position = 0;
-				m_Writer.Write(m_MagicNumber.ToByteArray());
-				m_Writer.Write(m_ContainerId.ToByteArray());
-				m_Writer.Write(m_CurrentVersion);
+				_stream.Position = 0;
+				_writer.Write(Magic.ToByteArray());
+				_writer.Write(_containerId.ToByteArray());
+				_writer.Write(CurrentVersion);
 			}
 		}
 
 		private void WriteEntry(Entry entry)
 		{
-			lock (m_Stream)
+			lock (_stream)
 			{
-				m_Writer.Write(entry.Hash.ToByteArray());
-				m_Writer.Write((int)entry.Flags);
-				m_Writer.Write(entry.Offset);
-				m_Writer.Write(entry.OriginalLength);
-				m_Writer.Write(entry.StorageLength);
-				m_Writer.Write(entry.Codec);
+				_writer.Write(entry.Hash.ToByteArray());
+				_writer.Write((int)entry.Flags);
+				_writer.Write(entry.Offset);
+				_writer.Write(entry.OriginalLength);
+				_writer.Write(entry.StorageLength);
+				_writer.Write(entry.Codec);
 			}
 		}
 
 		private void WriteTail()
 		{
-			lock (m_Stream)
+			lock (_stream)
 			{
-				m_Stream.Position = m_MagicOffset;
-				m_Writer.Write(m_Entries.Count);
-				foreach (var entry in m_Entries.Values)
+				_stream.Position = _magicOffset;
+				_writer.Write(_entries.Count);
+				foreach (var entry in _entries.Values)
 				{
 					WriteEntry(entry);
 				}
-				m_Writer.Write(m_MagicOffset);
-				m_Writer.Write(m_MagicNumber.ToByteArray());
+				_writer.Write(_magicOffset);
+				_writer.Write(Magic.ToByteArray());
 			}
 		}
 
 		private void WriteData(
-			Entry entry, byte[] data, LibZOptions options, int offset = 0, int length = int.MaxValue)
+			Entry entry, byte[] data, uint codec)
 		{
-			lock (m_Stream)
+			lock (_stream)
 			{
-				length = Math.Min(data.Length - offset, length);
+				entry.OriginalLength = data.Length;
 
-				data = Isolate(data, offset, length);
-
-				var encoded = Encode(options.Codec, data);
+				var encoded = Encode(codec, data);
 				if (encoded != null)
 				{
-					entry.Codec = options.Codec;
+					entry.Codec = codec;
 					data = encoded;
 				}
 
-				entry.OriginalLength = data.Length;
-
-				using (var source = new MemoryStream(data))
-				using (var target = new MemoryStream())
-				{
-					bool compression = options.Deflate;
-					bool encryption = options.Encrypt;
-
-					if (compression)
-					{
-						using (var isolated = Isolate(target))
-						using (var compressed = Deflate(isolated, true))
-						{
-							CopyStream(source, compressed, length);
-						}
-
-						compression = target.Length < source.Length;
-					}
-
-					using (var isolated = Isolate(m_Stream))
-					using (var encrypted = Encrypt(isolated, options.Password, encryption))
-					{
-						var decrypted = compression ? target : source;
-
-						decrypted.Position = 0;
-						CopyStream(decrypted, encrypted, decrypted.Length);
-
-						if (compression) entry.Flags |= EntryFlags.Compressed;
-						if (encryption) entry.Flags |= EntryFlags.Encrypted;
-					}
-				}
+				_stream.Write(data, 0, data.Length);
 			}
 		}
 
-		public void Append(string resourceName, string fileName)
+		public void Append(string resourceName, string fileName, string codecName = null)
 		{
-			SetBytes(resourceName, File.ReadAllBytes(fileName));
-		}
-
-		public void Append(string resourceName, string fileName, LibZOptions options)
-		{
-			SetBytes(resourceName, File.ReadAllBytes(fileName), options);
+			SetBytes(resourceName, File.ReadAllBytes(fileName), codecName);
 		}
 
 		public void Alias(string existingResourceName, string newResourceName)
 		{
-			var existingEntry = m_Entries[CreateHash(existingResourceName)];
+			var existingEntry = _entries[HashProvider.MD5(existingResourceName)];
 			var newEntry = new Entry
 			{
-				Hash = CreateHash(newResourceName),
+				Hash = HashProvider.MD5(newResourceName),
 				Flags = existingEntry.Flags,
 				Offset = existingEntry.Offset,
 				OriginalLength = existingEntry.OriginalLength,
 				StorageLength = existingEntry.StorageLength,
 			};
-			m_Entries.Add(newEntry.Hash, newEntry);
-			m_Dirty = true;
+			_entries.Add(newEntry.Hash, newEntry);
+			_dirty = true;
 		}
 
 		#endregion
 
 		#region access
 
-		public void SetBytes(string resourceName, byte[] data, LibZOptions options, int offset = 0, int length = int.MaxValue)
+		public void SetBytes(string resourceName, byte[] data, string codecName = null)
 		{
-			lock (m_Stream)
-			{
+			var codecId = codecName == null ? 0 : HashProvider.CRC(codecName);
 
-				length = Math.Min(data.Length - offset, length);
-				m_Stream.Position = m_MagicOffset;
+			lock (_stream)
+			{
+				_stream.Position = _magicOffset;
 				var entry = new Entry
 				{
-					Hash = CreateHash(resourceName),
-					Offset = m_Stream.Position,
+					Hash = HashProvider.MD5(resourceName),
+					Offset = _stream.Position,
 				};
-				m_Entries.Add(entry.Hash, entry);
+				_entries.Add(entry.Hash, entry);
 
-				WriteData(entry, data, options, offset, length);
+				WriteData(entry, data, codecId);
 
-				entry.StorageLength = (int)(m_Stream.Position - entry.Offset);
+				entry.StorageLength = (int)(_stream.Position - entry.Offset);
 
-				m_MagicOffset = m_Stream.Position;
-				m_Stream.SetLength(m_Stream.Position);
+				_magicOffset = _stream.Position;
+				_stream.SetLength(_stream.Position);
 
-				m_Dirty = true;
+				_dirty = true;
 			}
-		}
-
-		public void SetBytes(string resourceName, byte[] data, int offset = 0, int length = int.MaxValue)
-		{
-			SetBytes(resourceName, data, LibZOptions.Default, offset, length);
 		}
 
 		#endregion
@@ -291,18 +249,18 @@ namespace LibZ.Manager
 		protected override void Clear()
 		{
 			base.Clear();
-			TryDispose(ref m_Writer);
+			TryDispose(ref _writer);
 		}
 
 		protected override void DisposeManaged()
 		{
 			try
 			{
-				if (m_Dirty)
+				if (_dirty)
 				{
-					lock (m_Stream)
+					lock (_stream)
 					{
-						m_Stream.Position = m_MagicOffset;
+						_stream.Position = _magicOffset;
 						WriteTail();
 					}
 				}
@@ -313,60 +271,6 @@ namespace LibZ.Manager
 			}
 
 			base.DisposeManaged();
-		}
-
-		#endregion
-
-		#region copy stream
-
-		/// <summary>
-		/// Copies the stream.
-		/// </summary>
-		/// <param name="source">The source.</param>
-		/// <param name="target">The target.</param>
-		/// <param name="maximumLength">The maximum length.</param>
-		/// <param name="progress">The progress callback. Can be <c>null</c>.</param>
-		/// <returns>Number of bytes actually copied.</returns>
-		public static void CopyStream(Stream source, Stream target, long maximumLength)
-		{
-			if (source == null)
-				throw new ArgumentNullException("source", "source is null.");
-			if (target == null)
-				throw new ArgumentNullException("target", "target is null.");
-
-			int bufferSize = (int)Math.Min((long)m_CopyBufferLength, maximumLength);
-
-			byte[] buffer = new byte[bufferSize];
-			long copied = 0;
-			long left = maximumLength;
-
-			while (left > 0)
-			{
-				int bytes = (int)Math.Min((long)buffer.Length, left);
-				int read = source.Read(buffer, 0, bytes);
-				if (read <= 0) break;
-				target.Write(buffer, 0, read);
-				copied += (long)read;
-				left -= (long)read;
-			}
-		}
-
-		#endregion
-
-		#region stream encapsulation
-
-		protected static Stream Encrypt(Stream other, string password = null, bool encrypt = true)
-		{
-			return (password == null || !encrypt)
-				? other
-				: new PasswordStream(other, password, CryptoStreamMode.Write);
-		}
-
-		protected static Stream Deflate(Stream other, bool compress = true)
-		{
-			return !compress
-				? other
-				: new DeflateStream(other, CompressionMode.Compress);
 		}
 
 		#endregion

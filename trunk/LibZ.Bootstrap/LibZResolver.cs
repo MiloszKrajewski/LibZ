@@ -49,6 +49,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -151,6 +152,8 @@ namespace LibZ.Bootstrap
 				ExecutableFolder = executableFolder;
 				SearchPath = searchPath;
 
+				RegisterDecoder("deflate", DeflateDecoder);
+
 				// initialize assembly resolver
 				AppDomain.CurrentDomain.AssemblyResolve += (s, e) => Resolve(e);
 			}
@@ -246,6 +249,18 @@ namespace LibZ.Bootstrap
 		#endregion
 
 		#region private implementation
+
+		private static byte[] DeflateDecoder(byte[] input, int outputLength)
+		{
+			using (var mstream = new MemoryStream(input))
+			using (var zstream = new DeflateStream(mstream, CompressionMode.Decompress))
+			{
+				var result = new byte[outputLength];
+				var read = zstream.Read(result, 0, outputLength);
+				if (read != outputLength) throw new IOException("Corrupted data in deflate stream");
+				return result;
+			}
+		}
 
 		/// <summary>Tries to load missing assembly from LibZ containers.</summary>
 		/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
@@ -591,7 +606,7 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
-		#region GlobalDictionary
+		#region class GlobalDictionary
 
 		public class GlobalDictionary
 		{
