@@ -1,15 +1,16 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("LibZ.Manager")]
+[assembly: AssemblyTitle("LibZ.Tool.Core")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Milosz A. Krajewski")]
-[assembly: AssemblyProduct("LibZ.Manager")]
-[assembly: AssemblyCopyright("Copyright © Milosz A. Krajewski 2013")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("LibZ.Tool.Core")]
+[assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -19,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("85aa0e14-8dc3-4581-9055-dfe03070bf27")]
+[assembly: Guid("b1599b9f-edad-40f4-9420-655d2b8ca06a")]
 
 // Version information for an assembly consists of the following four values:
 //

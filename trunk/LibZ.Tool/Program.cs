@@ -1,14 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace LibZ.Tool
 {
 	class Program
 	{
+		static Program()
+		{
+			Bootstrap.LibZResolver.RegisterContainer("LibZ.Tool.libz");
+		}
+
 		static void Main(string[] args)
 		{
+			Core.Program.Run(args);
 		}
 	}
 }

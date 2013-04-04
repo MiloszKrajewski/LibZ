@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{617E7125-F13A-43BF-89A5-62D89FE4C8F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Bootstrap", "LibZ.Bootstrap\LibZ.Bootstrap.csproj", "{66762F06-D368-4A1D-91AD-D5B0300CB879}"
@@ -8,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Manager", "LibZ.Manager\LibZ.Manager.csproj", "{9526E061-2E22-421B-86A6-198B51960918}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool", "LibZ.Tool\LibZ.Tool.csproj", "{75F00D3F-6247-48BD-99C7-915646DD8566}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool.Core", "LibZ.Tool.Core\LibZ.Tool.Core.csproj", "{E43A9AA7-8D1B-4320-9608-D3513D14D458}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,16 @@ Global
 		{75F00D3F-6247-48BD-99C7-915646DD8566}.Release|Mixed Platforms.Build.0 = Release|x86
 		{75F00D3F-6247-48BD-99C7-915646DD8566}.Release|x86.ActiveCfg = Release|x86
 		{75F00D3F-6247-48BD-99C7-915646DD8566}.Release|x86.Build.0 = Release|x86
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{E43A9AA7-8D1B-4320-9608-D3513D14D458}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
