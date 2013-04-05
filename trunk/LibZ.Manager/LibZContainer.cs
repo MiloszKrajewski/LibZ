@@ -195,7 +195,7 @@ namespace LibZ.Manager
 			using (var istream = new MemoryStream(input))
 			using (var ostream = new MemoryStream())
 			{
-				using (var zstream = new DeflateStream(ostream, CompressionMode.Compress, true))
+				using (var zstream = new DeflateStream(ostream, CompressionMode.Compress))
 				{
 					istream.CopyTo(zstream);
 				}

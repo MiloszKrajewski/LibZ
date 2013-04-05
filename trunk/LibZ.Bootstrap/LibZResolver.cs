@@ -490,11 +490,11 @@ namespace LibZ.Bootstrap
 				lock (_stream)
 				{
 					_stream.Position = entry.Offset;
-					buffer = ReadBytes(_stream, entry.OriginalLength);
+					buffer = ReadBytes(_stream, entry.StorageLength);
 				}
 
 				// this needs to be outside lock!
-				return Decode(entry.Codec, buffer, entry.StorageLength, decoders);
+				return Decode(entry.Codec, buffer, entry.OriginalLength, decoders);
 			}
 
 			#endregion

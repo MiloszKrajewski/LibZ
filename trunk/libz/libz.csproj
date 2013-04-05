@@ -53,13 +53,14 @@
       <Name>LibZ.Tool</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="postbuild.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>del /q /s $(TargetDir)"libz.libz
-xcopy /y /d "$(TargetDir)"*.dll "$(TargetDir)"merge\ 
-"$(TargetPath)" --libz $(TargetDir)libz.libz $(TargetDir)merge\*.dll
-del /q /s *.dll &gt; nul
-rmdir /q /s $(TargetDir)merge &gt; nul</PostBuildEvent>
+    <PostBuildEvent>call postbuild.cmd</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -10,7 +10,6 @@ namespace LibZ.Tool
 	public class AddCommand: ManyConsole.ConsoleCommand
 	{
 		private string _libzFileName;
-		// private readonly List<string> _dllFileNames = new List<string>();
 		private string _codecName;
 		private bool _move;
 
