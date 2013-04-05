@@ -67,7 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddCommand.cs" />
+    <Compile Include="AddLibraryTask.cs" />
     <Compile Include="InjectCommand.cs" />
+    <Compile Include="InjectResourceTask.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="TaskBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

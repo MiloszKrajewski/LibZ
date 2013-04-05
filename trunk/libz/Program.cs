@@ -1,4 +1,5 @@
 ﻿using System;
+using LibZ.Bootstrap;
 
 namespace libz
 {
@@ -8,7 +9,7 @@ namespace libz
 		{
 			try
 			{
-				LibZ.Bootstrap.LibZResolver.RegisterContainer("libz.libz");
+				LibZResolver.RegisterContainer(typeof(Program), "libz.libz");
 				return Run(args);
 			}
 			catch (Exception e)

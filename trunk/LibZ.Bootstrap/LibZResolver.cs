@@ -203,18 +203,25 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		/// <summary>Registers the containers from folder.</summary>
-		/// <param name="folder">The folder.</param>
-		/// <param name="libzFilePattern">The libz file pattern.</param>
-		/// <param name="optional">if set to <c>true</c> containers are optional, 
+		/// <summary>Registers the container from resources.</summary>
+		/// <param name="assemblyHook">The assembly hook.</param>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		/// <param name="optional">if set to <c>true</c> container is optional,
 		/// so failure to load does not cause exception.</param>
-		public static void RegisterContainer(string folder, string libzFilePattern, bool optional = true)
+		/// <exception cref="System.IO.FileNotFoundException"></exception>
+		public static void RegisterContainer(Type assemblyHook, string libzFileName, bool optional = true)
 		{
-			var folderInfo = new DirectoryInfo(Path.Combine(ExecutableFolder, folder));
-			if (!folderInfo.Exists) return;
-			foreach (var file in folderInfo.GetFiles(libzFilePattern))
+			try
 			{
-				RegisterContainer(file.FullName, optional);
+				var resourceName =
+					string.Format("LibZ.{0:N}",
+						HashProvider.MD5(Path.GetFileName(libzFileName) ?? string.Empty));
+				var stream = assemblyHook.Assembly.GetManifestResourceStream(resourceName);
+				RegisterContainer(stream);
+			}
+			catch
+			{
+				if (!optional) throw;
 			}
 		}
 
@@ -254,8 +261,7 @@ namespace LibZ.Bootstrap
 		/// <returns>Loaded assembly (or <c>null</c>)</returns>
 		private static Assembly Resolve(ResolveEventArgs args)
 		{
-			var fullName = args.Name.ToLower();
-			var guid = HashProvider.MD5(fullName);
+			var guid = HashProvider.MD5(args.Name);
 
 			foreach (var container in Containers)
 			{
@@ -516,7 +522,7 @@ namespace LibZ.Bootstrap
 				return _entries.ContainsKey(hash);
 			}
 
-			//public bool HasEntry(string resourceName) { return HasEntry(HashProvider.MD5(resourceName)); }
+			public bool HasEntry(string resourceName) { return HasEntry(HashProvider.MD5(resourceName)); }
 
 			#endregion
 
@@ -712,8 +718,8 @@ namespace LibZ.Bootstrap
 				return new Guid(MD5Provider.ComputeHash(bytes));
 			}
 
-			public static uint CRC(string text) { return CRC(Encoding.UTF8.GetBytes(text)); }
-			public static Guid MD5(string text) { return MD5(Encoding.UTF8.GetBytes(text)); }
+			public static uint CRC(string text) { return CRC(Encoding.UTF8.GetBytes(text.ToLowerInvariant())); }
+			public static Guid MD5(string text) { return MD5(Encoding.UTF8.GetBytes(text.ToLowerInvariant())); }
 
 			#endregion
 		}

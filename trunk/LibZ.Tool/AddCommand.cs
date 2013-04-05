@@ -24,51 +24,9 @@ namespace LibZ.Tool
 
 		public override int Run(string[] remainingArguments)
 		{
-			using (var container = new LibZContainer(_libzFileName, true))
-			{
-				foreach (var fileName in FindFiles(remainingArguments))
-				{
-					var resourceName = GetAssemblyName(fileName).ToLower(CultureInfo.InvariantCulture);
-					Console.WriteLine("Adding '{0}' as '{1}'", fileName, resourceName);
-					container.Append(resourceName, fileName, _codecName);
-					if (_move) DeleteFile(fileName);
-				}
-			}
-
+			var task = new AddLibraryTask();
+			task.Execute(_libzFileName, remainingArguments, _codecName, _move);
 			return 0;
-		}
-
-		private string GetAssemblyName(string fileName)
-		{
-			var assembly = Mono.Cecil.AssemblyDefinition.ReadAssembly(fileName);
-			return assembly.Name.FullName;
-		}
-
-		private static void DeleteFile(string fileName)
-		{
-			try
-			{
-				File.Delete(fileName);
-			}
-			// ReSharper disable EmptyGeneralCatchClause
-			catch
-			{
-				Console.WriteLine("File '{0}' could not be deleted", fileName);
-			}
-			// ReSharper restore EmptyGeneralCatchClause
-		}
-
-		private static IEnumerable<string> FindFiles(IEnumerable<string> patterns)
-		{
-			return patterns.SelectMany(FindFiles);
-		}
-
-		private static IEnumerable<string> FindFiles(string pattern)
-		{
-			if (!Path.IsPathRooted(pattern)) pattern = ".\\" + pattern;
-			var directoryName = Path.GetDirectoryName(pattern) ?? ".";
-			var searchPattern = Path.GetFileName(pattern) ?? "*.dll";
-			return Directory.GetFiles(directoryName, searchPattern);
 		}
 	}
 }
