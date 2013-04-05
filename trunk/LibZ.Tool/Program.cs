@@ -2,16 +2,11 @@
 
 namespace LibZ.Tool
 {
-	class Program
+	public class Program
 	{
-		static Program()
+		public static int Run(string[] args)
 		{
-			Bootstrap.LibZResolver.RegisterContainer("LibZ.Tool.libz");
-		}
-
-		static void Main(string[] args)
-		{
-			Core.Program.Run(args);
+			return 0;
 		}
 	}
 }
