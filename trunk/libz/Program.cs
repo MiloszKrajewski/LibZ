@@ -8,7 +8,7 @@ namespace libz
 		{
 			try
 			{
-				LibZ.Bootstrap.LibZResolver.RegisterContainer("libzcli.libz");
+				LibZ.Bootstrap.LibZResolver.RegisterContainer("libz.libz");
 				return Run(args);
 			}
 			catch (Exception e)
@@ -16,13 +16,15 @@ namespace libz
 				Console.WriteLine("Fatal initialization error");
 				Console.WriteLine("{0}: {1}", e.GetType().Name, e.Message);
 				Console.WriteLine(e.StackTrace);
+				Console.ReadLine();
 				return -1;
 			}
 		}
 
 		static int Run(string[] args)
 		{
-			return LibZ.Tool.Program.Run(args);
+			var program = new LibZ.Tool.Program();
+			return program.Run(args);
 		}
 	}
 }

@@ -1,12 +1,14 @@
 ﻿using System;
+using ManyConsole;
 
 namespace LibZ.Tool
 {
 	public class Program
 	{
-		public static int Run(string[] args)
+		public int Run(string[] args)
 		{
-			return 0;
+			var commands = ConsoleCommandDispatcher.FindCommandsInSameAssemblyAs(GetType());
+			return ConsoleCommandDispatcher.DispatchCommand(commands, args, Console.Out);
 		}
 	}
 }

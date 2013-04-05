@@ -325,8 +325,7 @@ namespace LibZ.Bootstrap
 
 			#region consts
 
-			protected const int CopyBufferLength = 0x4000;
-			protected static readonly Guid Magic = new Guid("F434A49F-859F-40AB-A460-C87270575249");
+			protected static readonly Guid Magic = new Guid(Encoding.ASCII.GetBytes("LibZContainer103"));
 			protected static readonly int GuidLength = Guid.Empty.ToByteArray().Length; // that's nasty, but reliable
 			protected static readonly int CurrentVersion = 103;
 
