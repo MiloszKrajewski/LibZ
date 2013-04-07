@@ -41,13 +41,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\LibZ.Bootstrap\LibZResolver.cs">
-      <Link>LibZResolver.cs</Link>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LibZ.Bootstrap\LibZ.Bootstrap.csproj">
+      <Project>{66762f06-d368-4a1d-91ad-d5b0300cb879}</Project>
+      <Name>LibZ.Bootstrap</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LibZ.Tool\LibZ.Tool.csproj">
       <Project>{75f00d3f-6247-48bd-99c7-915646dd8566}</Project>
       <Name>LibZ.Tool</Name>

@@ -3,7 +3,7 @@ using System.IO;
 using LibZ.Manager;
 using Mono.Cecil;
 
-namespace LibZ.Tool
+namespace LibZ.Tool.Tasks
 {
 	public class AddLibraryTask: TaskBase
 	{

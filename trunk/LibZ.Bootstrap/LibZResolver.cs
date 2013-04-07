@@ -366,8 +366,8 @@ namespace LibZ.Bootstrap
 		#region consts
 
 		protected static readonly Guid Magic = new Guid(Encoding.ASCII.GetBytes("LibZContainer103"));
+		protected const int CurrentVersion = 103;
 		protected static readonly int GuidLength = Guid.Empty.ToByteArray().Length; // that's nasty, but reliable
-		protected static readonly int CurrentVersion = 103;
 
 		#endregion
 

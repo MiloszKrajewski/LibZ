@@ -1,6 +1,9 @@
-﻿namespace LibZ.Tool
+﻿using LibZ.Tool.Tasks;
+using ManyConsole;
+
+namespace LibZ.Tool.Commands
 {
-	public class AddCommand: ManyConsole.ConsoleCommand
+	public class AddCommand : ConsoleCommand
 	{
 		private string _libzFileName;
 		private string _codecName;

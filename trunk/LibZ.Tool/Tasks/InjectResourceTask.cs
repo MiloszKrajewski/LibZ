@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using Mono.Cecil;
 
-namespace LibZ.Tool
+namespace LibZ.Tool.Tasks
 {
-	public class InjectResourceTask: TaskBase
+	public class InjectResourceTask : TaskBase
 	{
 		public void Execute(
 			string libzFileName, string exeFileName, bool move)
@@ -26,6 +26,5 @@ namespace LibZ.Tool
 
 			if (move) DeleteFile(libzFileName);
 		}
-
 	}
 }

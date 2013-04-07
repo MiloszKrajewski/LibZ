@@ -66,13 +66,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AddCommand.cs" />
-    <Compile Include="AddLibraryTask.cs" />
+    <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\MergeBootstrapCommand.cs" />
+    <Compile Include="Tasks\AddLibraryTask.cs" />
     <Compile Include="AssemblyArchitecture.cs" />
-    <Compile Include="InjectCommand.cs" />
-    <Compile Include="InjectResourceTask.cs" />
+    <Compile Include="Commands\InjectCommand.cs" />
+    <Compile Include="Tasks\InjectResourceTask.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="TaskBase.cs" />
+    <Compile Include="Tasks\MergeBootstrapTask.cs" />
+    <Compile Include="Tasks\TaskBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -85,6 +87,7 @@
       <Name>LibZ.Manager</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

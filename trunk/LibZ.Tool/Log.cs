@@ -4,7 +4,11 @@ namespace LibZ.Tool
 {
 	public enum LogLevel
 	{
-		Debug, Info, Warn, Error, Fatal
+		Debug,
+		Info,
+		Warn,
+		Error,
+		Fatal
 	}
 
 	/// <summary>Helper class for console applications.</summary>
@@ -42,12 +46,18 @@ namespace LibZ.Tool
 		{
 			switch (level)
 			{
-				case LogLevel.Debug: return ConsoleColor.Gray;
-				case LogLevel.Info: return ConsoleColor.Cyan;
-				case LogLevel.Warn: return ConsoleColor.Yellow;
-				case LogLevel.Error: return ConsoleColor.Red;
-				case LogLevel.Fatal: return ConsoleColor.Magenta;
-				default: return ConsoleColor.White;
+				case LogLevel.Debug:
+					return ConsoleColor.Gray;
+				case LogLevel.Info:
+					return ConsoleColor.Cyan;
+				case LogLevel.Warn:
+					return ConsoleColor.Yellow;
+				case LogLevel.Error:
+					return ConsoleColor.Red;
+				case LogLevel.Fatal:
+					return ConsoleColor.Magenta;
+				default:
+					return ConsoleColor.White;
 			}
 		}
 

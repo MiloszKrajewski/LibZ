@@ -1,8 +1,9 @@
-﻿using ManyConsole;
+﻿using LibZ.Tool.Tasks;
+using ManyConsole;
 
-namespace LibZ.Tool
+namespace LibZ.Tool.Commands
 {
-	public class InjectCommand: ConsoleCommand
+	public class InjectCommand : ConsoleCommand
 	{
 		private string _exeFileName;
 		private string _libzFileName;

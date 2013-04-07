@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Mono.Cecil;
 
-namespace LibZ.Tool
+namespace LibZ.Tool.Tasks
 {
 	public class TaskBase
 	{
@@ -25,7 +25,7 @@ namespace LibZ.Tool
 				Log.Debug("Deleting '{0}'", fileName);
 				File.Delete(fileName);
 			}
-			// ReSharper disable EmptyGeneralCatchClause
+				// ReSharper disable EmptyGeneralCatchClause
 			catch
 			{
 				Log.Warn("File '{0}' could not be deleted", fileName);
@@ -52,7 +52,7 @@ namespace LibZ.Tool
 
 		protected static string GetAssemblyName(AssemblyDefinition assembly)
 		{
-			return assembly.Name.FullName.ToLowerInvariant();
+			return assembly.Name.FullName;
 		}
 
 		protected static bool IsManaged(AssemblyDefinition assembly)
@@ -92,7 +92,8 @@ namespace LibZ.Tool
 
 		protected static string MD5(string text)
 		{
-			return new Guid(MD5Provider.ComputeHash(Encoding.UTF8.GetBytes(text.ToLowerInvariant()))).ToString("N").ToLowerInvariant();
+			return
+				new Guid(MD5Provider.ComputeHash(Encoding.UTF8.GetBytes(text.ToLowerInvariant()))).ToString("N").ToLowerInvariant();
 		}
 
 		#endregion
