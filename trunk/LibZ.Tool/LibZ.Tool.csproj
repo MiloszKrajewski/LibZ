@@ -67,7 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
+    <Compile Include="Tasks\SignAndFixTask.cs" />
+    <Compile Include="Commands\SignCommand.cs" />
+    <Compile Include="Tasks\SignTask.cs" />
     <Compile Include="Tasks\AddLibraryTask.cs" />
     <Compile Include="AssemblyArchitecture.cs" />
     <Compile Include="Commands\InjectCommand.cs" />
@@ -77,6 +81,7 @@
     <Compile Include="Tasks\TaskBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tasks\TopologicalSort.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

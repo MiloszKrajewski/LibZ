@@ -5,10 +5,13 @@ namespace LibZ.Tool.Tasks
 {
 	public class MergeBootstrapTask: TaskBase
 	{
-		public void Execute(string exeFileName, string bootstrapFileName = null, bool move = true)
+		public void Execute(
+			string exeFileName, string bootstrapFileName = null, bool move = true,
+			string keyFileName = null, string keyFilePassword = null)
 		{
 			// TODO:MAK check if targetPlatform is set properly
-			// TODO:MAK check signing
+
+			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
 
 			if (string.IsNullOrWhiteSpace(bootstrapFileName))
 				bootstrapFileName = Path.Combine(Path.GetDirectoryName(exeFileName) ?? ".", "LibZ.Bootstrap.dll");
@@ -23,18 +26,29 @@ namespace LibZ.Tool.Tasks
 				bootstrapFileName
 			};
 
-			if (ILMerging.ILMerge.Main(args) != 0)
-				throw new InvalidOperationException("ILMerge failed");
-
-			File.Move(exeFileName, tempFileName);
-			File.Move(outputFileName, exeFileName);
-			File.Delete(tempFileName);
+			try
+			{
+				if (ILMerging.ILMerge.Main(args) != 0)
+					throw new InvalidOperationException("ILMerge failed");
+				File.Delete(exeFileName);
+				File.Move(outputFileName, exeFileName);
+			}
+			catch
+			{
+				DeleteFile(outputFileName);
+				throw;
+			}
 
 			if (move)
 			{
 				DeleteFile(bootstrapFileName);
 			}
 
+			if (keyFileName != null)
+			{
+				Log.Info("Resigning '{0}'", exeFileName);
+				SaveAssembly(LoadAssembly(exeFileName), exeFileName, keyPair);
+			}
 		}
 	}
 }
