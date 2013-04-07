@@ -1,26 +1,4 @@
-﻿#region Header
-
-// --------------------------------------------------------------------------------------
-// LibZ.Tool.InjectCommand.cs
-// --------------------------------------------------------------------------------------
-// 
-// 
-//
-// Copyright (c) 2013 Sepura Plc 
-//
-// Sepura Confidential
-//
-// Created: 4/5/2013 1:18:33 PM : SEPURA/krajewskim on SEPURA1051 
-// 
-// --------------------------------------------------------------------------------------
-
-#endregion
-
-using System;
-using System.Globalization;
-using System.IO;
-using ManyConsole;
-using Mono.Cecil;
+﻿using ManyConsole;
 
 namespace LibZ.Tool
 {

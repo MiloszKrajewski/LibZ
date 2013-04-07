@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -51,10 +50,26 @@ namespace LibZ.Tool
 
 		#region reflection utilities
 
-		protected static string GetAssemblyName(string fileName)
+		protected static string GetAssemblyName(AssemblyDefinition assembly)
 		{
-			var assembly = AssemblyDefinition.ReadAssembly(fileName);
-			return assembly.Name.FullName;
+			return assembly.Name.FullName.ToLowerInvariant();
+		}
+
+		protected static bool IsManaged(AssemblyDefinition assembly)
+		{
+			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);
+		}
+
+		protected static AssemblyArchitecture GetArchitecture(AssemblyDefinition assembly)
+		{
+			if (assembly.Modules.Any(m => m.Architecture == TargetArchitecture.AMD64))
+				return AssemblyArchitecture.X64;
+			// experimental: if there is a unmanaged code and it is not X64 it has to be X86
+			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.ILOnly) == 0))
+				return AssemblyArchitecture.X86;
+			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.Required32Bit) != 0))
+				return AssemblyArchitecture.X86;
+			return AssemblyArchitecture.AnyCPU;
 		}
 
 		#endregion

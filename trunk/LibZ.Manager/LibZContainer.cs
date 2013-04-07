@@ -58,30 +58,22 @@ namespace LibZ.Manager
 
 	public class LibZContainer: LibZReader
 	{
-		#region static fields
+		#region fields
 
 		private readonly static Dictionary<uint, Func<byte[], byte[]>> Encoders
 			= new Dictionary<uint, Func<byte[], byte[]>>();
-
-		#endregion
-
-		#region fields
 
 		private BinaryWriter _writer;
 		protected bool _dirty;
 
 		#endregion
 
-		#region static constructor
+		#region constructor
 
 		static LibZContainer()
 		{
 			RegisterEncoder("deflate", DeflateEncoder);
 		}
-
-		#endregion
-
-		#region constructor
 
 		public LibZContainer(Stream stream)
 		{
@@ -119,10 +111,6 @@ namespace LibZ.Manager
 			}
 		}
 
-		#endregion
-
-		#region initialization
-
 		private void CreateFile()
 		{
 			lock (_stream)
@@ -140,11 +128,37 @@ namespace LibZ.Manager
 
 		#endregion
 
-		#region codec management
+		#region public interface
+
+		public void Append(
+			string resourceName,
+			string assemblyName, byte[] assemblyData,
+			bool unmanaged,
+			string codecName = null)
+		{
+			var flags = EntryFlags.None;
+			if (unmanaged) flags |= EntryFlags.Unmanaged;
+
+			SetBytes(resourceName, assemblyName, assemblyData, flags, codecName);
+		}
+
+		public void Alias(string existingResourceName, string newResourceName)
+		{
+			var existingEntry = _entries[Hash.MD5(existingResourceName)];
+			var newEntry = new Entry {
+				Hash = Hash.MD5(newResourceName),
+				Flags = existingEntry.Flags,
+				Offset = existingEntry.Offset,
+				OriginalLength = existingEntry.OriginalLength,
+				StorageLength = existingEntry.StorageLength,
+			};
+			_entries.Add(newEntry.Hash, newEntry);
+			_dirty = true;
+		}
 
 		public static void RegisterCodec(
-			string codecName, 
-			Func<byte[], byte[]> encoder, Func<byte[], int, byte[]> decoder, 
+			string codecName,
+			Func<byte[], byte[]> encoder, Func<byte[], int, byte[]> decoder,
 			bool overwrite = false)
 		{
 			RegisterDecoder(codecName, decoder, overwrite);
@@ -152,14 +166,14 @@ namespace LibZ.Manager
 		}
 
 		public static void RegisterEncoder(
-			string codecName, 
-			Func<byte[], byte[]> encoder, 
+			string codecName,
+			Func<byte[], byte[]> encoder,
 			bool overwrite = false)
 		{
 			if (string.IsNullOrEmpty(codecName)) throw new ArgumentException("codecName is null or empty.");
 			if (encoder == null) throw new ArgumentNullException("encoder");
 
-			var crc = HashProvider.CRC(codecName);
+			var crc = Hash.CRC(codecName);
 
 			if (overwrite)
 			{
@@ -177,6 +191,12 @@ namespace LibZ.Manager
 				}
 			}
 		}
+
+		#endregion
+
+		#region private implementation
+
+		#region codec management
 
 		private static byte[] Encode(uint codec, byte[] data)
 		{
@@ -224,6 +244,7 @@ namespace LibZ.Manager
 			lock (_stream)
 			{
 				_writer.Write(entry.Hash.ToByteArray());
+				_writer.Write(entry.AssemblyName);
 				_writer.Write((int)entry.Flags);
 				_writer.Write(entry.Offset);
 				_writer.Write(entry.OriginalLength);
@@ -265,43 +286,29 @@ namespace LibZ.Manager
 			}
 		}
 
-		public void Append(string resourceName, string fileName, string codecName = null)
+		private void SetBytes(
+			string resourceName,
+			string assemblyName, byte[] data, EntryFlags flags, string codecName = null)
 		{
-			SetBytes(resourceName, File.ReadAllBytes(fileName), codecName);
-		}
-
-		public void Alias(string existingResourceName, string newResourceName)
-		{
-			var existingEntry = _entries[HashProvider.MD5(existingResourceName)];
-			var newEntry = new Entry
-			{
-				Hash = HashProvider.MD5(newResourceName),
-				Flags = existingEntry.Flags,
-				Offset = existingEntry.Offset,
-				OriginalLength = existingEntry.OriginalLength,
-				StorageLength = existingEntry.StorageLength,
-			};
-			_entries.Add(newEntry.Hash, newEntry);
-			_dirty = true;
-		}
-
-		#endregion
-
-		#region access
-
-		public void SetBytes(string resourceName, byte[] data, string codecName = null)
-		{
-			var codecId = codecName == null ? 0 : HashProvider.CRC(codecName);
+			var codecId = codecName == null ? 0 : Hash.CRC(codecName);
 
 			lock (_stream)
 			{
 				_stream.Position = _magicOffset;
-				var entry = new Entry
-				{
-					Hash = HashProvider.MD5(resourceName),
+				var entry = new Entry {
+					Hash = Hash.MD5(resourceName),
+					AssemblyName = assemblyName,
 					Offset = _stream.Position,
+					Flags = flags,
 				};
+#if DEBUG
+				// in debug allow entries to be overwritten (and leave some unused space)
+				// it does not harm it just a waste of space
+				_entries[entry.Hash] = entry;
+#else
+				// in release throw exception on duplicates
 				_entries.Add(entry.Hash, entry);
+#endif
 
 				WriteData(entry, data, codecId);
 
@@ -313,6 +320,8 @@ namespace LibZ.Manager
 				_dirty = true;
 			}
 		}
+
+		#endregion
 
 		#endregion
 
