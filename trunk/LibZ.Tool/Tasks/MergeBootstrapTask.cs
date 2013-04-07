@@ -7,6 +7,9 @@ namespace LibZ.Tool.Tasks
 	{
 		public void Execute(string exeFileName, string bootstrapFileName = null, bool move = true)
 		{
+			// TODO:MAK check if targetPlatform is set properly
+			// TODO:MAK check signing
+
 			if (string.IsNullOrWhiteSpace(bootstrapFileName))
 				bootstrapFileName = Path.Combine(Path.GetDirectoryName(exeFileName) ?? ".", "LibZ.Bootstrap.dll");
 			var outputFileName = exeFileName + ".ilmerge" + Path.GetExtension(exeFileName);
