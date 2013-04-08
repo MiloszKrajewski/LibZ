@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using ILMerging;
 
 namespace LibZ.Tool.Tasks
 {
@@ -15,8 +16,11 @@ namespace LibZ.Tool.Tasks
 
 			if (string.IsNullOrWhiteSpace(bootstrapFileName))
 				bootstrapFileName = Path.Combine(Path.GetDirectoryName(exeFileName) ?? ".", "LibZ.Bootstrap.dll");
-			var outputFileName = exeFileName + ".ilmerge" + Path.GetExtension(exeFileName);
-			var tempFileName = exeFileName + ".temp";
+			var outputFolderPath = Path.Combine(
+				Path.GetTempPath(),
+				Guid.NewGuid().ToString("N"));
+			var outputFileName = Path.Combine(
+				outputFolderPath, Path.GetFileName(exeFileName));
 
 			Log.Info("Merging '{0}' into '{1}'", bootstrapFileName, exeFileName);
 
@@ -28,15 +32,20 @@ namespace LibZ.Tool.Tasks
 
 			try
 			{
-				if (ILMerging.ILMerge.Main(args) != 0)
+				Directory.CreateDirectory(outputFolderPath);
+
+				if (ILMerge.Main(args) != 0)
 					throw new InvalidOperationException("ILMerge failed");
-				File.Delete(exeFileName);
-				File.Move(outputFileName, exeFileName);
+
+				using (var inputFile = File.OpenRead(outputFileName))
+				using (var outputFile = File.Create(exeFileName))
+				{
+					inputFile.CopyTo(outputFile);
+				}
 			}
-			catch
+			finally
 			{
-				DeleteFile(outputFileName);
-				throw;
+				Directory.Delete(outputFolderPath, true);
 			}
 
 			if (move)

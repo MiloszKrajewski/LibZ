@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using System.Reflection;
 
 namespace LibZ.Tool.Tasks
 {
@@ -9,6 +10,7 @@ namespace LibZ.Tool.Tasks
 	{
 		private class AssemblyInfoReference
 		{
+			public AssemblyNameReference Reference { get; set; }
 			public AssemblyInfo Source { get; set; }
 			public AssemblyInfo Target { get; set; }
 			public bool Invalid { get; set; }
@@ -48,7 +50,11 @@ namespace LibZ.Tool.Tasks
 			}
 
 			ScanDependencies();
+			SignAndFixAssemblies(keyPair);
+		}
 
+		private void SignAndFixAssemblies(StrongNameKeyPair keyPair)
+		{
 			var sorted = TopologicalSort<AssemblyInfo>.Sort(_assemblyInfos, GetReferencedAssemblies).ToArray();
 
 			foreach (var assemblyInfo in sorted)
@@ -60,18 +66,33 @@ namespace LibZ.Tool.Tasks
 
 				if (!needsRewrite) continue;
 
-				!!! FIX REFERENCES FROM THIS ASSEMBLY
-
 				SaveAssembly(assemblyInfo.Assembly, assemblyInfo.FileName, keyPair);
 				assemblyInfo.Assembly = LoadAssembly(assemblyInfo.FileName);
 				assemblyInfo.ReferencedBy.ForEach(r => r.Invalid = true);
 				assemblyInfo.Rewritten = true;
+
+				FixupReferencesTo(assemblyInfo);
 			}
 		}
-
-		private IEnumerable<AssemblyInfo> GetReferencedAssemblies(AssemblyInfo assemblyInfo)
+		private static IEnumerable<AssemblyInfo> GetReferencedAssemblies(AssemblyInfo assemblyInfo)
 		{
 			foreach (var reference in assemblyInfo.References) yield return reference.Target;
+		}
+
+		private static void FixupReferencesTo(AssemblyInfo assemblyInfo)
+		{
+			foreach (var referenceInfo in assemblyInfo.ReferencedBy)
+			{
+				var referenceSource = referenceInfo.Source;
+				foreach (var module in referenceSource.Assembly.Modules)
+				{
+					// it has to be inserted at the same location
+					var index = module.AssemblyReferences.IndexOf(referenceInfo.Reference);
+					module.AssemblyReferences[index] = assemblyInfo.AssemblyName;
+					//module.AssemblyReferences.RemoveAt(index);
+					//module.AssemblyReferences.Insert(index, assemblyInfo.AssemblyName);
+				}
+			}
 		}
 
 		private void ScanDependencies()
@@ -89,7 +110,9 @@ namespace LibZ.Tool.Tasks
 
 						Log.Debug("Reference to '{0}' has been found", referenceName.FullName);
 
-						var reference = new AssemblyInfoReference() {
+						var reference = new AssemblyInfoReference()
+						{
+							Reference = referenceName,
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
 							Invalid = false,
@@ -111,7 +134,8 @@ namespace LibZ.Tool.Tasks
 							referenceName.FullName,
 							otherAssemblyInfo.AssemblyName.FullName);
 
-						var reference = new AssemblyInfoReference() {
+						var reference = new AssemblyInfoReference()
+						{
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
 							Invalid = true,

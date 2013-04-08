@@ -26,7 +26,7 @@ namespace LibZ.Tool.Tasks
 						string.Empty;
 					resourceName = resourceName + assemblyName;
 
-					Log.Info("Appending '{0}' from '{1}", resourceName, fileName);
+					Log.Info("Appending '{0}' from '{1}'", resourceName, fileName);
 
 					container.Append(
 						resourceName,

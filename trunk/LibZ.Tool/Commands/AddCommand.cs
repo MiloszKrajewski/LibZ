@@ -15,7 +15,7 @@ namespace LibZ.Tool.Commands
 			HasRequiredOption("l|libz=", ".libz file name", s => _libzFileName = s);
 			HasOption("c|codec=", "codec name (optional)", s => _codecName = s);
 			HasOption("move", "move files (remove when added)", _ => _move = true);
-			HasAdditionalArguments(1, "<dll file name...>");
+			HasAdditionalArguments(null, "<dll file name...>");
 		}
 
 		public override int Run(string[] remainingArguments)

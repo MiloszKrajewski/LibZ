@@ -5,4 +5,9 @@ LibZ.suo
 LibZ.sln.docstates.suo
 LibZ.suo
 *.suo
+</Value></Property><Property><Name>svn:ignore</Name><Value>EmptySolution.sln.docstates.suo
+LibZ.sln.docstates.suo
+LibZ.suo
+*.suo
+LibZ.snk
 </Value></Property></Properties></ItemProperties>
