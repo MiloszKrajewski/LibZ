@@ -86,11 +86,9 @@ namespace LibZ.Tool.Tasks
 				var referenceSource = referenceInfo.Source;
 				foreach (var module in referenceSource.Assembly.Modules)
 				{
-					// it has to be inserted at the same location
+					// it has to be injected at the same index
 					var index = module.AssemblyReferences.IndexOf(referenceInfo.Reference);
 					module.AssemblyReferences[index] = assemblyInfo.AssemblyName;
-					//module.AssemblyReferences.RemoveAt(index);
-					//module.AssemblyReferences.Insert(index, assemblyInfo.AssemblyName);
 				}
 			}
 		}
