@@ -157,6 +157,7 @@ namespace LibZ.Tool.Tasks
 
 				File.Delete(assemblyFileName);
 				File.Move(tempFileName, assemblyFileName);
+				// TODO:MAK delete .pdb it is no longer valid
 			}
 			catch
 			{

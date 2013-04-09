@@ -50,6 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using LibZ.Manager.Internal;
 
 namespace LibZ.Manager
@@ -355,6 +356,11 @@ namespace LibZ.Manager
 		}
 
 		#endregion
+
+		public IEnumerable<string> GetAssemblyNames()
+		{
+			return _entries.Select(e => e.Value.AssemblyName);
+		}
 	}
 
 	#endregion

@@ -10,7 +10,7 @@ namespace LibZ.Tool.Tasks
 	{
 		private class AssemblyInfoReference
 		{
-			public AssemblyNameReference Reference { get; set; }
+			public AssemblyNameReference ReferencedAssemblyName { get; set; }
 			public AssemblyInfo Source { get; set; }
 			public AssemblyInfo Target { get; set; }
 			public bool Invalid { get; set; }
@@ -86,15 +86,26 @@ namespace LibZ.Tool.Tasks
 				var referenceSource = referenceInfo.Source;
 				foreach (var module in referenceSource.Assembly.Modules)
 				{
-					// it has to be injected at the same index
-					var index = module.AssemblyReferences.IndexOf(referenceInfo.Reference);
-					module.AssemblyReferences[index] = assemblyInfo.AssemblyName;
+					Log.Debug("Replacing reference to '{0}' with '{1}'", referenceInfo.ReferencedAssemblyName, assemblyInfo.AssemblyName);
+					module.AssemblyReferences.Remove(referenceInfo.ReferencedAssemblyName);
+					module.AssemblyReferences.Add(assemblyInfo.AssemblyName);
+
+					var typeReferences = module.GetTypeReferences();
+					foreach (var typeReference in typeReferences)
+					{
+						if (typeReference.Scope == referenceInfo.ReferencedAssemblyName)
+							typeReference.Scope = assemblyInfo.AssemblyName;
+					}
 				}
 			}
 		}
 
 		private void ScanDependencies()
 		{
+			var foundByLongName = new HashSet<string>();
+			var foundByShortName = new HashSet<Tuple<string, string>>();
+			var notFound = new HashSet<string>();
+
 			foreach (var assemblyInfo in _assemblyInfos)
 			{
 				foreach (var referenceName in assemblyInfo.ReferencedNames)
@@ -106,11 +117,10 @@ namespace LibZ.Tool.Tasks
 						if (found) break;
 						if (!EqualAssemblyNames(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName)) continue;
 
-						Log.Debug("Reference to '{0}' has been found", referenceName.FullName);
+						foundByLongName.Add(referenceName.FullName);
 
-						var reference = new AssemblyInfoReference()
-						{
-							Reference = referenceName,
+						var reference = new AssemblyInfoReference() {
+							ReferencedAssemblyName = referenceName,
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
 							Invalid = false,
@@ -127,13 +137,9 @@ namespace LibZ.Tool.Tasks
 						if (found) break;
 						if (!EqualAssemblyNames(referenceName.Name, otherAssemblyInfo.AssemblyName.Name)) continue;
 
-						Log.Warn(
-							"Reference to '{0}' has been resolved to '{1}' using short name",
-							referenceName.FullName,
-							otherAssemblyInfo.AssemblyName.FullName);
+						foundByShortName.Add(Tuple.Create(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName));
 
-						var reference = new AssemblyInfoReference()
-						{
+						var reference = new AssemblyInfoReference() {
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
 							Invalid = true,
@@ -147,10 +153,17 @@ namespace LibZ.Tool.Tasks
 
 					if (!found)
 					{
-						Log.Warn("Referenced assembly '{0}' has not been found, assuming system assembly", referenceName.FullName);
+						notFound.Add(referenceName.FullName);
 					}
 				}
 			}
+
+			foundByLongName.OrderBy(v => v).ToList()
+				.ForEach(n => Log.Info("Assembly '{0}' has been successfully resolved", n));
+			foundByShortName.OrderBy(v => v.Item1).ToList()
+				.ForEach(t => Log.Info("Assembly '{0}' has been resolved to '{1}' using short name", t.Item1, t.Item2));
+			notFound.OrderBy(v => v).ToList()
+				.ForEach(n => Log.Warn("Assembly '{0}' has not been found", n));
 		}
 	}
 }

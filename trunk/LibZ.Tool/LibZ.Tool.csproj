@@ -58,6 +58,7 @@
       <HintPath>..\packages\NDesk.Options.0.2.1\lib\NDesk.Options.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -90,6 +91,10 @@
     <ProjectReference Include="..\LibZ.Manager\LibZ.Manager.csproj">
       <Project>{9526e061-2e22-421b-86a6-198b51960918}</Project>
       <Name>LibZ.Manager</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LibZ.Tool.Interfaces\LibZ.Tool.Interfaces.csproj">
+      <Project>{46CEC914-26B0-4027-BA64-78154174274E}</Project>
+      <Name>LibZ.Tool.Interfaces</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

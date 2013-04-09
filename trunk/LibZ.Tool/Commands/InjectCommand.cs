@@ -13,7 +13,7 @@ namespace LibZ.Tool.Commands
 
 		public InjectCommand()
 		{
-			IsCommand("inject", "Inject .libz file into .exe as resource");
+			IsCommand("inject", "Injects .libz file into .exe as resource");
 			HasRequiredOption("l|libz=", ".libz file name", s => _libzFileName = s);
 			HasRequiredOption("e|exe=", ".exe file name", s => _exeFileName = s);
 			HasOption("move", "move files (remove when added)", _ => _move = true);

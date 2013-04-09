@@ -11,7 +11,7 @@ namespace LibZ.Tool.Commands
 
 		public AddCommand()
 		{
-			IsCommand("add", "Add .dll to .libz");
+			IsCommand("add", "Adds .dll to .libz");
 			HasRequiredOption("l|libz=", ".libz file name", s => _libzFileName = s);
 			HasOption("c|codec=", "codec name (optional)", s => _codecName = s);
 			HasOption("move", "move files (remove when added)", _ => _move = true);
