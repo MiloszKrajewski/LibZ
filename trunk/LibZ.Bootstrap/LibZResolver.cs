@@ -457,8 +457,8 @@ namespace LibZ.Embedded
 				{
 					// try assembly for specific architecture first
 					loaded =
-					TryLoadAssembly(container, architectureGuid) ??
-					TryLoadAssembly(container, normalGuid);
+						TryLoadAssembly(container, architectureGuid) ??
+						TryLoadAssembly(container, normalGuid);
 					if (loaded != null) break;
 				}
 			}
