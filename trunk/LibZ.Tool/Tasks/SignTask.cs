@@ -15,6 +15,12 @@ namespace LibZ.Tool.Tasks
 			{
 				var assembly = LoadAssembly(fileName);
 
+				if (IsManaged(assembly))
+				{
+					Log.Warn("Assembly '{0}' is unmanaged ones, thus cannot be resigned", fileName);
+					continue;
+				}
+
 				if (IsSigned(assembly))
 				{
 					if (force)

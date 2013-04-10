@@ -33,6 +33,7 @@ namespace LibZ.Tool.Tasks
 			public List<AssemblyInfoReference> References { get { return _references; } }
 
 			public bool Rewritten { get; set; }
+			public bool CanBeSigned { get; set; }
 		}
 
 		private readonly List<AssemblyInfo> _assemblyInfos = new List<AssemblyInfo>();
@@ -45,7 +46,11 @@ namespace LibZ.Tool.Tasks
 			foreach (var fileName in fileNames)
 			{
 				var assembly = LoadAssembly(fileName);
-				var assemblyInfo = new AssemblyInfo { FileName = fileName, Assembly = assembly, };
+				var assemblyInfo = new AssemblyInfo {
+					FileName = fileName, 
+					Assembly = assembly, 
+					CanBeSigned = IsManaged(assembly),
+				};
 				_assemblyInfos.Add(assemblyInfo);
 			}
 
@@ -65,6 +70,17 @@ namespace LibZ.Tool.Tasks
 					assemblyInfo.References.Any(r => r.Target.Rewritten);
 
 				if (!needsRewrite) continue;
+
+				if (!assemblyInfo.CanBeSigned)
+				{
+					Log.Warn(
+						"Assembly '{0}' or one of its dependencies is unmanaged or thus it cannot be signed.", 
+						assemblyInfo.FileName);
+
+					assemblyInfo.ReferencedBy
+						.Select(r => r.Source).ToList()
+						.ForEach(a => a.CanBeSigned = false);
+				}
 
 				SaveAssembly(assemblyInfo.Assembly, assemblyInfo.FileName, keyPair);
 				assemblyInfo.Assembly = LoadAssembly(assemblyInfo.FileName);

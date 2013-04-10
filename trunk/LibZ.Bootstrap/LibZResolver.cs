@@ -50,6 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -100,7 +101,7 @@ namespace LibZ.Embedded
 	}
 
 #endif
-	
+
 	#endregion
 
 	#region interface IComposableCatalogProxy
@@ -145,7 +146,7 @@ namespace LibZ.Embedded
 		private class ComposableCatalogProxy: IComposableCatalogProxy
 		{
 			/// <summary>Empty catalog.</summary>
-			public static readonly ComposableCatalogProxy Null = 
+			public static readonly ComposableCatalogProxy Null =
 				new ComposableCatalogProxy(() => new NullComposableCatalog());
 
 			#region fields
@@ -164,7 +165,7 @@ namespace LibZ.Embedded
 			/// <param name="catalogFactory">The catalog factory.</param>
 			public ComposableCatalogProxy(Func<ComposablePartCatalog> catalogFactory)
 			{
-				if (catalogFactory == null) 
+				if (catalogFactory == null)
 					throw new ArgumentNullException("catalogFactory");
 				_catalogFactory = catalogFactory;
 			}
@@ -240,8 +241,7 @@ namespace LibZ.Embedded
 				Containers = new List<LibZReader>();
 
 				// intialize paths
-				var searchPath = new List<string>();
-				searchPath.Add(AppDomain.CurrentDomain.BaseDirectory);
+				var searchPath = new List<string> { AppDomain.CurrentDomain.BaseDirectory };
 				var systemPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
 				searchPath.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
 
@@ -355,9 +355,9 @@ namespace LibZ.Embedded
 				if (string.IsNullOrWhiteSpace(pattern)) pattern = "*.libz";
 				var proxies = Directory
 					.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder), pattern)
-				    .Select(fn => RegisterFileContainer(fn))
-				    .Where(p => p != null)
-				    .ToArray();
+					.Select(fn => RegisterFileContainer(fn))
+					.Where(p => p != null)
+					.ToArray();
 
 				// NOTE: actual catalog creation is deferred
 				return new ComposableCatalogProxy(() => new AggregateCatalog(proxies.Select(p => p.Catalog)));
@@ -429,7 +429,7 @@ namespace LibZ.Embedded
 				}
 				catch (ArgumentException e)
 				{
-					Helpers.Throw(new ArgumentException(
+					throw Helpers.Error(new ArgumentException(
 						string.Format("Codec '{0}' ({1}) already registered", codecName, codecId), e));
 				}
 			}
@@ -537,7 +537,7 @@ namespace LibZ.Embedded
 
 	namespace Internal
 	{
-		using MD5Provider = System.Security.Cryptography.MD5;
+		using MD5Provider = MD5;
 
 		#region class LibZCatalog
 
@@ -828,9 +828,9 @@ namespace LibZ.Embedded
 			public static void RegisterDecoder(string codecName, Func<byte[], int, byte[]> decoder, bool overwrite = false)
 			{
 				if (String.IsNullOrEmpty(codecName))
-					Helpers.Throw(new ArgumentException("codecName is null or empty.", "codecName"));
+					throw Helpers.Error(new ArgumentException("codecName is null or empty.", "codecName"));
 				if (decoder == null)
-					Helpers.Throw(new ArgumentNullException("decoder", "decoder is null."));
+					throw Helpers.Error(new ArgumentNullException("decoder", "decoder is null."));
 
 				var codecId = Hash.CRC(codecName);
 				var decoders = Decoders;
@@ -847,7 +847,7 @@ namespace LibZ.Embedded
 					}
 					catch (ArgumentException e)
 					{
-						Helpers.Throw(new ArgumentException(
+						throw Helpers.Error(new ArgumentException(
 							string.Format("Codec '{0}' ({1}) already registered", codecName, codecId), e));
 					}
 				}
@@ -869,7 +869,7 @@ namespace LibZ.Embedded
 				lock (decoders)
 				{
 					if (!decoders.TryGetValue(codecId, out decoder))
-						Helpers.Throw(new ArgumentException(string.Format("Unknown codec id '{0}'", codecId)));
+						throw Helpers.Error(new ArgumentException(string.Format("Unknown codec id '{0}'", codecId)));
 				}
 				return decoder(data, outputLength);
 			}
@@ -987,7 +987,7 @@ namespace LibZ.Embedded
 			{
 				var result = new byte[length];
 				var read = stream.Read(result, 0, length);
-				if (read < length) 
+				if (read < length)
 					throw new IOException("Stream ended prematurely");
 				return result;
 			}
@@ -1215,56 +1215,17 @@ namespace LibZ.Embedded
 			internal static void Error(string message)
 			{
 				if (message == null) return;
-				// swallow
+				Trace.TraceError(message);
 			}
 
 			/// <summary>Sends exception and error message.</summary>
 			/// <param name="exception">The exception.</param>
-			internal static void Error(Exception exception)
+			internal static TException Error<TException>(TException exception) where TException: Exception
 			{
-				if (exception == null) return;
-				Error(string.Format("{0}: {1}", exception.GetType().Name, exception.Message));
+				if (exception != null)
+					Error(string.Format("{0}: {1}", exception.GetType().Name, exception.Message));
+				return exception;
 			}
-
-			/// <summary>Throws the specified exception.</summary>
-			/// <param name="exception">The exception.</param>
-			internal static void Throw(Exception exception)
-			{
-				if (exception == null) return;
-				Error(exception);
-				throw exception;
-			}
-
-			//internal static T SafeEval<T>(Func<T> action, T defaultValue = default (T))
-			//{
-			//    try
-			//    {
-			//        return action != null ? action() : defaultValue;
-			//    }
-			//    catch (Exception e)
-			//    {
-			//        Error(e);
-			//        return defaultValue;
-			//    }
-			//}
-
-			//internal static bool SafeExec(Action action)
-			//{
-			//    try
-			//    {
-			//        if (action != null)
-			//        {
-			//            action();
-			//            return true;
-			//        }
-			//        return false;
-			//    }
-			//    catch (Exception e)
-			//    {
-			//        Error(e);
-			//        return false;
-			//    }
-			//}
 		}
 
 
