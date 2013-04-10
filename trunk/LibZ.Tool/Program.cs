@@ -12,46 +12,6 @@ using ManyConsole;
 
 namespace LibZ.Tool
 {
-	class LibZCatalog: ComposablePartCatalog
-	{
-		private readonly List<TypeCatalog> _catalogs = new List<TypeCatalog>();
-		private readonly List<ComposablePartDefinition> _parts = new List<ComposablePartDefinition>();
-		private readonly List<string> _names;
-
-		public LibZCatalog(string libzFileName, bool optional = true)
-		{
-			try
-			{
-				if (!File.Exists(libzFileName))
-					throw new FileNotFoundException(string.Format("File '{0}' could not be found", libzFileName));
-				var container = new LibZContainer(libzFileName);
-				_names = container.GetAssemblyNames().ToList();
-				LibZResolver.RegisterContainer(libzFileName);
-
-				foreach (var name in _names)
-				{
-					var assembly = Assembly.Load(name);
-					var types = assembly.GetTypes();
-					_catalogs.Add(new TypeCatalog(types));
-				}
-			}
-			catch
-			{
-				if (!optional) throw;
-			}
-		}
-
-		public override IQueryable<ComposablePartDefinition> Parts
-		{
-			get { return _parts.AsQueryable(); }
-		}
-
-		public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition)
-		{
-			return _catalogs.SelectMany(c => c.GetExports(definition));
-		}
-	}
-
 	public class Program
 	{
 		// ReSharper disable FieldCanBeMadeReadOnly.Local
@@ -62,7 +22,7 @@ namespace LibZ.Tool
 		private void LoadPlugins()
 		{
 			var dllCatalog = new DirectoryCatalog(".");
-			var libzCatalog = new LibZCatalog("LibZ.ZLib.plugin");
+			var pluginsCatalog = LibZResolver.RegisterContainers(".", "*.libzcodec").Catalog;
 			var catalog = new AggregateCatalog(dllCatalog, libzCatalog);
 			var container = new CompositionContainer(catalog);
 			container.SatisfyImportsOnce(this);

@@ -356,11 +356,6 @@ namespace LibZ.Manager
 		}
 
 		#endregion
-
-		public IEnumerable<string> GetAssemblyNames()
-		{
-			return _entries.Select(e => e.Value.AssemblyName);
-		}
 	}
 
 	#endregion

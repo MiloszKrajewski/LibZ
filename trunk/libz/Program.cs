@@ -9,7 +9,7 @@ namespace libz
 		{
 			try
 			{
-				LibZResolver.RegisterContainer(typeof(Program), "libz.libz");
+				LibZManager.RegisterContainer(typeof(Program), "libz.libz");
 				return Run(args);
 			}
 			catch (Exception e)
