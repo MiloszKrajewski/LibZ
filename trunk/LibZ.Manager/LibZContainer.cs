@@ -250,7 +250,7 @@ namespace LibZ.Manager
 				_writer.Write(entry.Offset);
 				_writer.Write(entry.OriginalLength);
 				_writer.Write(entry.StorageLength);
-				_writer.Write(entry.Codec);
+				_writer.Write(entry.CodecId);
 			}
 		}
 
@@ -279,7 +279,7 @@ namespace LibZ.Manager
 				var encoded = Encode(codec, data);
 				if (encoded != null)
 				{
-					entry.Codec = codec;
+					entry.CodecId = codec;
 					data = encoded;
 				}
 
