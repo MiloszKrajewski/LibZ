@@ -492,7 +492,6 @@ namespace LibZ.Embedded
 					container.ContainerId.ToString("N"));
 				Directory.CreateDirectory(folderPath);
 
-				// TODO:MAK '.dll'? '.exe'?
 				var filePath = Path.Combine(folderPath, guid.ToString("N") + ".dll");
 
 				// if file exits and length is matching do not write it
