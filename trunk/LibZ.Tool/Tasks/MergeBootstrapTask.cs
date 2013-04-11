@@ -24,18 +24,17 @@ namespace LibZ.Tool.Tasks
 
 			Log.Info("Merging '{0}' into '{1}'", bootstrapFileName, exeFileName);
 
-			var args = new[] {
-				string.Format("/out:{0}", outputFileName),
-				exeFileName,
-				bootstrapFileName
-			};
-
 			try
 			{
 				Directory.CreateDirectory(outputFolderPath);
 
-				if (ILMerge.Main(args) != 0)
-					throw new InvalidOperationException("ILMerge failed");
+				var engine = new ILMerge
+				{
+					OutputFile = outputFileName,
+					Internalize = true,
+				};
+				engine.SetInputAssemblies(new[] { exeFileName, bootstrapFileName });
+				engine.Merge();
 
 				using (var inputFile = File.OpenRead(outputFileName))
 				using (var outputFile = File.Create(exeFileName))
