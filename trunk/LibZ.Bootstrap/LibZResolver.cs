@@ -440,6 +440,25 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		public static void Startup(Action action, bool rethrow = true)
+		{
+			Startup(() => { action(); return 0; }, rethrow);
+		}
+
+		public static int Startup(Func<int> action, bool rethrow = true)
+		{
+			try
+			{
+				return action();
+			}
+			catch (Exception e)
+			{
+				if (rethrow) throw;
+			}
+
+			return -1;
+		}
+
 		#endregion
 
 		#region private implementation
