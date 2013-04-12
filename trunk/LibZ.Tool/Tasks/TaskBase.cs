@@ -59,11 +59,6 @@ namespace LibZ.Tool.Tasks
 			return string.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
 		}
 
-		protected static string GetAssemblyName(AssemblyDefinition assembly)
-		{
-			return assembly.Name.FullName;
-		}
-
 		protected static bool IsManaged(AssemblyDefinition assembly)
 		{
 			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);

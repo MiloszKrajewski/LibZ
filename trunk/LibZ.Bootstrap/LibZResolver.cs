@@ -46,6 +46,14 @@
 
 #endregion
 
+#region conditionals
+
+#if !LIBZ_MANAGER && !LIBZ_BOOTSTRAP
+	#define LIBZ_INTERNAL
+#endif
+
+#endregion
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition.Hosting;
@@ -68,11 +76,8 @@ using System.Threading;
 
 #if LIBZ_MANAGER
 namespace LibZ.Manager
-#elif LIBZ_BOOTSTRAP
-namespace LibZ.Bootstrap
 #else
-#define LIBZ_INTERNAL
-namespace LibZ.Embedded
+namespace LibZ.Bootstrap
 #endif
 {
 	using Internal;
@@ -444,30 +449,63 @@ namespace LibZ.Embedded
 		/// <returns>Loaded assembly (or <c>null</c>)</returns>
 		private static Assembly Resolve(ResolveEventArgs args)
 		{
-			Assembly loaded = null;
-
 			try
 			{
-				// guid for AnyCPU assemblies
-				var normalGuid = Hash.MD5(args.Name);
-				// guid for x86 and x64 assemblies
-				var architectureGuid = Hash.MD5(IntPtr.Size == 4 ? "x86:" : "x64:" + args.Name);
-
-				foreach (var container in Containers)
-				{
-					// try assembly for specific architecture first
-					loaded =
-						TryLoadAssembly(container, architectureGuid) ??
-						TryLoadAssembly(container, normalGuid);
-					if (loaded != null) break;
-				}
+				var name = args.Name;
+				return
+					TryLoadAssembly3(name) ??
+					MatchByShortName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
 			}
 			catch (Exception e)
 			{
 				Helpers.Error(e);
 			}
 
-			return loaded;
+			return null;
+		}
+
+		/// <summary>Finds all assemblies which match given short name.</summary>
+		/// <param name="shortAssemblyName">The short name.</param>
+		/// <returns>Collection of full assembly names.</returns>
+		private static IEnumerable<string> MatchByShortName(string shortAssemblyName)
+		{
+			const StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
+
+			// from all containers return assemblyNames matching given string by short name
+			// please note, the container is not returned, so when looking for this name
+			// it will check all the containers again, waste of time but for hard to explain reason
+			// it will allow to this in "better" order
+			return Containers
+				.SelectMany(c => c.GetAssemblyNames()
+					.Where(an => string.Compare(an.Name, shortAssemblyName, ignoreCase) == 0))
+				.Distinct()
+				.OrderByDescending(an => an.Version)
+				.Select(an => an.FullName);
+		}
+
+		/// <summary>Tries the load assembly for 3 platforms, native, any cpu, then "opossite".</summary>
+		/// <param name="assemblyName">Name of the assembly.</param>
+		/// <returns>Loaded assembly or <c>null</c>.</returns>
+		private static Assembly TryLoadAssembly3(string assemblyName)
+		{
+			return
+				// try native one first
+				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + assemblyName) ??
+				// ...then AnyCPU
+				TryLoadAssembly(assemblyName) ??
+				// ...then try the opposite platform (as far as I understand x64 may use x86)
+				(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
+		}
+
+		/// <summary>Tries to load assembly by its resource name.</summary>
+		/// <param name="resourceName">Name of the resource.</param>
+		/// <returns>Loaded assembly or <c>null</c>.</returns>
+		private static Assembly TryLoadAssembly(string resourceName)
+		{
+			var guid = Hash.MD5(resourceName ?? string.Empty);
+			return Containers
+				.Select(c => TryLoadAssembly(c, guid))
+				.FirstOrDefault(a => a != null);
 		}
 
 		/// <summary>Tries the load assembly.</summary>
@@ -639,9 +677,7 @@ namespace LibZ.Embedded
 
 		#region class LibZReader
 
-		/// <summary>
-		/// LibZ file container. Read-only aspect.
-		/// </summary>
+		/// <summary>LibZ file container. Read-only aspect.</summary>
 		partial class LibZReader: IDisposable
 		{
 			#region enum EntryFlags
@@ -655,6 +691,12 @@ namespace LibZ.Embedded
 
 				/// <summary>Indicates unamanged assembly.</summary>
 				Unmanaged = 0x01,
+
+				/// <summary>Set when assembly is targetting AnyCPU architecture.</summary>
+				AnyCPU = 0x02,
+
+				/// <summary>Set when assembly is targetting 64-bit architectule.</summary>
+				AMD64 = 0x04,
 			}
 
 			#endregion
@@ -670,7 +712,7 @@ namespace LibZ.Embedded
 
 				/// <summary>Gets or sets the name of the assembly.</summary>
 				/// <value>The name of the assembly.</value>
-				public string AssemblyName { get; set; }
+				public AssemblyName AssemblyName { get; set; }
 
 				/// <summary>Gets or sets the flags.</summary>
 				/// <value>The flags.</value>
@@ -885,7 +927,7 @@ namespace LibZ.Embedded
 				{
 					var entry = new Entry {
 						Hash = new Guid(_reader.ReadBytes(GuidLength)),
-						AssemblyName = _reader.ReadString(),
+						AssemblyName = new AssemblyName(_reader.ReadString()),
 						Flags = (EntryFlags)_reader.ReadInt32(),
 						Offset = _reader.ReadInt64(),
 						OriginalLength = _reader.ReadInt32(),
@@ -956,7 +998,7 @@ namespace LibZ.Embedded
 
 			/// <summary>Gets all the assembly names.</summary>
 			/// <returns>Collection of assembly names.</returns>
-			public IEnumerable<string> GetAssemblyNames()
+			public IEnumerable<AssemblyName> GetAssemblyNames()
 			{
 				return _entries.Select(e => e.Value.AssemblyName);
 			}

@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.ComponentModel.Composition.Primitives;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
 using ManyConsole;

@@ -50,7 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
+using System.Reflection;
 using LibZ.Manager.Internal;
 
 namespace LibZ.Manager
@@ -132,15 +132,27 @@ namespace LibZ.Manager
 		#region public interface
 
 		public void Append(
-			string resourceName,
-			string assemblyName, byte[] assemblyData,
-			bool unmanaged,
-			string codecName = null)
+			AssemblyInfo assemblyInfo, 
+			EntryOptions options)
 		{
 			var flags = EntryFlags.None;
-			if (unmanaged) flags |= EntryFlags.Unmanaged;
+			if (assemblyInfo.Unmanaged) flags |= EntryFlags.Unmanaged;
+			if (assemblyInfo.AnyCPU) flags |= EntryFlags.AnyCPU;
+			if (assemblyInfo.AMD64) flags |= EntryFlags.AMD64;
 
-			SetBytes(resourceName, assemblyName, assemblyData, flags, codecName);
+			var platformId =
+				assemblyInfo.AnyCPU ? string.Empty :
+				assemblyInfo.AMD64 ? "x64:" :
+				"x86:";
+			var assemblyName = assemblyInfo.AssemblyName;
+			var bytes = assemblyInfo.Bytes;
+
+			SetBytes(
+				platformId + assemblyName.FullName, 
+				assemblyName, 
+				bytes, 
+				flags, 
+				options);
 		}
 
 		public void Alias(string existingResourceName, string newResourceName)
@@ -245,7 +257,7 @@ namespace LibZ.Manager
 			lock (_stream)
 			{
 				_writer.Write(entry.Hash.ToByteArray());
-				_writer.Write(entry.AssemblyName);
+				_writer.Write(entry.AssemblyName.FullName);
 				_writer.Write((int)entry.Flags);
 				_writer.Write(entry.Offset);
 				_writer.Write(entry.OriginalLength);
@@ -289,8 +301,9 @@ namespace LibZ.Manager
 
 		private void SetBytes(
 			string resourceName,
-			string assemblyName, byte[] data, EntryFlags flags, string codecName = null)
+			AssemblyName assemblyName, byte[] data, EntryFlags flags, EntryOptions options)
 		{
+			var codecName = options.CodecName;
 			var codecId = codecName == null ? 0 : Hash.CRC(codecName);
 
 			lock (_stream)
@@ -302,14 +315,15 @@ namespace LibZ.Manager
 					Offset = _stream.Position,
 					Flags = flags,
 				};
-#if DEBUG
-				// in debug allow entries to be overwritten (and leave some unused space)
-				// it does not harm it just a waste of space
-				_entries[entry.Hash] = entry;
-#else
-				// in release throw exception on duplicates
-				_entries.Add(entry.Hash, entry);
-#endif
+
+				if (options.Overwrite)
+				{
+					_entries[entry.Hash] = entry;
+				}
+				else
+				{
+					_entries.Add(entry.Hash, entry);
+				}
 
 				WriteData(entry, data, codecId);
 

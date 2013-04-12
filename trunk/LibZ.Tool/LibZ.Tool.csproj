@@ -68,6 +68,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\ListCommand.cs" />
+    <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
     <Compile Include="Tasks\SignAndFixTask.cs" />
