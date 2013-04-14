@@ -49,7 +49,7 @@
 #region conditionals
 
 #if !LIBZ_MANAGER && !LIBZ_BOOTSTRAP
-	#define LIBZ_INTERNAL
+#define LIBZ_INTERNAL
 #endif
 
 #endregion
@@ -63,6 +63,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -85,19 +86,10 @@ namespace LibZ.Bootstrap
 
 	#region declare visibility
 
-#if LIBZ_INTERAL
+	#if LIBZ_MANAGER
+	
+	// in LibZ.Manager all clases are actually interface classes
 
-	internal partial interface IComposableCatalogProxy { };
-	internal partial class LibZResolver { };
-
-	namespace Internal
-	{
-		internal partial class LibZReader { };
-	}
-
-#else
-
-	public partial interface IComposableCatalogProxy { };
 	public partial class LibZResolver { };
 
 	namespace Internal
@@ -105,23 +97,29 @@ namespace LibZ.Bootstrap
 		public partial class LibZReader { };
 	}
 
-#endif
+	#elif LIBZ_BOOTSTRAP
 
-	#endregion
+	// in LibZ.Bootstrap LibZResolver needs to be exposed
 
-	#region interface IComposableCatalogProxy
+	public partial class LibZResolver { };
 
-	/// <summary>
-	/// ComposablePartCatalog proxy. The idea behind proxying it is to avoid
-	/// mandatory reference to System.ComponentModel.Composition if the result
-	/// is actually not used.
-	/// </summary>
-	partial interface IComposableCatalogProxy
+	namespace Internal
 	{
-		/// <summary>Gets the actual catalog.</summary>
-		/// <value>The catalog.</value>
-		ComposablePartCatalog Catalog { get; }
+		internal partial class LibZReader { };
 	}
+
+	#else
+
+	// if file is just embedded into another assembly it should be all internal
+
+	internal partial class LibZResolver { };
+
+	namespace Internal
+	{
+		internal partial class LibZReader { };
+	}
+
+	#endif
 
 	#endregion
 
@@ -130,71 +128,31 @@ namespace LibZ.Bootstrap
 	/// <summary>Assembly resolver and repository of .libz files.</summary>
 	partial class LibZResolver
 	{
-		#region class NullComposableCatalog
+		#region consts
 
 		/// <summary>
-		/// Empty catalog. Used to avoid returning 'null' (which requires additional check).
+		/// Regular expression for embedded containers.
 		/// </summary>
-		private class NullComposableCatalog: ComposablePartCatalog
-		{
-			public override IQueryable<ComposablePartDefinition> Parts
-			{
-				get { return new ComposablePartDefinition[0].AsQueryable(); }
-			}
-		}
+		private static readonly Regex LibZResourceNameRx = new Regex(
+			@"^LibZ\.[0-9A-Fa-f]{32}$",
+			RegexOptions.IgnoreCase);
 
-		#endregion
-
-		#region class ComposableCatalogProxy
-
-		/// <summary>Default implementation of IComposableCatalogProxy.</summary>
-		private class ComposableCatalogProxy: IComposableCatalogProxy
-		{
-			/// <summary>Empty catalog.</summary>
-			public static readonly ComposableCatalogProxy Null =
-				new ComposableCatalogProxy(() => new NullComposableCatalog());
-
-			#region fields
-
-			/// <summary>The catalog factory.</summary>
-			private readonly Func<ComposablePartCatalog> _catalogFactory;
-
-			/// <summary>The cached catalog.</summary>
-			private ComposablePartCatalog _catalog;
-
-			#endregion
-
-			#region constructor
-
-			/// <summary>Initializes a new instance of the <see cref="ComposableCatalogProxy" /> class.</summary>
-			/// <param name="catalogFactory">The catalog factory.</param>
-			public ComposableCatalogProxy(Func<ComposablePartCatalog> catalogFactory)
-			{
-				if (catalogFactory == null)
-					throw new ArgumentNullException("catalogFactory");
-				_catalogFactory = catalogFactory;
-			}
-
-			#endregion
-
-			#region public interface
-
-			/// <summary>Gets the catalog.</summary>
-			/// <value>The catalog.</value>
-			public ComposablePartCatalog Catalog
-			{
-				get { lock (this) { return _catalog ?? (_catalog = _catalogFactory()); } }
-			}
-
-			#endregion
-		}
+		const StringComparison IgnoreCase = StringComparison.InvariantCultureIgnoreCase;
 
 		#endregion
 
 		#region static fields
 
-		/// <summary>The containers</summary>
-		private static readonly List<LibZReader> Containers;
+		/*
+		 * NOTE: This fields are populated ONLY by first caller.
+		 * The rest of them are reusing it.
+		 */
+
+		/// <summary>The reader/writer lock for containers.</summary>
+		private static readonly ReaderWriterLockSlim Lock;
+
+		/// <summary>The containers.</summary>
+		private static readonly List<LibZReader> ContainerRepository;
 
 		#endregion
 
@@ -206,9 +164,9 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Gets or sets the register stream callback.</summary>
 		/// <value>The register stream callback.</value>
-		private static Func<Stream, ComposablePartCatalog> RegisterStream
+		private static Func<Stream, Guid> RegisterStreamCallback
 		{
-			get { return SharedData.Get<Func<Stream, ComposablePartCatalog>>(0); }
+			get { return SharedData.Get<Func<Stream, Guid>>(0); }
 			set { SharedData.Set(0, value); }
 		}
 
@@ -228,6 +186,20 @@ namespace LibZ.Bootstrap
 			private set { SharedData.Set(3, value); }
 		}
 
+		/// <summary>Gets the get catalog.</summary>
+		/// <value>The get catalog.</value>
+		private static Func<Guid, ComposablePartCatalog> GetCatalogCallback
+		{
+			get { return SharedData.Get<Func<Guid, ComposablePartCatalog>>(4); }
+			set { SharedData.Set(4, value); }
+		}
+
+		private static Func<IEnumerable<ComposablePartCatalog>> GetAllCatalogsCallback
+		{
+			get { return SharedData.Get<Func<ComposablePartCatalog[]>>(5); }
+			set { SharedData.Set(5, value); }
+		}
+
 		#endregion
 
 		#region static constructor
@@ -243,19 +215,18 @@ namespace LibZ.Bootstrap
 			{
 				if (!SharedData.IsOwner) return;
 
-				Containers = new List<LibZReader>();
+				ContainerRepository = new List<LibZReader>();
+				Lock = new ReaderWriterLockSlim();
 
 				// intialize paths
 				var searchPath = new List<string> { AppDomain.CurrentDomain.BaseDirectory };
 				var systemPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
 				searchPath.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
 
-				RegisterStream = (stream) => {
-					var container = new LibZReader(stream);
-					var existing = Containers.FirstOrDefault(c => c.ContainerId == container.ContainerId);
-					if (existing == null) Containers.Add(existing = container);
-					return new LibZCatalog(existing);
-				};
+				RegisterStreamCallback = RegisterStreamImplementation;
+				GetCatalogCallback = GetCatalogImplementation;
+				GetAllCatalogsCallback = GetAllCatalogsImplementation;
+
 				Decoders = new Dictionary<uint, Func<byte[], int, byte[]>>();
 				SearchPath = searchPath;
 
@@ -266,29 +237,114 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		private static Guid RegisterStreamImplementation(Stream stream)
+		{
+			var container = new LibZReader(stream);
+
+			Lock.EnterUpgradeableReadLock();
+			try
+			{
+				var existing = ContainerRepository.FirstOrDefault(c => c.ContainerId == container.ContainerId);
+				if (existing != null) return existing.ContainerId;
+
+				Lock.EnterWriteLock();
+				try
+				{
+					ContainerRepository.Add(container);
+					return container.ContainerId;
+				}
+				finally
+				{
+					Lock.ExitWriteLock();
+				}
+			}
+			finally
+			{
+				Lock.ExitUpgradeableReadLock();
+			}
+		}
+
+		private static ComposablePartCatalog GetCatalogImplementation(Guid guid)
+		{
+			Lock.EnterReadLock();
+			try
+			{
+				return new LibZCatalog(
+					ContainerRepository.FirstOrDefault(c => c.ContainerId == guid));
+			}
+			finally
+			{
+				Lock.ExitReadLock();
+			}
+		}
+
+		private static ComposablePartCatalog[] GetAllCatalogsImplementation()
+		{
+			Lock.EnterReadLock();
+			try
+			{
+				return ContainerRepository
+					.Select(c => new LibZCatalog(c))
+					.Cast<ComposablePartCatalog>()
+					.ToArray();
+			}
+			finally
+			{
+				Lock.ExitReadLock();
+			}
+		}
+
 		#endregion
 
 		#region public interface
+
+		/// <summary>Gets the catalog.</summary>
+		/// <param name="handle">The handle.</param>
+		/// <returns>Catalog for given container.</returns>
+		public static ComposablePartCatalog GetCatalog(Guid handle)
+		{
+			return GetCatalogCallback(handle);
+		}
+
+		/// <summary>Gets the catalogs.</summary>
+		/// <param name="handles">The container handles.</param>
+		/// <returns>Collection of catalogs.</returns>
+		public static IEnumerable<ComposablePartCatalog> GetCatalogs(IEnumerable<Guid> handles)
+		{
+			return handles
+				.Where(h => h != Guid.Empty)
+				.Select(h => GetCatalogCallback(h))
+				.Where(c => c != null)
+				.ToArray();
+		}
+
+		/// <summary>Gets all catalogs.</summary>
+		/// <returns>Collection of catalogs.</returns>
+		public static IEnumerable<ComposablePartCatalog> GetAllCatalogs()
+		{
+			return GetAllCatalogsCallback();
+		}
 
 		/// <summary>Registers the container.</summary>
 		/// <param name="stream">The stream.</param>
 		/// <param name="optional">if set to <c>true</c> container is optional,
 		/// so failure to load does not cause exception.</param>
-		/// <returns><see cref="IComposableCatalogProxy" /></returns>
+		/// <returns>GUID of added container.</returns>
 		/// <exception cref="System.ArgumentNullException">stream</exception>
-		public static IComposableCatalogProxy RegisterStreamContainer(
+		public static Guid RegisterStreamContainer(
 			Stream stream, bool optional = true)
 		{
 			try
 			{
-				if (stream == null) throw new ArgumentNullException("stream");
-				var catalog = RegisterStream(stream);
-				return new ComposableCatalogProxy(() => catalog);
+				if (stream == null) 
+					throw new ArgumentNullException("stream");
+				return RegisterStreamCallback(stream);
 			}
-			catch
+			catch (Exception e)
 			{
+				Helpers.Error(e, optional);
 				if (!optional) throw;
-				return ComposableCatalogProxy.Null;
+				return Guid.Empty;
 			}
 		}
 
@@ -296,9 +352,9 @@ namespace LibZ.Bootstrap
 		/// <param name="libzFileName">Name of the libz file.</param>
 		/// <param name="optional">if set to <c>true</c> container is optional,
 		/// so failure to load does not cause exception.</param>
-		/// <returns><see cref="IComposableCatalogProxy"/></returns>
+		/// <returns>GUID of added container.</returns>
 		/// <exception cref="System.IO.FileNotFoundException"></exception>
-		public static IComposableCatalogProxy RegisterFileContainer(
+		public static Guid RegisterFileContainer(
 			string libzFileName, bool optional = true)
 		{
 			try
@@ -309,16 +365,19 @@ namespace LibZ.Bootstrap
 					throw new FileNotFoundException(
 						string.Format("LibZ library '{0}' cannot be found", libzFileName));
 
+				Helpers.Debug(string.Format("Opening library '{0}'", fileName));
+
 				// file will be locked for writing but it will be possible to 
 				// have multiple processes reading it
 				var stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
 
 				return RegisterStreamContainer(stream);
 			}
-			catch
+			catch (Exception e)
 			{
+				Helpers.Error(e, optional);
 				if (!optional) throw;
-				return ComposableCatalogProxy.Null;
+				return Guid.Empty;
 			}
 		}
 
@@ -327,8 +386,8 @@ namespace LibZ.Bootstrap
 		/// <param name="libzFileName">Name of the libz file.</param>
 		/// <param name="optional">if set to <c>true</c> container is optional,
 		/// so failure to load does not cause exception.</param>
-		/// <returns><see cref="IComposableCatalogProxy" /></returns>
-		public static IComposableCatalogProxy RegisterResourceContainer(
+		/// <returns>GUID of added container.</returns>
+		public static Guid RegisterResourceContainer(
 			Type assemblyHook, string libzFileName, bool optional = true)
 		{
 			try
@@ -336,20 +395,27 @@ namespace LibZ.Bootstrap
 				var resourceName =
 					string.Format("LibZ.{0:N}",
 						Hash.MD5(Path.GetFileName(libzFileName) ?? string.Empty));
+				Helpers.Debug(string.Format("Opening library '{0}' from '{1}'", libzFileName, resourceName));
 				var stream = assemblyHook.Assembly.GetManifestResourceStream(resourceName);
+
+				if (stream == null)
+					throw new MissingManifestResourceException(
+						string.Format("Resource '{0}' could not be found", resourceName));
+
 				return RegisterStreamContainer(stream);
 			}
-			catch
+			catch (Exception e)
 			{
+				Helpers.Error(e, optional);
 				if (!optional) throw;
-				return ComposableCatalogProxy.Null;
+				return Guid.Empty;
 			}
 		}
 
 		/// <summary>Registers the multiple contrainers using wildcards.</summary>
 		/// <param name="libzFileNamePattern">The libz file name pattern (.\*.libz is used if not provided).</param>
-		/// <returns><see cref="ComposableCatalogProxy" /></returns>
-		public static IComposableCatalogProxy RegisterMultipleFileContainers(string libzFileNamePattern = null)
+		/// <returns>Collection of GUIDs identifying registered containers.</returns>
+		public static IEnumerable<Guid> RegisterMultipleFileContainers(string libzFileNamePattern = null)
 		{
 			try
 			{
@@ -361,49 +427,43 @@ namespace LibZ.Bootstrap
 				var proxies = Directory
 					.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder), pattern)
 					.Select(fn => RegisterFileContainer(fn))
-					.Where(p => p != null)
+					.Where(p => p != Guid.Empty)
 					.ToArray();
 
-				// NOTE: actual catalog creation is deferred
-				return new ComposableCatalogProxy(() => new AggregateCatalog(proxies.Select(p => p.Catalog)));
+				return proxies;
 			}
 			catch
 			{
 				// do nothing - they are all 'optional' by default
-				return ComposableCatalogProxy.Null;
+				return new Guid[0];
 			}
 		}
 
 		/// <summary>Registers all contrainers from assembly.</summary>
 		/// <param name="assemblyHook">The assembly hook.</param>
-		/// <returns><see cref="ComposableCatalogProxy"/></returns>
-		public static IComposableCatalogProxy RegisterAllResourceContainers(
+		/// <returns>Collection of GUIDs identifying registered containers.</returns>
+		public static IEnumerable<Guid> RegisterAllResourceContainers(
 			Type assemblyHook)
 		{
-			var regex = new Regex(@"^LibZ\.[0-9A-Fa-f]{32}$", RegexOptions.IgnoreCase);
-
 			try
 			{
 				var resourceNames = assemblyHook.Assembly
 					.GetManifestResourceNames()
-					.Where(name => regex.IsMatch(name));
+					.Where(name => LibZResourceNameRx.IsMatch(name));
 				var proxies = resourceNames
 					.Select(rn => assemblyHook.Assembly.GetManifestResourceStream(rn))
 					.Where(rs => rs != null)
 					.Select(rs => RegisterStreamContainer(rs))
 					.ToArray();
 
-				// NOTE: actual catalog creation is deferred
-				return new ComposableCatalogProxy(
-					() => new AggregateCatalog(proxies.Select(p => p.Catalog)));
+				return proxies;
 			}
 			catch
 			{
 				// do nothing - they are all 'optional' by default
-				return ComposableCatalogProxy.Null;
+				return new Guid[0];
 			}
 		}
-
 
 		/// <summary>Registers the decoder.</summary>
 		/// <param name="codecName">Name of the codec.</param>
@@ -440,25 +500,6 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		public static void Startup(Action action, bool rethrow = true)
-		{
-			Startup(() => { action(); return 0; }, rethrow);
-		}
-
-		public static int Startup(Func<int> action, bool rethrow = true)
-		{
-			try
-			{
-				return action();
-			}
-			catch (Exception e)
-			{
-				if (rethrow) throw;
-			}
-
-			return -1;
-		}
-
 		#endregion
 
 		#region private implementation
@@ -488,18 +529,25 @@ namespace LibZ.Bootstrap
 		/// <returns>Collection of full assembly names.</returns>
 		private static IEnumerable<string> MatchByShortName(string shortAssemblyName)
 		{
-			const StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
-
-			// from all containers return assemblyNames matching given string by short name
-			// please note, the container is not returned, so when looking for this name
-			// it will check all the containers again, waste of time but for hard to explain reason
-			// it will allow to this in "better" order
-			return Containers
-				.SelectMany(c => c.GetAssemblyNames()
-					.Where(an => string.Compare(an.Name, shortAssemblyName, ignoreCase) == 0))
-				.Distinct()
-				.OrderByDescending(an => an.Version)
-				.Select(an => an.FullName);
+			Lock.EnterReadLock();
+			try
+			{
+				// from all containers return assemblyNames matching given string by short name
+				// please note, the container is not returned, so when looking for this name
+				// it will check all the containers again, waste of time but for hard to explain reason
+				// it will allow to this in "better" order
+				return ContainerRepository
+					.SelectMany(c =>
+						c.GetAssemblyNames().Where(an => string.Compare(an.Name, shortAssemblyName, IgnoreCase) == 0))
+					.Distinct()
+					.OrderByDescending(an => an.Version)
+					.Select(an => an.FullName)
+					.ToArray(); // needs to be buffered before returning
+			}
+			finally
+			{
+				Lock.ExitReadLock();
+			}
 		}
 
 		/// <summary>Tries the load assembly for 3 platforms, native, any cpu, then "opossite".</summary>
@@ -521,10 +569,18 @@ namespace LibZ.Bootstrap
 		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly TryLoadAssembly(string resourceName)
 		{
-			var guid = Hash.MD5(resourceName ?? string.Empty);
-			return Containers
-				.Select(c => TryLoadAssembly(c, guid))
-				.FirstOrDefault(a => a != null);
+			Lock.EnterUpgradeableReadLock();
+			try
+			{
+				var guid = Hash.MD5(resourceName ?? string.Empty);
+				return ContainerRepository
+					.Select(c => TryLoadAssembly(c, guid))
+					.FirstOrDefault(a => a != null);
+			}
+			finally
+			{
+				Lock.ExitUpgradeableReadLock();
+			}
 		}
 
 		/// <summary>Tries the load assembly.</summary>
@@ -533,6 +589,8 @@ namespace LibZ.Bootstrap
 		/// <returns>Loaded assembly or <c>null</c></returns>
 		private static Assembly TryLoadAssembly(LibZReader container, Guid guid)
 		{
+			// NOTE: You have UpgradeableReadLock here
+
 			if (!container.HasEntry(guid)) return null;
 
 			try
@@ -573,17 +631,11 @@ namespace LibZ.Bootstrap
 		private static string FindFile(string libzFileName)
 		{
 			if (Path.IsPathRooted(libzFileName))
-			{
 				return File.Exists(libzFileName) ? libzFileName : null;
-			}
 
-			foreach (var candidate in SearchPath)
-			{
-				var temp = Path.GetFullPath(Path.Combine(candidate, libzFileName));
-				if (File.Exists(temp)) return temp;
-			}
-
-			return null;
+			return SearchPath
+				.Select(p => Path.GetFullPath(Path.Combine(p, libzFileName)))
+				.FirstOrDefault(File.Exists);
 		}
 
 		#endregion
@@ -629,10 +681,12 @@ namespace LibZ.Bootstrap
 			private void Initialize()
 			{
 				if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
+				_catalogs = new List<TypeCatalog>();
+				_parts = new List<ComposablePartDefinition>();
+
+				if (_reader == null) return;
 
 				var assemblyNames = _reader.GetAssemblyNames().ToList();
-
-				_catalogs = new List<TypeCatalog>();
 
 				foreach (var assemblyName in assemblyNames)
 				{
@@ -641,7 +695,7 @@ namespace LibZ.Bootstrap
 						_catalogs.Add(
 							new TypeCatalog(
 								Assembly.Load(assemblyName)
-								.GetTypes()));
+										.GetTypes()));
 					}
 					catch (Exception e)
 					{
@@ -650,7 +704,7 @@ namespace LibZ.Bootstrap
 					}
 				}
 
-				_parts = _catalogs.SelectMany(c => c.Parts).ToList();
+				_parts.AddRange(_catalogs.SelectMany(c => c.Parts));
 			}
 
 			#endregion
@@ -1270,24 +1324,53 @@ namespace LibZ.Bootstrap
 		/// <summary>Simple helper functions.</summary>
 		public static class Helpers
 		{
-			/// <summary>Sends error message.</summary>
+			/// <summary>Sends debug message.</summary>
 			/// <param name="message">The message.</param>
-			internal static void Error(string message)
+			internal static void Debug(string message)
 			{
 				if (message == null) return;
-				Trace.TraceError(message);
+				Trace.TraceInformation(message);
+			}
+
+			/// <summary>Sends warning message.</summary>
+			/// <param name="message">The message.</param>
+			internal static void Warn(string message)
+			{
+				if (message == null) return;
+				Trace.TraceWarning(message);
+			}
+
+			/// <summary>Sends error message.</summary>
+			/// <param name="message">The message.</param>
+			/// <param name="ignored"><c>true</c> if exception is going to be ignored, 
+			/// so problem is reported as Warning instead of Error.</param>
+			internal static void Error(string message, bool ignored = false)
+			{
+				if (message == null) return;
+				if (ignored)
+				{
+					Trace.TraceWarning(message);
+				}
+				else
+				{
+					Trace.TraceError(message);
+				}
 			}
 
 			/// <summary>Sends exception and error message.</summary>
 			/// <param name="exception">The exception.</param>
-			internal static TException Error<TException>(TException exception) where TException: Exception
+			/// <param name="ignored"><c>true</c> if exception is going to be ignored, 
+			/// so problem is reported as Warning instead of Error.</param>
+			internal static TException Error<TException>(TException exception, bool ignored = false)
+				where TException: Exception
 			{
 				if (exception != null)
-					Error(string.Format("{0}: {1}", exception.GetType().Name, exception.Message));
+					Error(
+						string.Format("{0}: {1}", exception.GetType().Name, exception.Message),
+						ignored);
 				return exception;
 			}
 		}
-
 
 		#endregion
 	}

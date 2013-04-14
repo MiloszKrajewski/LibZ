@@ -5,6 +5,7 @@ using System.ComponentModel.Composition.Hosting;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
 using ManyConsole;
+using System.Linq;
 
 namespace LibZ.Tool
 {
@@ -17,7 +18,10 @@ namespace LibZ.Tool
 
 		private void LoadPlugins()
 		{
-			var catalog = LibZResolver.RegisterMultipleFileContainers(".\\*.libzcodec").Catalog;
+			var catalog = 
+				new AggregateCatalog(
+					LibZResolver.GetCatalogs(
+						LibZResolver.RegisterMultipleFileContainers(".\\*.libzcodec")));
 			var container = new CompositionContainer(catalog);
 			container.SatisfyImportsOnce(this);
 		}

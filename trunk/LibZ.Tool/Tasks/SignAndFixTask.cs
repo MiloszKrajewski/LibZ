@@ -38,10 +38,12 @@ namespace LibZ.Tool.Tasks
 
 		private readonly List<AssemblyInfo> _assemblyInfos = new List<AssemblyInfo>();
 
-		public void Execute(string keyFileName, string keyFilePassword, string[] patterns)
+		public void Execute(
+			string keyFileName, string keyFilePassword, 
+			string[] includePatterns, string[] excludePatterns)
 		{
 			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
-			var fileNames = FindFiles(patterns).ToArray();
+			var fileNames = FindFiles(includePatterns, excludePatterns).ToArray();
 
 			foreach (var fileName in fileNames)
 			{

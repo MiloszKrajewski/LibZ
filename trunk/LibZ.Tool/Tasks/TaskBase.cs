@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
@@ -15,6 +16,12 @@ namespace LibZ.Tool.Tasks
 		#region consts
 
 		private static readonly MD5 MD5Provider = System.Security.Cryptography.MD5.Create();
+
+		#endregion
+
+		#region static fields
+
+		private static readonly Dictionary<string, Regex> WildcardCacheRx = new Dictionary<string, Regex>();
 
 		#endregion
 
@@ -37,17 +44,42 @@ namespace LibZ.Tool.Tasks
 			// ReSharper restore EmptyGeneralCatchClause
 		}
 
-		protected static IEnumerable<string> FindFiles(IEnumerable<string> patterns)
+		protected static IEnumerable<string> FindFiles(
+			IEnumerable<string> includePatterns,
+			IEnumerable<string> excludePatterns)
 		{
-			return patterns.SelectMany(FindFiles);
+			return includePatterns.SelectMany(p => FindFiles(p, excludePatterns));
 		}
 
-		protected static IEnumerable<string> FindFiles(string pattern)
+		protected static IEnumerable<string> FindFiles(string pattern, IEnumerable<string> excludePatterns)
 		{
 			if (!Path.IsPathRooted(pattern)) pattern = ".\\" + pattern;
 			var directoryName = Path.GetDirectoryName(pattern) ?? ".";
 			var searchPattern = Path.GetFileName(pattern) ?? "*.dll";
-			return Directory.GetFiles(directoryName, searchPattern);
+
+			return Directory
+				.GetFiles(directoryName, searchPattern)
+				.Where(fn => !excludePatterns.Any(
+					ep => WildcardToRegex(ep).IsMatch(Path.GetFileName(fn) ?? string.Empty)));
+		}
+
+		protected static Regex WildcardToRegex(string pattern)
+		{
+			Regex rx;
+			if (!WildcardCacheRx.TryGetValue(pattern, out rx))
+			{
+				WildcardCacheRx[pattern] = rx = new Regex(
+					string.Format("^{0}$", Regex.Escape(pattern).Replace("*", ".*").Replace("?", ".")),
+					RegexOptions.IgnoreCase);
+			}
+			return rx;
+		}
+
+		protected static Regex[] WildcardToRegex(IEnumerable<string> patterns)
+		{
+			return patterns == null 
+				? new Regex[0] 
+				: patterns.Select(WildcardToRegex).ToArray();
 		}
 
 		#endregion

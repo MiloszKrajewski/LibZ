@@ -9,12 +9,14 @@ namespace LibZ.Tool.Tasks
 	public class AddLibraryTask: TaskBase
 	{
 		public void Execute(
-			string libzFileName, string[] patterns, string codecName, bool move, bool overwrite)
+			string libzFileName, 
+			string[] patterns, string[] excludePatterns, 
+			string codecName, bool move, bool overwrite)
 		{
 			using (var container = new LibZContainer(libzFileName, true))
 			{
 				var count = 0;
-				foreach (var fileName in FindFiles(patterns))
+				foreach (var fileName in FindFiles(patterns, excludePatterns))
 				{
 					var assembly = LoadAssembly(fileName);
 					var assemblyName = assembly.Name;

@@ -7,11 +7,13 @@ namespace LibZ.Tool.Tasks
 {
 	public class SignTask: TaskBase
 	{
-		internal void Execute(string keyFileName, bool force, string password, string[] patterns)
+		internal void Execute(
+			string keyFileName, bool force, string password, 
+			string[] patterns, string[] excludePatterns)
 		{
 			var keyPair = LoadKeyPair(keyFileName, password);
 
-			foreach (var fileName in FindFiles(patterns))
+			foreach (var fileName in FindFiles(patterns, excludePatterns))
 			{
 				var assembly = LoadAssembly(fileName);
 
