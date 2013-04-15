@@ -50,6 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using LibZ.Manager.Internal;
 
@@ -132,7 +133,7 @@ namespace LibZ.Manager
 		#region public interface
 
 		public void Append(
-			AssemblyInfo assemblyInfo, 
+			AssemblyInfo assemblyInfo,
 			EntryOptions options)
 		{
 			var flags = EntryFlags.None;
@@ -148,10 +149,10 @@ namespace LibZ.Manager
 			var bytes = assemblyInfo.Bytes;
 
 			SetBytes(
-				platformId + assemblyName.FullName, 
-				assemblyName, 
-				bytes, 
-				flags, 
+				platformId + assemblyName.FullName,
+				assemblyName,
+				bytes,
+				flags,
 				options);
 		}
 
@@ -244,23 +245,7 @@ namespace LibZ.Manager
 			lock (_stream)
 			{
 				_stream.Position = 0;
-				_writer.Write(Magic.ToByteArray());
-				_writer.Write(_containerId.ToByteArray());
-				_writer.Write(CurrentVersion);
-			}
-		}
-
-		private void WriteEntry(Entry entry)
-		{
-			lock (_stream)
-			{
-				_writer.Write(entry.Hash.ToByteArray());
-				_writer.Write(entry.AssemblyName.FullName);
-				_writer.Write((int)entry.Flags);
-				_writer.Write(entry.Offset);
-				_writer.Write(entry.OriginalLength);
-				_writer.Write(entry.StorageLength);
-				_writer.Write(entry.CodecName);
+				WriteHeadTo(_writer, _containerId);
 			}
 		}
 
@@ -269,14 +254,35 @@ namespace LibZ.Manager
 			lock (_stream)
 			{
 				_stream.Position = _magicOffset;
-				_writer.Write(_entries.Count);
-				foreach (var entry in _entries.Values)
-				{
-					WriteEntry(entry);
-				}
-				_writer.Write(_magicOffset);
-				_writer.Write(Magic.ToByteArray());
+				WriteTailTo(_writer, _entries.Values);
 			}
+		}
+
+		private static void WriteHeadTo(BinaryWriter writer, Guid containerId)
+		{
+			writer.Write(Magic.ToByteArray());
+			writer.Write(containerId.ToByteArray());
+			writer.Write(CurrentVersion);
+		}
+
+		private static void WriteEntryTo(BinaryWriter writer, Entry entry)
+		{
+			writer.Write(entry.Hash.ToByteArray());
+			writer.Write(entry.AssemblyName.FullName);
+			writer.Write((int)entry.Flags);
+			writer.Write(entry.Offset);
+			writer.Write(entry.OriginalLength);
+			writer.Write(entry.StorageLength);
+			writer.Write(entry.CodecName);
+		}
+
+		private static void WriteTailTo(BinaryWriter writer, ICollection<Entry> entries)
+		{
+			var magicOffset = writer.BaseStream.Position;
+			writer.Write(entries.Count);
+			foreach (var entry in entries) WriteEntryTo(writer, entry);
+			writer.Write(magicOffset);
+			writer.Write(Magic.ToByteArray());
 		}
 
 		private void WriteData(
@@ -367,6 +373,28 @@ namespace LibZ.Manager
 		}
 
 		#endregion
+
+		public void SaveAs(string fileName)
+		{
+			using (var writer = new BinaryWriter(File.Create(fileName)))
+			{
+				WriteHeadTo(writer, Guid.NewGuid());
+				var newEntries = new List<Entry>();
+				foreach (var oldEntry in _entries.Values.OrderBy(e => e.Offset))
+				{
+					byte[] buffer;
+					lock (_stream)
+					{
+						_stream.Position = oldEntry.Offset;
+						buffer = _reader.ReadBytes(oldEntry.StorageLength);
+					}
+					var newEntry = new Entry(oldEntry) { Offset = _writer.BaseStream.Position };
+					_writer.Write(buffer);
+					newEntries.Add(newEntry);
+				}
+				WriteTailTo(writer, newEntries);
+			}
+		}
 	}
 
 	#endregion

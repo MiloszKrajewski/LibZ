@@ -81,8 +81,8 @@ namespace LibZ.Manager
 namespace LibZ.Bootstrap
 #endif
 {
-	using Internal;
 	using System.Text.RegularExpressions;
+	using Internal;
 
 	#region declare visibility
 
@@ -178,7 +178,8 @@ namespace LibZ.Bootstrap
 			set { SharedData.Set(1, value); }
 		}
 
-		/// <summary>Gets or sets the search path.</summary>
+		/// <summary>Gets the search path. Please note, this list os not thread save. 
+		/// If you are going to modify it, put it inside lock statement.</summary>
 		/// <value>The search path.</value>
 		public static List<string> SearchPath
 		{
@@ -186,14 +187,16 @@ namespace LibZ.Bootstrap
 			private set { SharedData.Set(3, value); }
 		}
 
-		/// <summary>Gets the get catalog.</summary>
-		/// <value>The get catalog.</value>
+		/// <summary>Gets or sets the GetCatalog callback.</summary>
+		/// <value>The GetCatalog callback.</value>
 		private static Func<Guid, ComposablePartCatalog> GetCatalogCallback
 		{
 			get { return SharedData.Get<Func<Guid, ComposablePartCatalog>>(4); }
 			set { SharedData.Set(4, value); }
 		}
 
+		/// <summary>Gets or sets the GetAllCatalogs callback.</summary>
+		/// <value>The GetAllCatalogs callback.</value>
 		private static Func<IEnumerable<ComposablePartCatalog>> GetAllCatalogsCallback
 		{
 			get { return SharedData.Get<Func<ComposablePartCatalog[]>>(5); }
@@ -461,8 +464,7 @@ namespace LibZ.Bootstrap
 		/// <summary>Registers all contrainers from assembly.</summary>
 		/// <param name="assemblyHook">The assembly hook.</param>
 		/// <returns>Collection of GUIDs identifying registered containers.</returns>
-		public static IEnumerable<Guid> RegisterAllResourceContainers(
-			Type assemblyHook)
+		public static IEnumerable<Guid> RegisterAllResourceContainers(Type assemblyHook)
 		{
 			try
 			{
@@ -554,8 +556,10 @@ namespace LibZ.Bootstrap
 				// it will check all the containers again, waste of time but for hard to explain reason
 				// it will allow to this in "better" order
 				return ContainerRepository
-					.SelectMany(c =>
-						c.GetAssemblyNames().Where(an => string.Compare(an.Name, shortAssemblyName, IgnoreCase) == 0))
+					.SelectMany(c => c
+						.Entries
+						.Select(e => e.AssemblyName)
+						.Where(an => string.Compare(an.Name, shortAssemblyName, IgnoreCase) == 0))
 					.Distinct()
 					.OrderByDescending(an => an.Version)
 					.Select(an => an.FullName)
@@ -586,18 +590,25 @@ namespace LibZ.Bootstrap
 		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly TryLoadAssembly(string resourceName)
 		{
-			Lock.EnterUpgradeableReadLock();
+			var guid = Hash.MD5(resourceName ?? string.Empty);
+			LibZReader[] containers;
+
+			Lock.EnterReadLock();
 			try
 			{
-				var guid = Hash.MD5(resourceName ?? string.Empty);
-				return ContainerRepository
-					.Select(c => TryLoadAssembly(c, guid))
-					.FirstOrDefault(a => a != null);
+				containers = ContainerRepository.ToArray();
 			}
 			finally
 			{
-				Lock.ExitUpgradeableReadLock();
+				Lock.ExitReadLock();
 			}
+
+			// this needs to be outside lock
+			// because it is possible that loaded module initialization 
+			// may want to acquire write lock immediately
+			return containers
+				.Select(c => TryLoadAssembly(c, guid))
+				.FirstOrDefault(a => a != null);
 		}
 
 		/// <summary>Tries the load assembly.</summary>
@@ -608,14 +619,15 @@ namespace LibZ.Bootstrap
 		{
 			// NOTE: You have UpgradeableReadLock here
 
-			if (!container.HasEntry(guid)) return null;
+			var entry = container.TryGetEntry(guid);
+			if (entry == null) return null;
 
 			try
 			{
-				var data = container.GetBytes(guid, Decoders);
+				var data = container.GetBytes(entry, Decoders);
 
 				// managed assemblies can be loaded straight from memory
-				if (container.IsManaged(guid))
+				if (!entry.Unmanaged)
 					return Assembly.Load(data);
 
 				// unmanaged ones needs to be saved first
@@ -703,16 +715,13 @@ namespace LibZ.Bootstrap
 
 				if (_reader == null) return;
 
-				var assemblyNames = _reader.GetAssemblyNames().ToList();
+				var assemblyNames = _reader.Entries.Select(e => e.AssemblyName).ToList();
 
 				foreach (var assemblyName in assemblyNames)
 				{
 					try
 					{
-						_catalogs.Add(
-							new TypeCatalog(
-								Assembly.Load(assemblyName)
-										.GetTypes()));
+						_catalogs.Add(new TypeCatalog(Assembly.Load(assemblyName).GetTypes()));
 					}
 					catch (Exception e)
 					{
@@ -796,6 +805,8 @@ namespace LibZ.Bootstrap
 			/// <summary>Single container entry.</summary>
 			public class Entry
 			{
+				#region stored properties
+
 				/// <summary>Gets or sets the hash.</summary>
 				/// <value>The hash.</value>
 				public Guid Hash { get; protected internal set; }
@@ -823,6 +834,39 @@ namespace LibZ.Bootstrap
 				/// <summary>Gets or sets the codec name.</summary>
 				/// <value>The codec name.</value>
 				public string CodecName { get; protected internal set; }
+
+				#endregion
+
+				#region derived properties
+
+				/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
+				/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
+				public bool Unmanaged { get { return (Flags & EntryFlags.Unmanaged) != 0; } }
+
+				#endregion
+
+				#region constructor
+
+				/// <summary>Initializes a new instance of the <see cref="Entry"/> class.</summary>
+				public Entry()
+				{
+				}
+
+				/// <summary>Initializes a new instance of the <see cref="Entry"/> class. 
+				/// Copies all field from other object.</summary>
+				/// <param name="other">The other entry.</param>
+				public Entry(Entry other)
+				{
+					Hash = other.Hash;
+					AssemblyName = other.AssemblyName;
+					Flags = other.Flags;
+					Offset = other.Offset;
+					OriginalLength = other.OriginalLength;
+					StorageLength = other.StorageLength;
+					CodecName = other.CodecName;
+				}
+
+				#endregion
 			}
 
 			#endregion
@@ -913,10 +957,6 @@ namespace LibZ.Bootstrap
 			public LibZReader(string fileName)
 				: this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) { }
 
-			#endregion
-
-			#region initialization
-
 			/// <summary>Opens the file.</summary>
 			/// <exception cref="System.ArgumentException">Container file seems to be corrupted.</exception>
 			/// <exception cref="System.NotSupportedException">Not supported version of container file.</exception>
@@ -938,8 +978,8 @@ namespace LibZ.Bootstrap
 					if (guid != Magic)
 						throw new ArgumentException("Invalid LibZ file footer");
 					_stream.Position = _magicOffset;
-					int count = _reader.ReadInt32();
-					for (int i = 0; i < count; i++)
+					var count = _reader.ReadInt32();
+					for (var i = 0; i < count; i++)
 					{
 						var entry = ReadEntry();
 						_entries.Add(entry.Hash, entry);
@@ -949,7 +989,7 @@ namespace LibZ.Bootstrap
 
 			#endregion
 
-			#region codec management
+			#region public interface
 
 			/// <summary>Registers the decoder.</summary>
 			/// <param name="codecName">The codec name.</param>
@@ -986,6 +1026,54 @@ namespace LibZ.Bootstrap
 				}
 			}
 
+			///// <summary>Determines whether the container has given entry.</summary>
+			///// <param name="resourceHash">The resource hash.</param>
+			///// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
+			//public bool HasEntry(Guid resourceHash) { return _entries.ContainsKey(resourceHash); }
+
+			///// <summary>Determines whether the container has given entry.</summary>
+			///// <param name="resourceName">Name of the resource.</param>
+			///// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
+			//public bool HasEntry(string resourceName) { return HasEntry(Hash.MD5(resourceName)); }
+
+			public Entry TryGetEntry(Guid guid)
+			{
+				Entry result;
+				_entries.TryGetValue(guid, out result);
+				return result;
+			}
+
+			/// <summary>Gets the bytes for given resource.</summary>
+			/// <param name="resourceName">Name of the resource.</param>
+			/// <param name="decoders">The decoders.</param>
+			/// <returns>Buffer of bytes.</returns>
+			public byte[] GetBytes(string resourceName, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
+			{
+				return GetBytes(Hash.MD5(resourceName), decoders);
+			}
+
+			/// <summary>Gets the bytes for given resource.</summary>
+			/// <param name="resourceHash">The resource hash.</param>
+			/// <param name="decoders">The decoders.</param>
+			/// <returns>Buffer of bytes.</returns>
+			public byte[] GetBytes(Guid resourceHash, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
+			{
+				return GetBytes(_entries[resourceHash], decoders);
+			}
+
+			/// <summary>Gets the bytes for given resource.</summary>
+			/// <param name="entry">The entry.</param>
+			/// <param name="decoders">The decoders.</param>
+			/// <returns>Buffer of bytes.</returns>
+			public byte[] GetBytes(Entry entry, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
+			{
+				return ReadData(entry, decoders);
+			}
+
+			#endregion
+
+			#region private implementation
+
 			/// <summary>Decodes the specified data.</summary>
 			/// <param name="codecName">Name of the codec.</param>
 			/// <param name="data">The data.</param>
@@ -1006,10 +1094,6 @@ namespace LibZ.Bootstrap
 				}
 				return decoder(data, outputLength);
 			}
-
-			#endregion
-
-			#region read
 
 			/// <summary>Reads the entry.</summary>
 			/// <returns><see cref="Entry"/></returns>
@@ -1040,59 +1124,11 @@ namespace LibZ.Bootstrap
 
 				lock (_stream)
 				{
-					_stream.Position = entry.Offset;
-					buffer = ReadBytes(_stream, entry.StorageLength);
+					buffer = ReadBytes(_stream, entry.Offset, entry.StorageLength);
 				}
 
 				// this needs to be outside lock!
 				return Decode(entry.CodecName, buffer, entry.OriginalLength, decoders);
-			}
-
-			#endregion
-
-			#region access
-
-			/// <summary>Gets the bytes for given resource.</summary>
-			/// <param name="resourceHash">The resource hash.</param>
-			/// <param name="decoders">The decoders.</param>
-			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(Guid resourceHash, IDictionary<string, Func<byte[], int, byte[]>> decoders)
-			{
-				return ReadData(_entries[resourceHash], decoders);
-			}
-
-			/// <summary>Gets the bytes for given resource.</summary>
-			/// <param name="resourceName">Name of the resource.</param>
-			/// <param name="decoders">The decoders.</param>
-			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(string resourceName, IDictionary<string, Func<byte[], int, byte[]>> decoders)
-			{
-				return GetBytes(Hash.MD5(resourceName), decoders);
-			}
-
-			/// <summary>Determines whether the container has given entry.</summary>
-			/// <param name="resourceHash">The resource hash.</param>
-			/// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
-			public bool HasEntry(Guid resourceHash)
-			{
-				return _entries.ContainsKey(resourceHash);
-			}
-
-			/// <summary>Determines whether the container has given entry.</summary>
-			/// <param name="resourceName">Name of the resource.</param>
-			/// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
-			public bool HasEntry(string resourceName) { return HasEntry(Hash.MD5(resourceName)); }
-
-			/// <summary>Determines whether the specified resource is managed assembly.</summary>
-			/// <param name="resourceHash">The resource hash.</param>
-			/// <returns><c>true</c> if the specified resource is managed; otherwise, <c>false</c>.</returns>
-			public bool IsManaged(Guid resourceHash) { return (_entries[resourceHash].Flags & EntryFlags.Unmanaged) == 0; }
-
-			/// <summary>Gets all the assembly names.</summary>
-			/// <returns>Collection of assembly names.</returns>
-			public IEnumerable<AssemblyName> GetAssemblyNames()
-			{
-				return _entries.Select(e => e.Value.AssemblyName);
 			}
 
 			#endregion
@@ -1108,20 +1144,22 @@ namespace LibZ.Bootstrap
 				using (var mstream = new MemoryStream(input))
 				using (var zstream = new DeflateStream(mstream, CompressionMode.Decompress))
 				{
-					return ReadBytes(zstream, outputLength);
+					return ReadBytes(zstream, -1, outputLength);
 				}
 			}
 
 			/// <summary>Reads the buffer from stream.</summary>
 			/// <param name="stream">The stream.</param>
+			/// <param name="position">The position (does not change is value is negativge).</param>
 			/// <param name="length">The length.</param>
 			/// <returns>Buffer of bytes.</returns>
-			protected static byte[] ReadBytes(Stream stream, int length)
+			/// <exception cref="System.IO.IOException">LibZ container is corrupted</exception>
+			protected static byte[] ReadBytes(Stream stream, long position, int length)
 			{
 				var result = new byte[length];
+				if (position >= 0) stream.Position = position;
 				var read = stream.Read(result, 0, length);
-				if (read < length)
-					throw new IOException("Stream ended prematurely");
+				if (read < length) throw new IOException("LibZ container is corrupted");
 				return result;
 			}
 

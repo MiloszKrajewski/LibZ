@@ -19,7 +19,7 @@ namespace LibZ.Tool.Commands
 
 		public override int Run(string[] remainingArguments)
 		{
-			var task = new ListTask();
+			var task = new ListLibraryContentTask();
 			task.Execute(_libzFileName);
 
 			return 0;
