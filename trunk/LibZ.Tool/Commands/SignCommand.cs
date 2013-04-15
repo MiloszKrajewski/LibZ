@@ -25,7 +25,7 @@ namespace LibZ.Tool.Commands
 
 		public override int Run(string[] remainingArguments)
 		{
-			var task = new SignTask();
+			var task = new SignAssembliesTask();
 			task.Execute(_keyFileName, _force, _password, _include.ToArray(), _exclude.ToArray());
 
 			return 0;

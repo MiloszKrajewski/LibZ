@@ -27,13 +27,28 @@ namespace LibZ.Tool.Tasks
 
 		#region file utilities
 
+		protected static void RenameFile(string sourceFileName, string targetFileName)
+		{
+			try
+			{
+				var tempFileName = string.Format("{0}.{1}", targetFileName, Guid.NewGuid().ToString("N"));
+				File.Move(targetFileName, tempFileName);
+				File.Move(sourceFileName, targetFileName);
+				File.Delete(tempFileName);
+			}
+			catch
+			{
+				Log.Error("Renaming to '{0}' failed", targetFileName);
+				throw;
+			}
+		}
+
 		protected static void DeleteFile(string fileName)
 		{
 			if (!File.Exists(fileName)) return;
 
 			try
 			{
-				Log.Debug("Deleting '{0}'", fileName);
 				File.Delete(fileName);
 			}
 			// ReSharper disable EmptyGeneralCatchClause

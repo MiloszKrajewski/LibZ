@@ -1,11 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using Mono.Cecil;
-
-namespace LibZ.Tool.Tasks
+﻿namespace LibZ.Tool.Tasks
 {
-	public class SignTask: TaskBase
+	public class SignAssembliesTask: TaskBase
 	{
 		internal void Execute(
 			string keyFileName, bool force, string password, 

@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace LibZ.Tool.Tasks
 {
-	class SignAndFixTask: TaskBase
+	class SignAndFixAssembliesTask: TaskBase
 	{
 		private class AssemblyInfoReference
 		{

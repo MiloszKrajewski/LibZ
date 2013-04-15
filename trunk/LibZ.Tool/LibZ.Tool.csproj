@@ -74,9 +74,9 @@
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
     <Compile Include="Tasks\RebuildLibraryTask.cs" />
-    <Compile Include="Tasks\SignAndFixTask.cs" />
+    <Compile Include="Tasks\SignAndFixAssembliesTask.cs" />
     <Compile Include="Commands\SignCommand.cs" />
-    <Compile Include="Tasks\SignTask.cs" />
+    <Compile Include="Tasks\SignAssembliesTask.cs" />
     <Compile Include="Tasks\AddLibraryTask.cs" />
     <Compile Include="AssemblyArchitecture.cs" />
     <Compile Include="Commands\InjectCommand.cs" />

@@ -58,25 +58,33 @@ namespace LibZ.Manager
 {
 	#region class LibZContainer
 
+	/// <summary>Class for reading and writing LibZ containers.</summary>
 	public class LibZContainer: LibZReader
 	{
 		#region fields
 
+		/// <summary>The encoder dictionary.</summary>
 		private readonly static Dictionary<string, Func<byte[], byte[]>> Encoders
 			= new Dictionary<string, Func<byte[], byte[]>>();
 
+		/// <summary>The file writer.</summary>
 		private BinaryWriter _writer;
+
+		/// <summary>The dirty flag.</summary>
 		protected bool _dirty;
 
 		#endregion
 
 		#region constructor
 
+		/// <summary>Static contstructor.</summary>
 		static LibZContainer()
 		{
 			RegisterEncoder("deflate", DeflateEncoder);
 		}
 
+		/// <summary>Initializes a new instance of the <see cref="LibZContainer"/> class.</summary>
+		/// <param name="stream">The stream.</param>
 		public LibZContainer(Stream stream)
 		{
 			_stream = stream;
@@ -94,6 +102,10 @@ namespace LibZ.Manager
 			}
 		}
 
+		/// <summary>Initializes a new instance of the <see cref="LibZContainer"/> class.</summary>
+		/// <param name="fileName">Name of the file.</param>
+		/// <param name="writable">if set to <c>true</c> container will be writable.</param>
+		/// <param name="reset">if set to <c>true</c> resets the container (removes all the data).</param>
 		public LibZContainer(string fileName, bool writable = false, bool reset = false)
 		{
 			var mode = writable ? (reset ? FileMode.Create : FileMode.OpenOrCreate) : FileMode.Open;
@@ -113,6 +125,7 @@ namespace LibZ.Manager
 			}
 		}
 
+		/// <summary>Creates the empty file.</summary>
 		private void CreateFile()
 		{
 			lock (_stream)
@@ -376,7 +389,8 @@ namespace LibZ.Manager
 
 		public void SaveAs(string fileName)
 		{
-			using (var writer = new BinaryWriter(File.Create(fileName)))
+			using (var stream = new FileStream(fileName, FileMode.Create))
+			using (var writer = new BinaryWriter(stream))
 			{
 				WriteHeadTo(writer, Guid.NewGuid());
 				var newEntries = new List<Entry>();
@@ -388,8 +402,8 @@ namespace LibZ.Manager
 						_stream.Position = oldEntry.Offset;
 						buffer = _reader.ReadBytes(oldEntry.StorageLength);
 					}
-					var newEntry = new Entry(oldEntry) { Offset = _writer.BaseStream.Position };
-					_writer.Write(buffer);
+					var newEntry = new Entry(oldEntry) { Offset = stream.Position };
+					writer.Write(buffer);
 					newEntries.Add(newEntry);
 				}
 				WriteTailTo(writer, newEntries);
