@@ -172,9 +172,9 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Gets or sets the decoders dictionary.</summary>
 		/// <value>The decoders dictionary.</value>
-		private static Dictionary<uint, Func<byte[], int, byte[]>> Decoders
+		private static Dictionary<string, Func<byte[], int, byte[]>> Decoders
 		{
-			get { return SharedData.Get<Dictionary<uint, Func<byte[], int, byte[]>>>(1); }
+			get { return SharedData.Get<Dictionary<string, Func<byte[], int, byte[]>>>(1); }
 			set { SharedData.Set(1, value); }
 		}
 
@@ -227,7 +227,7 @@ namespace LibZ.Bootstrap
 				GetCatalogCallback = GetCatalogImplementation;
 				GetAllCatalogsCallback = GetAllCatalogsImplementation;
 
-				Decoders = new Dictionary<uint, Func<byte[], int, byte[]>>();
+				Decoders = new Dictionary<string, Func<byte[], int, byte[]>>();
 				SearchPath = searchPath;
 
 				RegisterDecoder("deflate", LibZReader.DeflateDecoder);
@@ -297,6 +297,25 @@ namespace LibZ.Bootstrap
 		#endregion
 
 		#region public interface
+
+		/// <summary>Application startup. It is used to postpone assembly loading until 
+		/// LibZResolver is intialized.</summary>
+		/// <param name="action">The action.</param>
+		/// <returns>Exit code.</returns>
+		public static int Startup(Action action)
+		{
+			action();
+			return 0;
+		}
+
+		/// <summary>Application startup. It is used to postpone assembly loading until 
+		/// LibZResolver is intialized.</summary>
+		/// <param name="action">The action.</param>
+		/// <returns>Exit code returned by <paramref name="action"/>.</returns>
+		public static int Startup(Func<int> action)
+		{
+			return action();
+		}
 
 		/// <summary>Gets the catalog.</summary>
 		/// <param name="handle">The handle.</param>
@@ -480,22 +499,20 @@ namespace LibZ.Bootstrap
 			if (decoder == null)
 				throw new ArgumentNullException("decoder", "decoder is null.");
 
-			var codecId = Hash.CRC(codecName);
-
 			if (overwrite)
 			{
-				lock (Decoders) Decoders[codecId] = decoder;
+				lock (Decoders) Decoders[codecName] = decoder;
 			}
 			else
 			{
 				try
 				{
-					lock (Decoders) Decoders.Add(codecId, decoder);
+					lock (Decoders) Decoders.Add(codecName, decoder);
 				}
 				catch (ArgumentException e)
 				{
 					throw Helpers.Error(new ArgumentException(
-						string.Format("Codec '{0}' ({1}) already registered", codecName, codecId), e));
+						string.Format("Codec '{0}' already registered", codecName), e));
 				}
 			}
 		}
@@ -757,7 +774,7 @@ namespace LibZ.Bootstrap
 
 			/// <summary>Flags on every entry in container.</summary>
 			[Flags]
-			protected enum EntryFlags
+			public enum EntryFlags
 			{
 				/// <summary>None.</summary>
 				None = 0x00,
@@ -777,35 +794,35 @@ namespace LibZ.Bootstrap
 			#region class Entry
 
 			/// <summary>Single container entry.</summary>
-			protected class Entry
+			public class Entry
 			{
 				/// <summary>Gets or sets the hash.</summary>
 				/// <value>The hash.</value>
-				public Guid Hash { get; set; }
+				public Guid Hash { get; protected internal set; }
 
 				/// <summary>Gets or sets the name of the assembly.</summary>
 				/// <value>The name of the assembly.</value>
-				public AssemblyName AssemblyName { get; set; }
+				public AssemblyName AssemblyName { get; protected internal set; }
 
 				/// <summary>Gets or sets the flags.</summary>
 				/// <value>The flags.</value>
-				public EntryFlags Flags { get; set; }
+				public EntryFlags Flags { get; protected internal set; }
 
 				/// <summary>Gets or sets the offset.</summary>
 				/// <value>The offset.</value>
-				public long Offset { get; set; }
+				public long Offset { get; protected internal set; }
 
 				/// <summary>Gets or sets the length of the original stream.</summary>
 				/// <value>The length of the original stream.</value>
-				public int OriginalLength { get; set; }
+				public int OriginalLength { get; protected internal set; }
 
 				/// <summary>Gets or sets the length of the storage.</summary>
 				/// <value>The length of the storage.</value>
-				public int StorageLength { get; set; }
+				public int StorageLength { get; protected internal set; }
 
-				/// <summary>Gets or sets the codec id.</summary>
-				/// <value>The codec id.</value>
-				public uint CodecId { get; set; }
+				/// <summary>Gets or sets the codec name.</summary>
+				/// <value>The codec name.</value>
+				public string CodecName { get; protected internal set; }
 			}
 
 			#endregion
@@ -826,8 +843,8 @@ namespace LibZ.Bootstrap
 			#region static fields
 
 			/// <summary>The registered decoders.</summary>
-			private static readonly Dictionary<uint, Func<byte[], int, byte[]>> Decoders
-				= new Dictionary<uint, Func<byte[], int, byte[]>>();
+			private static readonly Dictionary<string, Func<byte[], int, byte[]>> Decoders
+				= new Dictionary<string, Func<byte[], int, byte[]>>();
 
 			#endregion
 
@@ -861,6 +878,9 @@ namespace LibZ.Bootstrap
 			/// <summary>Gets the container id.</summary>
 			/// <value>The container id.</value>
 			public Guid ContainerId { get { return _containerId; } }
+
+			/// <summary>Gets the entries in the container.</summary>
+			public IEnumerable<Entry> Entries { get { return _entries.Values; } }
 
 			#endregion
 
@@ -946,44 +966,43 @@ namespace LibZ.Bootstrap
 				if (decoder == null)
 					throw Helpers.Error(new ArgumentNullException("decoder", "decoder is null."));
 
-				var codecId = Hash.CRC(codecName);
 				var decoders = Decoders;
 
 				if (overwrite)
 				{
-					lock (decoders) decoders[codecId] = decoder;
+					lock (decoders) decoders[codecName] = decoder;
 				}
 				else
 				{
 					try
 					{
-						lock (decoders) decoders.Add(codecId, decoder);
+						lock (decoders) decoders.Add(codecName, decoder);
 					}
 					catch (ArgumentException e)
 					{
 						throw Helpers.Error(new ArgumentException(
-							string.Format("Codec '{0}' ({1}) already registered", codecName, codecId), e));
+							string.Format("Codec '{0}' already registered", codecName), e));
 					}
 				}
 			}
 
 			/// <summary>Decodes the specified data.</summary>
-			/// <param name="codecId">The codec id.</param>
+			/// <param name="codecName">Name of the codec.</param>
 			/// <param name="data">The data.</param>
 			/// <param name="outputLength">Length of the output.</param>
 			/// <param name="decoders">The decoders dictionary.</param>
 			/// <returns>Decoded data.</returns>
 			protected static byte[] Decode(
-				uint codecId, byte[] data, int outputLength,
-				IDictionary<uint, Func<byte[], int, byte[]>> decoders = null)
+				string codecName, byte[] data, int outputLength,
+				IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
 			{
-				if (codecId == 0) return data;
+				if (string.IsNullOrEmpty(codecName)) return data;
 				if (decoders == null) decoders = Decoders;
 				Func<byte[], int, byte[]> decoder;
 				lock (decoders)
 				{
-					if (!decoders.TryGetValue(codecId, out decoder))
-						throw Helpers.Error(new ArgumentException(string.Format("Unknown codec id '{0}'", codecId)));
+					if (!decoders.TryGetValue(codecName, out decoder))
+						throw Helpers.Error(new ArgumentException(string.Format("Codec '{0}' is not registered", codecName)));
 				}
 				return decoder(data, outputLength);
 			}
@@ -1005,7 +1024,7 @@ namespace LibZ.Bootstrap
 						Offset = _reader.ReadInt64(),
 						OriginalLength = _reader.ReadInt32(),
 						StorageLength = _reader.ReadInt32(),
-						CodecId = _reader.ReadUInt32(),
+						CodecName = _reader.ReadString(),
 					};
 					return entry;
 				}
@@ -1015,7 +1034,7 @@ namespace LibZ.Bootstrap
 			/// <param name="entry">The entry.</param>
 			/// <param name="decoders">The decoders.</param>
 			/// <returns>Buffer of bytes.</returns>
-			private byte[] ReadData(Entry entry, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
+			private byte[] ReadData(Entry entry, IDictionary<string, Func<byte[], int, byte[]>> decoders)
 			{
 				byte[] buffer;
 
@@ -1026,7 +1045,7 @@ namespace LibZ.Bootstrap
 				}
 
 				// this needs to be outside lock!
-				return Decode(entry.CodecId, buffer, entry.OriginalLength, decoders);
+				return Decode(entry.CodecName, buffer, entry.OriginalLength, decoders);
 			}
 
 			#endregion
@@ -1037,7 +1056,7 @@ namespace LibZ.Bootstrap
 			/// <param name="resourceHash">The resource hash.</param>
 			/// <param name="decoders">The decoders.</param>
 			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(Guid resourceHash, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
+			public byte[] GetBytes(Guid resourceHash, IDictionary<string, Func<byte[], int, byte[]>> decoders)
 			{
 				return ReadData(_entries[resourceHash], decoders);
 			}
@@ -1046,7 +1065,7 @@ namespace LibZ.Bootstrap
 			/// <param name="resourceName">Name of the resource.</param>
 			/// <param name="decoders">The decoders.</param>
 			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(string resourceName, IDictionary<uint, Func<byte[], int, byte[]>> decoders)
+			public byte[] GetBytes(string resourceName, IDictionary<string, Func<byte[], int, byte[]>> decoders)
 			{
 				return GetBytes(Hash.MD5(resourceName), decoders);
 			}
@@ -1255,46 +1274,12 @@ namespace LibZ.Bootstrap
 		{
 			#region fields
 
-			/// <summary>CRC Table.</summary>
-			private static readonly uint[] Crc32Table;
-
 			/// <summary>MD5 provider.</summary>
 			private readonly static MD5 MD5Provider = MD5Provider.Create();
 
 			#endregion
 
-			#region constructor
-
-			/// <summary>Initializes the <see cref="Hash"/> class.</summary>
-			static Hash()
-			{
-				const uint poly = 0xedb88320;
-				Crc32Table = new uint[256];
-				for (uint i = 0; i < Crc32Table.Length; ++i)
-				{
-					var temp = i;
-					for (var j = 8; j > 0; --j) temp = (temp & 1) == 1 ? (temp >> 1) ^ poly : temp >> 1;
-					Crc32Table[i] = temp;
-				}
-			}
-
-			#endregion
-
 			#region public interface
-
-			/// <summary>Computes the CRC for specified byte array.</summary>
-			/// <param name="bytes">The bytes.</param>
-			/// <returns>CRC.</returns>
-			public static uint CRC(byte[] bytes)
-			{
-				var crc = 0xffffffffu;
-				for (var i = 0; i < bytes.Length; ++i)
-				{
-					var index = (byte)((crc & 0xff) ^ bytes[i]);
-					crc = (crc >> 8) ^ Crc32Table[index];
-				}
-				return ~crc;
-			}
 
 			/// <summary>Computes the MD5 for specified byte array.</summary>
 			/// <param name="bytes">The bytes.</param>
@@ -1303,11 +1288,6 @@ namespace LibZ.Bootstrap
 			{
 				return new Guid(MD5Provider.ComputeHash(bytes));
 			}
-
-			/// <summary>Computes CRC for the specified text (case insensitive).</summary>
-			/// <param name="text">The text.</param>
-			/// <returns>CRC</returns>
-			public static uint CRC(string text) { return CRC(Encoding.UTF8.GetBytes(text.ToLowerInvariant())); }
 
 			/// <summary>Computes MD5 for the specified text (case insensitive).</summary>
 			/// <param name="text">The text.</param>

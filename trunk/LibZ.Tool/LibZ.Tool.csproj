@@ -72,6 +72,7 @@
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
+    <Compile Include="Tasks\ListTask.cs" />
     <Compile Include="Tasks\SignAndFixTask.cs" />
     <Compile Include="Commands\SignCommand.cs" />
     <Compile Include="Tasks\SignTask.cs" />

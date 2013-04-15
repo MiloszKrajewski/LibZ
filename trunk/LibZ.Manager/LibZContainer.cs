@@ -61,8 +61,8 @@ namespace LibZ.Manager
 	{
 		#region fields
 
-		private readonly static Dictionary<uint, Func<byte[], byte[]>> Encoders
-			= new Dictionary<uint, Func<byte[], byte[]>>();
+		private readonly static Dictionary<string, Func<byte[], byte[]>> Encoders
+			= new Dictionary<string, Func<byte[], byte[]>>();
 
 		private BinaryWriter _writer;
 		protected bool _dirty;
@@ -186,17 +186,15 @@ namespace LibZ.Manager
 			if (string.IsNullOrEmpty(codecName)) throw new ArgumentException("codecName is null or empty.");
 			if (encoder == null) throw new ArgumentNullException("encoder");
 
-			var crc = Hash.CRC(codecName);
-
 			if (overwrite)
 			{
-				lock (Encoders) Encoders[crc] = encoder;
+				lock (Encoders) Encoders[codecName] = encoder;
 			}
 			else
 			{
 				try
 				{
-					lock (Encoders) Encoders.Add(crc, encoder);
+					lock (Encoders) Encoders.Add(codecName, encoder);
 				}
 				catch (ArgumentException e)
 				{
@@ -211,14 +209,14 @@ namespace LibZ.Manager
 
 		#region codec management
 
-		private static byte[] Encode(uint codec, byte[] data)
+		private static byte[] Encode(string codecName, byte[] data)
 		{
-			if (codec == 0) return data;
+			if (string.IsNullOrEmpty(codecName)) return data;
 			Func<byte[], byte[]> encoder;
 			lock (Encoders)
 			{
-				if (!Encoders.TryGetValue(codec, out encoder))
-					throw new ArgumentException(string.Format("Unknown codecName {0}", codec));
+				if (!Encoders.TryGetValue(codecName, out encoder))
+					throw new ArgumentException(string.Format("Unknown codecName {0}", codecName));
 			}
 			return encoder(data);
 		}
@@ -262,7 +260,7 @@ namespace LibZ.Manager
 				_writer.Write(entry.Offset);
 				_writer.Write(entry.OriginalLength);
 				_writer.Write(entry.StorageLength);
-				_writer.Write(entry.CodecId);
+				_writer.Write(entry.CodecName);
 			}
 		}
 
@@ -282,7 +280,7 @@ namespace LibZ.Manager
 		}
 
 		private void WriteData(
-			Entry entry, byte[] data, uint codec)
+			Entry entry, byte[] data, string codec)
 		{
 			lock (_stream)
 			{
@@ -291,7 +289,7 @@ namespace LibZ.Manager
 				var encoded = Encode(codec, data);
 				if (encoded != null)
 				{
-					entry.CodecId = codec;
+					entry.CodecName = codec;
 					data = encoded;
 				}
 
@@ -304,7 +302,6 @@ namespace LibZ.Manager
 			AssemblyName assemblyName, byte[] data, EntryFlags flags, EntryOptions options)
 		{
 			var codecName = options.CodecName;
-			var codecId = codecName == null ? 0 : Hash.CRC(codecName);
 
 			lock (_stream)
 			{
@@ -325,7 +322,7 @@ namespace LibZ.Manager
 					_entries.Add(entry.Hash, entry);
 				}
 
-				WriteData(entry, data, codecId);
+				WriteData(entry, data, codecName);
 
 				entry.StorageLength = (int)(_stream.Position - entry.Offset);
 

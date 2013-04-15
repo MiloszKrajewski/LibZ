@@ -57,8 +57,12 @@ namespace libz
 		{
 			try
 			{
-				LibZResolver.RegisterResourceContainer(typeof(Program), "libz.libz");
-				return Run(args);
+				LibZResolver.RegisterAllResourceContainers(typeof(Program));
+				return LibZResolver.Startup(() =>
+				{
+					var program = new LibZ.Tool.Program();
+					return program.Run(args);
+				});
 			}
 			catch (Exception e)
 			{
@@ -68,12 +72,6 @@ namespace libz
 				Console.ReadLine();
 				return -1;
 			}
-		}
-
-		static int Run(string[] args)
-		{
-			var program = new LibZ.Tool.Program();
-			return program.Run(args);
 		}
 	}
 }
