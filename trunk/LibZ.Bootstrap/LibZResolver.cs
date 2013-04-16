@@ -676,104 +676,6 @@ namespace LibZ.Bootstrap
 	{
 		using MD5Provider = MD5;
 
-		#region class LibZCatalog
-
-		/// <summary>Catalog (in MEF sense) for given LibZReader.</summary>
-		internal class LibZCatalog: ComposablePartCatalog
-		{
-			#region fields
-
-			/// <summary>The reader.</summary>
-			private readonly LibZReader _reader;
-
-			/// <summary>Flag indicating that catalog has been initialized.</summary>
-			private int _initialized;
-
-			/// <summary>The partial type catalogs.</summary>
-			private List<TypeCatalog> _catalogs;
-
-			/// <summary>The parts.</summary>
-			private List<ComposablePartDefinition> _parts;
-
-			#endregion
-
-			#region constructor
-
-			/// <summary>Initializes a new instance of the <see cref="LibZCatalog"/> class.</summary>
-			/// <param name="reader">The reader.</param>
-			public LibZCatalog(LibZReader reader)
-			{
-				_reader = reader;
-			}
-
-			/// <summary>Initializes this instance. Deffers querying assemblies until it is actually needed.</summary>
-			private void Initialize()
-			{
-				if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
-				_catalogs = new List<TypeCatalog>();
-				_parts = new List<ComposablePartDefinition>();
-
-				if (_reader == null) return;
-
-				var assemblyNames = _reader.Entries.Select(e => e.AssemblyName).ToList();
-
-				foreach (var assemblyName in assemblyNames)
-				{
-					try
-					{
-						_catalogs.Add(new TypeCatalog(Assembly.Load(assemblyName).GetTypes()));
-					}
-					catch (Exception e)
-					{
-						Helpers.Error(string.Format("Could not load catalog for '{0}'", assemblyName));
-						Helpers.Error(e);
-					}
-				}
-
-				_parts.AddRange(_catalogs.SelectMany(c => c.Parts));
-			}
-
-			#endregion
-
-			#region overrides
-
-			/// <summary>Gets the part definitions that are contained in the catalog.</summary>
-			/// <returns>The <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" /> 
-			/// contained in the <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartCatalog" />.
-			/// </returns>
-			public override IQueryable<ComposablePartDefinition> Parts
-			{
-				get
-				{
-					Initialize();
-					return _parts.AsQueryable();
-				}
-			}
-
-			/// <summary>
-			/// Gets a list of export definitions that match the constraint defined by the specified
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ImportDefinition" /> object.
-			/// </summary>
-			/// <param name="definition">The conditions of the
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" />
-			/// objects to be returned.</param>
-			/// <returns>
-			/// A collection of <see cref="T:System.Tuple`2" /> containing the
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" /> objects
-			/// and their associated <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" />
-			/// objects for objects that match the constraint specified by <paramref name="definition" />.
-			/// </returns>
-			public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition)
-			{
-				Initialize();
-				return _catalogs.SelectMany(c => c.GetExports(definition));
-			}
-
-			#endregion
-		}
-
-		#endregion
-
 		#region class LibZReader
 
 		/// <summary>LibZ file container. Read-only aspect.</summary>
@@ -1026,39 +928,14 @@ namespace LibZ.Bootstrap
 				}
 			}
 
-			///// <summary>Determines whether the container has given entry.</summary>
-			///// <param name="resourceHash">The resource hash.</param>
-			///// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
-			//public bool HasEntry(Guid resourceHash) { return _entries.ContainsKey(resourceHash); }
-
-			///// <summary>Determines whether the container has given entry.</summary>
-			///// <param name="resourceName">Name of the resource.</param>
-			///// <returns><c>true</c> if the container has given entry; otherwise, <c>false</c>.</returns>
-			//public bool HasEntry(string resourceName) { return HasEntry(Hash.MD5(resourceName)); }
-
+			/// <summary>Tries the get entry.</summary>
+			/// <param name="guid">The GUID.</param>
+			/// <returns>Entry with specified GUID or <c>null</c>.</returns>
 			public Entry TryGetEntry(Guid guid)
 			{
 				Entry result;
 				_entries.TryGetValue(guid, out result);
 				return result;
-			}
-
-			/// <summary>Gets the bytes for given resource.</summary>
-			/// <param name="resourceName">Name of the resource.</param>
-			/// <param name="decoders">The decoders.</param>
-			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(string resourceName, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
-			{
-				return GetBytes(Hash.MD5(resourceName), decoders);
-			}
-
-			/// <summary>Gets the bytes for given resource.</summary>
-			/// <param name="resourceHash">The resource hash.</param>
-			/// <param name="decoders">The decoders.</param>
-			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(Guid resourceHash, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
-			{
-				return GetBytes(_entries[resourceHash], decoders);
 			}
 
 			/// <summary>Gets the bytes for given resource.</summary>
@@ -1101,7 +978,8 @@ namespace LibZ.Bootstrap
 			{
 				lock (_stream)
 				{
-					var entry = new Entry {
+					var entry = new Entry
+					{
 						Hash = new Guid(_reader.ReadBytes(GuidLength)),
 						AssemblyName = new AssemblyName(_reader.ReadString()),
 						Flags = (EntryFlags)_reader.ReadInt32(),
@@ -1236,6 +1114,104 @@ namespace LibZ.Bootstrap
 				if (ReferenceEquals(disposable, null)) return;
 				disposable.Dispose();
 				subject = null;
+			}
+
+			#endregion
+		}
+
+		#endregion
+
+		#region class LibZCatalog
+
+		/// <summary>Catalog (in MEF sense) for given LibZReader.</summary>
+		internal class LibZCatalog: ComposablePartCatalog
+		{
+			#region fields
+
+			/// <summary>The reader.</summary>
+			private readonly LibZReader _reader;
+
+			/// <summary>Flag indicating that catalog has been initialized.</summary>
+			private int _initialized;
+
+			/// <summary>The partial type catalogs.</summary>
+			private List<TypeCatalog> _catalogs;
+
+			/// <summary>The parts.</summary>
+			private List<ComposablePartDefinition> _parts;
+
+			#endregion
+
+			#region constructor
+
+			/// <summary>Initializes a new instance of the <see cref="LibZCatalog"/> class.</summary>
+			/// <param name="reader">The reader.</param>
+			public LibZCatalog(LibZReader reader)
+			{
+				_reader = reader;
+			}
+
+			/// <summary>Initializes this instance. Deffers querying assemblies until it is actually needed.</summary>
+			private void Initialize()
+			{
+				if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
+				_catalogs = new List<TypeCatalog>();
+				_parts = new List<ComposablePartDefinition>();
+
+				if (_reader == null) return;
+
+				var assemblyNames = _reader.Entries.Select(e => e.AssemblyName).ToList();
+
+				foreach (var assemblyName in assemblyNames)
+				{
+					try
+					{
+						_catalogs.Add(new TypeCatalog(Assembly.Load(assemblyName).GetTypes()));
+					}
+					catch (Exception e)
+					{
+						Helpers.Error(string.Format("Could not load catalog for '{0}'", assemblyName));
+						Helpers.Error(e);
+					}
+				}
+
+				_parts.AddRange(_catalogs.SelectMany(c => c.Parts));
+			}
+
+			#endregion
+
+			#region overrides
+
+			/// <summary>Gets the part definitions that are contained in the catalog.</summary>
+			/// <returns>The <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" /> 
+			/// contained in the <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartCatalog" />.
+			/// </returns>
+			public override IQueryable<ComposablePartDefinition> Parts
+			{
+				get
+				{
+					Initialize();
+					return _parts.AsQueryable();
+				}
+			}
+
+			/// <summary>
+			/// Gets a list of export definitions that match the constraint defined by the specified
+			/// <see cref="T:System.ComponentModel.Composition.Primitives.ImportDefinition" /> object.
+			/// </summary>
+			/// <param name="definition">The conditions of the
+			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" />
+			/// objects to be returned.</param>
+			/// <returns>
+			/// A collection of <see cref="T:System.Tuple`2" /> containing the
+			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" /> objects
+			/// and their associated <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" />
+			/// objects for objects that match the constraint specified by <paramref name="definition" />.
+			/// </returns>
+			public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition)
+			{
+				Initialize();
+				return _catalogs.SelectMany(c => c.GetExports(definition));
 			}
 
 			#endregion

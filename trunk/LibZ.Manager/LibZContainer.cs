@@ -145,6 +145,9 @@ namespace LibZ.Manager
 
 		#region public interface
 
+		/// <summary>Appends the assembly into container.</summary>
+		/// <param name="assemblyInfo">The assembly info.</param>
+		/// <param name="options">The options.</param>
 		public void Append(
 			AssemblyInfo assemblyInfo,
 			EntryOptions options)
@@ -169,20 +172,12 @@ namespace LibZ.Manager
 				options);
 		}
 
-		public void Alias(string existingResourceName, string newResourceName)
-		{
-			var existingEntry = _entries[Hash.MD5(existingResourceName)];
-			var newEntry = new Entry {
-				Hash = Hash.MD5(newResourceName),
-				Flags = existingEntry.Flags,
-				Offset = existingEntry.Offset,
-				OriginalLength = existingEntry.OriginalLength,
-				StorageLength = existingEntry.StorageLength,
-			};
-			_entries.Add(newEntry.Hash, newEntry);
-			_dirty = true;
-		}
-
+		/// <summary>Registers the codec.</summary>
+		/// <param name="codecName">Name of the codec.</param>
+		/// <param name="encoder">The encoder.</param>
+		/// <param name="decoder">The decoder.</param>
+		/// <param name="overwrite">if set to <c>true</c> overwrites previously 
+		/// registered codec.</param>
 		public static void RegisterCodec(
 			string codecName,
 			Func<byte[], byte[]> encoder, Func<byte[], int, byte[]> decoder,
@@ -192,6 +187,11 @@ namespace LibZ.Manager
 			RegisterEncoder(codecName, encoder, overwrite);
 		}
 
+		/// <summary>Registers the encoder.</summary>
+		/// <param name="codecName">Name of the codec.</param>
+		/// <param name="encoder">The encoder.</param>
+		/// <param name="overwrite">if set to <c>true</c> overwrites previously 
+		/// registered encoder.</param>
 		public static void RegisterEncoder(
 			string codecName,
 			Func<byte[], byte[]> encoder,
@@ -223,6 +223,10 @@ namespace LibZ.Manager
 
 		#region codec management
 
+		/// <summary>Encodes the data with specified codec.</summary>
+		/// <param name="codecName">Name of the codec.</param>
+		/// <param name="data">The data.</param>
+		/// <returns>Encoded data.</returns>
 		private static byte[] Encode(string codecName, byte[] data)
 		{
 			if (string.IsNullOrEmpty(codecName)) return data;
@@ -235,6 +239,9 @@ namespace LibZ.Manager
 			return encoder(data);
 		}
 
+		/// <summary>Encoder for 'deflate' codec.</summary>
+		/// <param name="input">The input data.</param>
+		/// <returns>Encoded data.</returns>
 		private static byte[] DeflateEncoder(byte[] input)
 		{
 			using (var istream = new MemoryStream(input))
