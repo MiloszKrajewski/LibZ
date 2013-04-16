@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.ZLib", "LibZ.Cod
 		{9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA} = {9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.LZ4", "LibZ.Codec.LZ4\LibZ.Codec.LZ4.csproj", "{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
