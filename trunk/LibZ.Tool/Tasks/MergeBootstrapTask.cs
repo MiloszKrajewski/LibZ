@@ -7,7 +7,7 @@ namespace LibZ.Tool.Tasks
 	public class MergeBootstrapTask: TaskBase
 	{
 		public void Execute(
-			string exeFileName, string bootstrapFileName = null, bool move = true,
+			string mainFileName, string bootstrapFileName = null, bool move = true,
 			string keyFileName = null, string keyFilePassword = null)
 		{
 			// TODO:MAK check if targetPlatform is set properly
@@ -15,14 +15,14 @@ namespace LibZ.Tool.Tasks
 			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
 
 			if (string.IsNullOrWhiteSpace(bootstrapFileName))
-				bootstrapFileName = Path.Combine(Path.GetDirectoryName(exeFileName) ?? ".", "LibZ.Bootstrap.dll");
+				bootstrapFileName = Path.Combine(Path.GetDirectoryName(mainFileName) ?? ".", "LibZ.Bootstrap.dll");
 			var outputFolderPath = Path.Combine(
 				Path.GetTempPath(),
 				Guid.NewGuid().ToString("N"));
 			var outputFileName = Path.Combine(
-				outputFolderPath, Path.GetFileName(exeFileName));
+				outputFolderPath, Path.GetFileName(mainFileName) ?? "temp.exe");
 
-			Log.Info("Merging '{0}' into '{1}'", bootstrapFileName, exeFileName);
+			Log.Info("Merging '{0}' into '{1}'", bootstrapFileName, mainFileName);
 
 			try
 			{
@@ -33,11 +33,11 @@ namespace LibZ.Tool.Tasks
 					OutputFile = outputFileName,
 					Internalize = true,
 				};
-				engine.SetInputAssemblies(new[] { exeFileName, bootstrapFileName });
+				engine.SetInputAssemblies(new[] { mainFileName, bootstrapFileName });
 				engine.Merge();
 
 				using (var inputFile = File.OpenRead(outputFileName))
-				using (var outputFile = File.Create(exeFileName))
+				using (var outputFile = File.Create(mainFileName))
 				{
 					inputFile.CopyTo(outputFile);
 				}
@@ -54,8 +54,8 @@ namespace LibZ.Tool.Tasks
 
 			if (keyFileName != null)
 			{
-				Log.Info("Resigning '{0}'", exeFileName);
-				SaveAssembly(LoadAssembly(exeFileName), exeFileName, keyPair);
+				Log.Info("Resigning '{0}'", mainFileName);
+				SaveAssembly(LoadAssembly(mainFileName), mainFileName, keyPair);
 			}
 		}
 	}

@@ -2,19 +2,22 @@
 
 namespace LibZ.Manager
 {
+	/// <summary>Assembly information.</summary>
 	public struct AssemblyInfo
 	{
+		/// <summary>The assembly name</summary>
 		public AssemblyName AssemblyName;
-		public byte[] Bytes;
-		public bool Unmanaged;
-		public bool AnyCPU;
-		public bool AMD64;
 
-		public override string ToString()
-		{
-			return string.Format("{0}{1}",
-			    AnyCPU ? string.Empty : AMD64 ? "x64:" : "x86:",
-			    AssemblyName.FullName);
-		}
+		/// <summary>Content of the assembly.</summary>
+		public byte[] Bytes;
+
+		/// <summary>Is unmanaged.</summary>
+		public bool Unmanaged;
+
+		/// <summary>Is AnyCPU</summary>
+		public bool AnyCPU;
+
+		/// <summary>Is AMD64</summary>
+		public bool AMD64;
 	}
 }

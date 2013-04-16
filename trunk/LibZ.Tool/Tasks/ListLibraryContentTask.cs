@@ -14,21 +14,21 @@
 // --------------------------------------------------------------------------------------
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using LibZ.Manager;
 using LibZ.Manager.Internal;
 
 namespace LibZ.Tool.Tasks
 {
+	using EntryFlags = LibZEntry.EntryFlags;
+
 	public class ListLibraryContentTask: TaskBase
 	{
 		public void Execute(string libzFileName)
 		{
 			Log.Info("Opening '{0}'", libzFileName);
-			using (var container = new LibZContainer(libzFileName, false, false))
+			using (var container = new LibZContainer(libzFileName))
 			{
 				var orderedEnties = container.Entries
 					.OrderBy(e => e.AssemblyName.Name)
@@ -51,14 +51,14 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
-		private static IEnumerable<string> GetFlagsText(LibZReader.EntryFlags entryFlags)
+		private static IEnumerable<string> GetFlagsText(EntryFlags entryFlags)
 		{
-			if ((entryFlags & LibZReader.EntryFlags.Unmanaged) != 0)
+			if ((entryFlags & EntryFlags.Unmanaged) != 0)
 				yield return "Unmanaged";
 
-			if ((entryFlags & LibZReader.EntryFlags.AnyCPU) != 0)
+			if ((entryFlags & EntryFlags.AnyCPU) != 0)
 				yield return "AnyCPU";
-			else if ((entryFlags & LibZReader.EntryFlags.AMD64) != 0)
+			else if ((entryFlags & EntryFlags.AMD64) != 0)
 				yield return "x64";
 			else
 				yield return "x86";

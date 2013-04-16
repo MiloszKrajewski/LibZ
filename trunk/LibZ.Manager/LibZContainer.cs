@@ -58,6 +58,8 @@ namespace LibZ.Manager
 {
 	#region class LibZContainer
 
+	using EntryFlags = LibZEntry.EntryFlags;
+
 	/// <summary>Class for reading and writing LibZ containers.</summary>
 	public class LibZContainer: LibZReader
 	{
@@ -150,7 +152,7 @@ namespace LibZ.Manager
 		/// <param name="options">The options.</param>
 		public void Append(
 			AssemblyInfo assemblyInfo,
-			EntryOptions options)
+			AppendOptions options)
 		{
 			var flags = EntryFlags.None;
 			if (assemblyInfo.Unmanaged) flags |= EntryFlags.Unmanaged;
@@ -217,6 +219,41 @@ namespace LibZ.Manager
 			}
 		}
 
+		/// <summary>Commits all changes.</summary>
+		public void Commit()
+		{
+			lock (_stream)
+			{
+				_stream.Position = _magicOffset;
+				WriteTail();
+			}
+		}
+
+		/// <summary>Saves container to new file.</summary>
+		/// <param name="fileName">Name of the file.</param>
+		public void SaveAs(string fileName)
+		{
+			using (var stream = new FileStream(fileName, FileMode.Create))
+			using (var writer = new BinaryWriter(stream))
+			{
+				WriteHeadTo(writer, Guid.NewGuid());
+				var newEntries = new List<LibZEntry>();
+				foreach (var oldEntry in _entries.Values.OrderBy(e => e.Offset))
+				{
+					byte[] buffer;
+					lock (_stream)
+					{
+						_stream.Position = oldEntry.Offset;
+						buffer = _reader.ReadBytes(oldEntry.StorageLength);
+					}
+					var newEntry = new LibZEntry(oldEntry) { Offset = stream.Position };
+					writer.Write(buffer);
+					newEntries.Add(newEntry);
+				}
+				WriteTailTo(writer, newEntries);
+			}
+		}
+
 		#endregion
 
 		#region private implementation
@@ -260,24 +297,35 @@ namespace LibZ.Manager
 
 		#region write
 
+		/// <summary>Writes the head of file.</summary>
 		private void WriteHead()
 		{
 			lock (_stream)
 			{
+				_writer.Flush(); 
 				_stream.Position = 0;
 				WriteHeadTo(_writer, _containerId);
+				_writer.Flush();
 			}
 		}
 
+		/// <summary>Writes the tail of file. Truncates the file.</summary>
 		private void WriteTail()
 		{
 			lock (_stream)
 			{
+				_writer.Flush();
 				_stream.Position = _magicOffset;
 				WriteTailTo(_writer, _entries.Values);
+				_writer.Flush();
+				_stream.SetLength(_stream.Position);
+				_dirty = false;
 			}
 		}
 
+		/// <summary>Writes the head to.</summary>
+		/// <param name="writer">The writer.</param>
+		/// <param name="containerId">The container id.</param>
 		private static void WriteHeadTo(BinaryWriter writer, Guid containerId)
 		{
 			writer.Write(Magic.ToByteArray());
@@ -285,7 +333,10 @@ namespace LibZ.Manager
 			writer.Write(CurrentVersion);
 		}
 
-		private static void WriteEntryTo(BinaryWriter writer, Entry entry)
+		/// <summary>Writes the entry to.</summary>
+		/// <param name="writer">The writer.</param>
+		/// <param name="entry">The entry.</param>
+		private static void WriteEntryTo(BinaryWriter writer, LibZEntry entry)
 		{
 			writer.Write(entry.Hash.ToByteArray());
 			writer.Write(entry.AssemblyName.FullName);
@@ -296,7 +347,10 @@ namespace LibZ.Manager
 			writer.Write(entry.CodecName);
 		}
 
-		private static void WriteTailTo(BinaryWriter writer, ICollection<Entry> entries)
+		/// <summary>Writes the tail to.</summary>
+		/// <param name="writer">The writer.</param>
+		/// <param name="entries">The entries.</param>
+		private static void WriteTailTo(BinaryWriter writer, ICollection<LibZEntry> entries)
 		{
 			var magicOffset = writer.BaseStream.Position;
 			writer.Write(entries.Count);
@@ -305,40 +359,30 @@ namespace LibZ.Manager
 			writer.Write(Magic.ToByteArray());
 		}
 
-		private void WriteData(
-			Entry entry, byte[] data, string codec)
-		{
-			lock (_stream)
-			{
-				entry.OriginalLength = data.Length;
-
-				var encoded = Encode(codec, data);
-				if (encoded != null)
-				{
-					entry.CodecName = codec;
-					data = encoded;
-				}
-
-				_stream.Write(data, 0, data.Length);
-			}
-		}
-
+		/// <summary>Saves entry to file.</summary>
+		/// <param name="resourceName">Name of the resource.</param>
+		/// <param name="assemblyName">Name of the assembly.</param>
+		/// <param name="data">The content of the assembly.</param>
+		/// <param name="flags">The flags.</param>
+		/// <param name="options">The options.</param>
 		private void SetBytes(
 			string resourceName,
-			AssemblyName assemblyName, byte[] data, EntryFlags flags, EntryOptions options)
+			AssemblyName assemblyName, byte[] data, EntryFlags flags, AppendOptions options)
 		{
 			var codecName = options.CodecName;
 
 			lock (_stream)
 			{
-				_stream.Position = _magicOffset;
-				var entry = new Entry {
+				// prepare entry
+				var entry = new LibZEntry {
 					Hash = Hash.MD5(resourceName),
 					AssemblyName = assemblyName,
-					Offset = _stream.Position,
+					Offset = _magicOffset,
 					Flags = flags,
+					OriginalLength = data.Length,
 				};
 
+				// add it to dictionary
 				if (options.Overwrite)
 				{
 					_entries[entry.Hash] = entry;
@@ -348,15 +392,33 @@ namespace LibZ.Manager
 					_entries.Add(entry.Hash, entry);
 				}
 
-				WriteData(entry, data, codecName);
+				// encode it
+				var encoded = Encode(codecName, data);
+				if (encoded != null)
+				{
+					entry.CodecName = codecName;
+					data = encoded;
+				}
 
-				entry.StorageLength = (int)(_stream.Position - entry.Offset);
-
-				_magicOffset = _stream.Position;
+				// write it
+				_magicOffset += entry.StorageLength = WriteBytes(_stream, _magicOffset, data);
 				_stream.SetLength(_stream.Position);
 
 				_dirty = true;
 			}
+		}
+
+		/// <summary>Writes buffer to stream.</summary>
+		/// <param name="stream">The stream.</param>
+		/// <param name="position">The position.</param>
+		/// <param name="data">The data to be written.</param>
+		/// <returns>Number of bytes written.</returns>
+		protected static int WriteBytes(Stream stream, long position, byte[] data)
+		{
+			if (position >= 0) stream.Position = position;
+			var length = data.Length;
+			stream.Write(data, 0, length);
+			return length;
 		}
 
 		#endregion
@@ -365,57 +427,21 @@ namespace LibZ.Manager
 
 		#region overrides
 
-		protected override void Clear()
-		{
-			base.Clear();
-			TryDispose(ref _writer);
-		}
-
+		/// <summary>Disposes the managed resources.</summary>
 		protected override void DisposeManaged()
 		{
 			try
 			{
-				if (_dirty)
-				{
-					lock (_stream)
-					{
-						_stream.Position = _magicOffset;
-						WriteTail();
-					}
-				}
+				if (_dirty) Commit();
 			}
 			finally
 			{
-				Clear();
+				TryDispose(ref _writer);
+				base.DisposeManaged();
 			}
-
-			base.DisposeManaged();
 		}
 
 		#endregion
-
-		public void SaveAs(string fileName)
-		{
-			using (var stream = new FileStream(fileName, FileMode.Create))
-			using (var writer = new BinaryWriter(stream))
-			{
-				WriteHeadTo(writer, Guid.NewGuid());
-				var newEntries = new List<Entry>();
-				foreach (var oldEntry in _entries.Values.OrderBy(e => e.Offset))
-				{
-					byte[] buffer;
-					lock (_stream)
-					{
-						_stream.Position = oldEntry.Offset;
-						buffer = _reader.ReadBytes(oldEntry.StorageLength);
-					}
-					var newEntry = new Entry(oldEntry) { Offset = stream.Position };
-					writer.Write(buffer);
-					newEntries.Add(newEntry);
-				}
-				WriteTailTo(writer, newEntries);
-			}
-		}
 	}
 
 	#endregion

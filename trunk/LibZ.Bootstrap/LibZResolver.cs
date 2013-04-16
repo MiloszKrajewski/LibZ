@@ -86,18 +86,19 @@ namespace LibZ.Bootstrap
 
 	#region declare visibility
 
-	#if LIBZ_MANAGER
-	
+#if LIBZ_MANAGER
+
 	// in LibZ.Manager all clases are actually interface classes
 
 	public partial class LibZResolver { };
 
 	namespace Internal
 	{
+		public partial class LibZEntry { };
 		public partial class LibZReader { };
 	}
 
-	#elif LIBZ_BOOTSTRAP
+#elif LIBZ_BOOTSTRAP
 
 	// in LibZ.Bootstrap LibZResolver needs to be exposed
 
@@ -105,10 +106,11 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
+		internal partial class LibZEntry { };
 		internal partial class LibZReader { };
 	}
 
-	#else
+#else
 
 	// if file is just embedded into another assembly it should be all internal
 
@@ -116,10 +118,11 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
+		internal partial class LibZEntry { };
 		internal partial class LibZReader { };
 	}
 
-	#endif
+#endif
 
 	#endregion
 
@@ -358,7 +361,7 @@ namespace LibZ.Bootstrap
 		{
 			try
 			{
-				if (stream == null) 
+				if (stream == null)
 					throw new ArgumentNullException("stream");
 				return RegisterStreamCallback(stream);
 			}
@@ -523,6 +526,8 @@ namespace LibZ.Bootstrap
 
 		#region private implementation
 
+		#region resolve
+
 		/// <summary>Tries to load missing assembly from LibZ containers.</summary>
 		/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
 		/// <returns>Loaded assembly (or <c>null</c>)</returns>
@@ -617,8 +622,6 @@ namespace LibZ.Bootstrap
 		/// <returns>Loaded assembly or <c>null</c></returns>
 		private static Assembly TryLoadAssembly(LibZReader container, Guid guid)
 		{
-			// NOTE: You have UpgradeableReadLock here
-
 			var entry = container.TryGetEntry(guid);
 			if (entry == null) return null;
 
@@ -654,6 +657,10 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		#endregion
+
+		#region find files
+
 		/// <summary>Finds the file on search path.</summary>
 		/// <param name="libzFileName">Name of the libz file.</param>
 		/// <returns>Full path of found LibZ file, or <c>null</c>.</returns>
@@ -668,6 +675,8 @@ namespace LibZ.Bootstrap
 		}
 
 		#endregion
+
+		#endregion
 	}
 
 	#endregion
@@ -678,8 +687,10 @@ namespace LibZ.Bootstrap
 
 		#region class LibZReader
 
-		/// <summary>LibZ file container. Read-only aspect.</summary>
-		partial class LibZReader: IDisposable
+		#region class Entry
+
+		/// <summary>Single container entry.</summary>
+		partial class LibZEntry
 		{
 			#region enum EntryFlags
 
@@ -702,77 +713,75 @@ namespace LibZ.Bootstrap
 
 			#endregion
 
-			#region class Entry
+			#region stored properties
 
-			/// <summary>Single container entry.</summary>
-			public class Entry
-			{
-				#region stored properties
+			/// <summary>Gets or sets the hash.</summary>
+			/// <value>The hash.</value>
+			public Guid Hash { get; protected internal set; }
 
-				/// <summary>Gets or sets the hash.</summary>
-				/// <value>The hash.</value>
-				public Guid Hash { get; protected internal set; }
+			/// <summary>Gets or sets the name of the assembly.</summary>
+			/// <value>The name of the assembly.</value>
+			public AssemblyName AssemblyName { get; protected internal set; }
 
-				/// <summary>Gets or sets the name of the assembly.</summary>
-				/// <value>The name of the assembly.</value>
-				public AssemblyName AssemblyName { get; protected internal set; }
+			/// <summary>Gets or sets the flags.</summary>
+			/// <value>The flags.</value>
+			public EntryFlags Flags { get; protected internal set; }
 
-				/// <summary>Gets or sets the flags.</summary>
-				/// <value>The flags.</value>
-				public EntryFlags Flags { get; protected internal set; }
+			/// <summary>Gets or sets the offset.</summary>
+			/// <value>The offset.</value>
+			public long Offset { get; protected internal set; }
 
-				/// <summary>Gets or sets the offset.</summary>
-				/// <value>The offset.</value>
-				public long Offset { get; protected internal set; }
+			/// <summary>Gets or sets the length of the original stream.</summary>
+			/// <value>The length of the original stream.</value>
+			public int OriginalLength { get; protected internal set; }
 
-				/// <summary>Gets or sets the length of the original stream.</summary>
-				/// <value>The length of the original stream.</value>
-				public int OriginalLength { get; protected internal set; }
+			/// <summary>Gets or sets the length of the storage.</summary>
+			/// <value>The length of the storage.</value>
+			public int StorageLength { get; protected internal set; }
 
-				/// <summary>Gets or sets the length of the storage.</summary>
-				/// <value>The length of the storage.</value>
-				public int StorageLength { get; protected internal set; }
-
-				/// <summary>Gets or sets the codec name.</summary>
-				/// <value>The codec name.</value>
-				public string CodecName { get; protected internal set; }
-
-				#endregion
-
-				#region derived properties
-
-				/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
-				/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
-				public bool Unmanaged { get { return (Flags & EntryFlags.Unmanaged) != 0; } }
-
-				#endregion
-
-				#region constructor
-
-				/// <summary>Initializes a new instance of the <see cref="Entry"/> class.</summary>
-				public Entry()
-				{
-				}
-
-				/// <summary>Initializes a new instance of the <see cref="Entry"/> class. 
-				/// Copies all field from other object.</summary>
-				/// <param name="other">The other entry.</param>
-				public Entry(Entry other)
-				{
-					Hash = other.Hash;
-					AssemblyName = other.AssemblyName;
-					Flags = other.Flags;
-					Offset = other.Offset;
-					OriginalLength = other.OriginalLength;
-					StorageLength = other.StorageLength;
-					CodecName = other.CodecName;
-				}
-
-				#endregion
-			}
+			/// <summary>Gets or sets the codec name.</summary>
+			/// <value>The codec name.</value>
+			public string CodecName { get; protected internal set; }
 
 			#endregion
 
+			#region derived properties
+
+			/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
+			/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
+			public bool Unmanaged { get { return (Flags & EntryFlags.Unmanaged) != 0; } }
+
+			#endregion
+
+			#region constructor
+
+			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class.</summary>
+			public LibZEntry()
+			{
+			}
+
+			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class. 
+			/// Copies all field from other object.</summary>
+			/// <param name="other">The other entry.</param>
+			public LibZEntry(LibZEntry other)
+			{
+				Hash = other.Hash;
+				AssemblyName = other.AssemblyName;
+				Flags = other.Flags;
+				Offset = other.Offset;
+				OriginalLength = other.OriginalLength;
+				StorageLength = other.StorageLength;
+				CodecName = other.CodecName;
+			}
+
+			#endregion
+		}
+
+		#endregion
+
+		/// <summary>LibZ file container. Read-only aspect.</summary>
+		partial class LibZReader: IDisposable
+		{
 			#region consts
 
 			/// <summary>The magic identifer on container files.</summary>
@@ -806,7 +815,7 @@ namespace LibZ.Bootstrap
 			protected int _version;
 
 			/// <summary>The map of entries.</summary>
-			protected Dictionary<Guid, Entry> _entries = new Dictionary<Guid, Entry>();
+			protected Dictionary<Guid, LibZEntry> _entries = new Dictionary<Guid, LibZEntry>();
 
 			/// <summary>The container stream.</summary>
 			protected Stream _stream;
@@ -826,7 +835,7 @@ namespace LibZ.Bootstrap
 			public Guid ContainerId { get { return _containerId; } }
 
 			/// <summary>Gets the entries in the container.</summary>
-			public IEnumerable<Entry> Entries { get { return _entries.Values; } }
+			public IEnumerable<LibZEntry> Entries { get { return _entries.Values; } }
 
 			#endregion
 
@@ -854,11 +863,6 @@ namespace LibZ.Bootstrap
 				OpenFile();
 			}
 
-			/// <summary>Initializes a new instance of the <see cref="LibZReader"/> class.</summary>
-			/// <param name="fileName">Name of the file.</param>
-			public LibZReader(string fileName)
-				: this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) { }
-
 			/// <summary>Opens the file.</summary>
 			/// <exception cref="System.ArgumentException">Container file seems to be corrupted.</exception>
 			/// <exception cref="System.NotSupportedException">Not supported version of container file.</exception>
@@ -883,7 +887,7 @@ namespace LibZ.Bootstrap
 					var count = _reader.ReadInt32();
 					for (var i = 0; i < count; i++)
 					{
-						var entry = ReadEntry();
+						var entry = ReadEntry(_reader);
 						_entries.Add(entry.Hash, entry);
 					}
 				}
@@ -931,9 +935,9 @@ namespace LibZ.Bootstrap
 			/// <summary>Tries the get entry.</summary>
 			/// <param name="guid">The GUID.</param>
 			/// <returns>Entry with specified GUID or <c>null</c>.</returns>
-			public Entry TryGetEntry(Guid guid)
+			public LibZEntry TryGetEntry(Guid guid)
 			{
-				Entry result;
+				LibZEntry result;
 				_entries.TryGetValue(guid, out result);
 				return result;
 			}
@@ -942,9 +946,17 @@ namespace LibZ.Bootstrap
 			/// <param name="entry">The entry.</param>
 			/// <param name="decoders">The decoders.</param>
 			/// <returns>Buffer of bytes.</returns>
-			public byte[] GetBytes(Entry entry, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
+			public byte[] GetBytes(LibZEntry entry, IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
 			{
-				return ReadData(entry, decoders);
+				byte[] buffer;
+
+				lock (_stream)
+				{
+					buffer = ReadBytes(_stream, entry.Offset, entry.StorageLength);
+				}
+
+				// this needs to be outside lock!
+				return Decode(entry.CodecName, buffer, entry.OriginalLength, decoders ?? Decoders);
 			}
 
 			#endregion
@@ -957,12 +969,11 @@ namespace LibZ.Bootstrap
 			/// <param name="outputLength">Length of the output.</param>
 			/// <param name="decoders">The decoders dictionary.</param>
 			/// <returns>Decoded data.</returns>
-			protected static byte[] Decode(
+			private static byte[] Decode(
 				string codecName, byte[] data, int outputLength,
-				IDictionary<string, Func<byte[], int, byte[]>> decoders = null)
+				IDictionary<string, Func<byte[], int, byte[]>> decoders)
 			{
 				if (string.IsNullOrEmpty(codecName)) return data;
-				if (decoders == null) decoders = Decoders;
 				Func<byte[], int, byte[]> decoder;
 				lock (decoders)
 				{
@@ -972,41 +983,17 @@ namespace LibZ.Bootstrap
 				return decoder(data, outputLength);
 			}
 
-			/// <summary>Reads the entry.</summary>
-			/// <returns><see cref="Entry"/></returns>
-			private Entry ReadEntry()
+			private static LibZEntry ReadEntry(BinaryReader reader)
 			{
-				lock (_stream)
-				{
-					var entry = new Entry
-					{
-						Hash = new Guid(_reader.ReadBytes(GuidLength)),
-						AssemblyName = new AssemblyName(_reader.ReadString()),
-						Flags = (EntryFlags)_reader.ReadInt32(),
-						Offset = _reader.ReadInt64(),
-						OriginalLength = _reader.ReadInt32(),
-						StorageLength = _reader.ReadInt32(),
-						CodecName = _reader.ReadString(),
-					};
-					return entry;
-				}
-			}
-
-			/// <summary>Reads the data associated with given entry.</summary>
-			/// <param name="entry">The entry.</param>
-			/// <param name="decoders">The decoders.</param>
-			/// <returns>Buffer of bytes.</returns>
-			private byte[] ReadData(Entry entry, IDictionary<string, Func<byte[], int, byte[]>> decoders)
-			{
-				byte[] buffer;
-
-				lock (_stream)
-				{
-					buffer = ReadBytes(_stream, entry.Offset, entry.StorageLength);
-				}
-
-				// this needs to be outside lock!
-				return Decode(entry.CodecName, buffer, entry.OriginalLength, decoders);
+				return new LibZEntry {
+					Hash = new Guid(reader.ReadBytes(GuidLength)),
+					AssemblyName = new AssemblyName(reader.ReadString()),
+					Flags = (LibZEntry.EntryFlags) reader.ReadInt32(),
+					Offset = reader.ReadInt64(),
+					OriginalLength = reader.ReadInt32(),
+					StorageLength = reader.ReadInt32(),
+					CodecName = reader.ReadString(),
+				};
 			}
 
 			#endregion
@@ -1044,14 +1031,6 @@ namespace LibZ.Bootstrap
 			#endregion
 
 			#region IDisposable Members
-
-			/// <summary>Clears the allocated memory.</summary>
-			protected virtual void Clear()
-			{
-				TryDispose(ref _reader);
-				TryDispose(ref _stream);
-				_entries = null;
-			}
 
 			/// <summary>
 			/// Releases unmanaged resources and performs other cleanup operations before the
@@ -1095,7 +1074,9 @@ namespace LibZ.Bootstrap
 			/// <summary>Disposes the managed resources.</summary>
 			protected virtual void DisposeManaged()
 			{
-				Clear();
+				TryDispose(ref _reader);
+				TryDispose(ref _stream);
+				_entries = null;
 			}
 
 			/// <summary>Disposes the unmanaged resources.</summary>
@@ -1109,7 +1090,6 @@ namespace LibZ.Bootstrap
 			/// <param name="subject">The subject.</param>
 			protected static void TryDispose<T>(ref T subject) where T: class
 			{
-				if (ReferenceEquals(subject, null)) return;
 				var disposable = subject as IDisposable;
 				if (ReferenceEquals(disposable, null)) return;
 				disposable.Dispose();

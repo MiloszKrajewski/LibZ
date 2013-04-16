@@ -48,7 +48,7 @@
       <Link>LibZResolver.cs</Link>
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="EntryOptions.cs" />
+    <Compile Include="AppendOptions.cs" />
     <Compile Include="LibZContainer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

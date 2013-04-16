@@ -35,7 +35,7 @@ namespace LibZ.Tool.Tasks
 
 					container.Append(
 						assemblyInfo,
-						new EntryOptions { CodecName = codecName, Overwrite = overwrite, });
+						new AppendOptions { CodecName = codecName, Overwrite = overwrite, });
 					if (move) DeleteFile(fileName);
 
 					count++;
