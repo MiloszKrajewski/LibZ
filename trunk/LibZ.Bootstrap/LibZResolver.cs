@@ -66,6 +66,7 @@ using System.Reflection;
 using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 /*
@@ -81,7 +82,6 @@ namespace LibZ.Manager
 namespace LibZ.Bootstrap
 #endif
 {
-	using System.Text.RegularExpressions;
 	using Internal;
 
 	#region declare visibility
@@ -137,7 +137,7 @@ namespace LibZ.Bootstrap
 		/// Regular expression for embedded containers.
 		/// </summary>
 		private static readonly Regex LibZResourceNameRx = new Regex(
-			@"^LibZ\.[0-9A-Fa-f]{32}$",
+			@"^libz://[0-9A-Fa-f]{32}$",
 			RegexOptions.IgnoreCase);
 
 		const StringComparison IgnoreCase = StringComparison.InvariantCultureIgnoreCase;
@@ -418,7 +418,7 @@ namespace LibZ.Bootstrap
 			try
 			{
 				var resourceName =
-					string.Format("LibZ.{0:N}",
+					string.Format("libz://{0:N}",
 						Hash.MD5(Path.GetFileName(libzFileName) ?? string.Empty));
 				Helpers.Debug(string.Format("Opening library '{0}' from '{1}'", libzFileName, resourceName));
 				var stream = assemblyHook.Assembly.GetManifestResourceStream(resourceName);

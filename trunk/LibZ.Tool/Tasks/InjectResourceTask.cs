@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Reflection;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
@@ -20,7 +19,7 @@ namespace LibZ.Tool.Tasks
 
 			var assembly = LoadAssembly(mainFileName);
 
-			var resourceName = "LibZ." + MD5(fileName);
+			var resourceName = "libz://" + MD5(fileName);
 			var resource = new EmbeddedResource(
 				resourceName,
 				ManifestResourceAttributes.Public,
