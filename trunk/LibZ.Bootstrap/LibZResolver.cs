@@ -1199,7 +1199,7 @@ namespace LibZ.Bootstrap
 
 		#endregion
 
-		#region internal class GlobalDictionary
+		#region class GlobalDictionary
 
 		/// <summary>Dictionary accessible from whole AppDomain.</summary>
 		internal class GlobalDictionary

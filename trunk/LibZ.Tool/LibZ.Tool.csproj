@@ -72,6 +72,7 @@
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
+    <Compile Include="Tasks\InjectModuleInitializerTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
     <Compile Include="Tasks\RebuildLibraryTask.cs" />
     <Compile Include="Tasks\SignAndFixAssembliesTask.cs" />
