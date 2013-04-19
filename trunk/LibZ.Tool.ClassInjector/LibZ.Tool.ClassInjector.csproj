@@ -54,9 +54,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyDefintion.cs" />
     <Compile Include="CecilExtenders.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TemplateCopy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

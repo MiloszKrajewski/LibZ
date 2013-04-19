@@ -8,6 +8,11 @@ namespace LibZ.Tool.ClassInjector
 {
 	public static class CecilExtenders
 	{
+		public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
+		{
+			foreach (var i in collection) action(i);
+		}
+
 		public static bool AddReference(this AssemblyDefinition into, AssemblyDefinition assembly)
 		{
 			return AddReference(into, assembly.Name);
