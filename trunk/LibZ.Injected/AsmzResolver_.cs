@@ -6,14 +6,17 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
-namespace LibZ.Bootstrap
+namespace LibZ.Injected
 {
 	/// <summary>
 	/// AsmZResolver. Mini resolver getting assemblies straight from resources.
 	/// </summary>
 	public class AsmZResolver
 	{
+		private static int _initialized;
+
 		private static readonly MD5 MD5Service = MD5.Create();
 
 		private static readonly Regex ResourceNamePattern = new Regex(
@@ -36,6 +39,11 @@ namespace LibZ.Bootstrap
 				ResourceNames.Add(guid, m);
 			}
 			AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolver;
+		}
+
+		static void Initialize()
+		{
+			Interlocked.CompareExchange(ref _initialized, 1, 0);
 		}
 
 		private static Assembly AssemblyResolver(object sender, ResolveEventArgs args)

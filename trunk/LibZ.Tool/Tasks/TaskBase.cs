@@ -177,7 +177,17 @@ namespace LibZ.Tool.Tasks
 		protected static AssemblyDefinition LoadAssembly(string assemblyFileName)
 		{
 			Log.Debug("Loading '{0}'", assemblyFileName);
-			return AssemblyDefinition.ReadAssembly(assemblyFileName);
+			var result = AssemblyDefinition.ReadAssembly(assemblyFileName);
+			Log.Debug("Loaded '{0}'", result.FullName);
+			return result;
+		}
+
+		protected AssemblyDefinition LoadAssembly(byte[] bytes)
+		{
+			Log.Debug("Loading assmbly from resources");
+			var result = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes));
+			Log.Debug("Loaded '{0}'", result.FullName);
+			return result;
 		}
 
 		protected void SaveAssembly(AssemblyDefinition assembly, string assemblyFileName, StrongNameKeyPair keyPair = null)

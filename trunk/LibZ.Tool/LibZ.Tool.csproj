@@ -73,6 +73,7 @@
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
     <Compile Include="Tasks\InjectModuleInitializerTask.cs" />
+    <Compile Include="Tasks\InstrumentTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
     <Compile Include="Tasks\RebuildLibraryTask.cs" />
     <Compile Include="Tasks\SignAndFixAssembliesTask.cs" />
@@ -96,6 +97,10 @@
     <ProjectReference Include="..\LibZ.Manager\LibZ.Manager.csproj">
       <Project>{9526e061-2e22-421b-86a6-198b51960918}</Project>
       <Name>LibZ.Manager</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LibZ.Tool.InjectIL\LibZ.Tool.InjectIL.csproj">
+      <Project>{A391D2AA-228B-4DF4-9C0E-05B386B323E3}</Project>
+      <Name>LibZ.Tool.InjectIL</Name>
     </ProjectReference>
     <ProjectReference Include="..\LibZ.Tool.Interfaces\LibZ.Tool.Interfaces.csproj">
       <Project>{46CEC914-26B0-4027-BA64-78154174274E}</Project>
