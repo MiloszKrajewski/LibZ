@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\InstrumentCommand.cs" />
     <Compile Include="Commands\ListCommand.cs" />
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />

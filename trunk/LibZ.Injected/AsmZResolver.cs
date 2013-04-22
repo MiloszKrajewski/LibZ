@@ -41,7 +41,7 @@ namespace LibZ.Injected
 			AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolver;
 		}
 
-		static void Initialize()
+		static public void Initialize()
 		{
 			Interlocked.CompareExchange(ref _initialized, 1, 0);
 		}
@@ -63,7 +63,7 @@ namespace LibZ.Injected
 				Match match;
 				if (!ResourceNames.TryGetValue(guid, out match)) return null;
 				resourceName = match.Groups[0].Value;
-				var flags = match.Groups["flags"].Value ?? string.Empty;
+				var flags = match.Groups["flags"].Value;
 				var size = int.Parse(match.Groups["size"].Value);
 				var compressed = flags.Contains("z");
 				var unmanaged = flags.Contains("u");

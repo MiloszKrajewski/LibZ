@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using LibZ.Bootstrap;
-using LibZ.Tool.ClassInjector;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 

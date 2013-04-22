@@ -7,7 +7,7 @@ using Mono.Collections.Generic;
 using System.Reflection;
 using Mono.Cecil.Rocks;
 
-namespace LibZ.Tool.ClassInjector
+namespace LibZ.Tool.InjectIL
 {
 	public class TemplateCopy
 	{

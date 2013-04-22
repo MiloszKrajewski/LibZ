@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 
 namespace LibZ.Injected
 {
@@ -23,10 +24,12 @@ namespace LibZ.Injected
 
 		private static void InitializeAsmZ()
 		{
+			Console.WriteLine("InitializeAsmZ");
 		}
 
 		private static void InitializeLibZ()
 		{
+			Console.WriteLine("InitializeLibZ");
 		}
 	}
 }

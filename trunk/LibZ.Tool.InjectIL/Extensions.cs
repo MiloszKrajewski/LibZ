@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Mono.Cecil;
 
-namespace LibZ.Tool.ClassInjector
+namespace LibZ.Tool.InjectIL
 {
 	public static class Extensions
 	{
