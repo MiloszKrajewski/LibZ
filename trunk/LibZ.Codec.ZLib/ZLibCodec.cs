@@ -47,6 +47,7 @@
 #endregion
 
 using System.ComponentModel.Composition;
+using Ionic.Zlib;
 using LibZ.Tool.Interfaces;
 
 namespace LibZ.Codec.ZLib

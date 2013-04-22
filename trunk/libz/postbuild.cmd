@@ -14,11 +14,11 @@ merge\libz instrument --assembly libz.exe --asmz
 exit /b
 
 :libz
-merge\libz merge-bootstrap --main libz.exe --move
+merge\libz inject-dll --assembly libz.exe --include LibZ.Bootstrap.dll --move
 merge\libz add --libz libz.libz --codec deflate --move --include *.dll --include ILMerge.exe --overwrite
-merge\libz list --libz libz.libz
 merge\libz rebuild --libz libz.libz
 merge\libz inject-libz --assembly libz.exe --libz libz.libz --move
+merge\libz instrument --assembly libz.exe --asmz --libz-resources
 exit /b
 
 :end

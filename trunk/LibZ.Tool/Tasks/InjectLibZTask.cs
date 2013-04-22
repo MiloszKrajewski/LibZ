@@ -31,6 +31,7 @@ namespace LibZ.Tool.Tasks
 					File.ReadAllBytes(libzFileName));
 				assembly.MainModule.Resources.Add(resource);
 				Log.Info("Injecting '{0}' into '{1}'", libzFileName, mainFileName);
+				injectedFileNames.Add(libzFileName);
 			}
 
 			if (injectedFileNames.Count <= 0)

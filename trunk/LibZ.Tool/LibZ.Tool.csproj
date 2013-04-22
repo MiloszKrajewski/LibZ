@@ -97,6 +97,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LibZ.Bootstrap\LibZ.Bootstrap.csproj">
+      <Project>{66762F06-D368-4A1D-91AD-D5B0300CB879}</Project>
+      <Name>LibZ.Bootstrap</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LibZ.Manager\LibZ.Manager.csproj">
       <Project>{9526e061-2e22-421b-86a6-198b51960918}</Project>
       <Name>LibZ.Manager</Name>

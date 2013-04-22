@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using LibZ.Bootstrap;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
 using ManyConsole;
@@ -17,7 +18,7 @@ namespace LibZ.Tool
 
 		private void LoadPlugins()
 		{
-			AggregateCatalog catalog = 
+			var catalog = 
 				new AggregateCatalog(
 					LibZResolver.GetCatalogs(
 						LibZResolver.RegisterMultipleFileContainers(".\\*.libzcodec")));

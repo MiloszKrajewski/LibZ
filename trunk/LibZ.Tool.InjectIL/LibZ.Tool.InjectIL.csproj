@@ -52,7 +52,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />
-    <Compile Include="InjectModuleInitializer.cs" />
     <Compile Include="InstrumentHelper.cs" />
     <Compile Include="Precompiled.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -75,7 +74,6 @@
       <Name>LibZ.Injected</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Precompiled.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -87,7 +85,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy /y /d $(ProjectDir)..\LibZ.Injected\bin\Release\LibZ.Injected.dll $(ProjectDir)Resources</PreBuildEvent>
+    <PreBuildEvent>xcopy /y /d $(ProjectDir)..\LibZ.Injected\bin\$(ConfigurationName)\LibZ.Injected.dll $(ProjectDir)Resources</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

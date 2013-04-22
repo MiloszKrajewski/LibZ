@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -51,9 +52,15 @@ namespace LibZ.Tool.Tasks
 				return targetAssembly;
 			}
 
-			// TODO:MAK allow merging even if does not reference LibZ.Bootstrap at all
 			var refLibZBootstrap = targetAssembly.MainModule.AssemblyReferences
-				.Single(r => r.Name == "LibZ.Bootstrap");
+				.FirstOrDefault(r => r.Name == "LibZ.Bootstrap");
+
+			if (refLibZBootstrap == null)
+			{
+				throw new InvalidOperationException(
+					"Target assembly does not reference LibZ.Bootstrap, thus using .libz file is not allowed.");
+			}
+
 			var guid = HashString(refLibZBootstrap.FullName);
 
 			var embedded = targetAssembly.MainModule.Resources
@@ -61,6 +68,7 @@ namespace LibZ.Tool.Tasks
 				.Select(r => TryLoadAssembly(r, guid))
 				.FirstOrDefault(b => b != null);
 
+			// TODO:MAK allow merging even if does not reference LibZ.Bootstrap at all
 			if (embedded != null)
 			{
 				Log.Debug("LibZResolver has been found embedded into main executable");

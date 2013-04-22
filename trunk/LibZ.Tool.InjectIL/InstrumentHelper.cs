@@ -9,7 +9,7 @@ namespace LibZ.Tool.InjectIL
 {
 	public class InstrumentHelper
 	{
-		private Func<AssemblyDefinition> _bootstrapAssemblyFinder;
+		private readonly Func<AssemblyDefinition> _bootstrapAssemblyFinder;
 		private readonly AssemblyDefinition _sourceAssembly;
 		private readonly AssemblyDefinition _targetAssembly;
 		// private readonly AssemblyDefinition _bootstrapAssembly;

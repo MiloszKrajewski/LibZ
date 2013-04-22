@@ -57,9 +57,7 @@ namespace libz
 		{
 			try
 			{
-				LibZResolver.RegisterAllResourceContainers(typeof(Program));
-				return LibZResolver.Startup(() =>
-				{
+				return LibZResolver.Startup(() => {
 					var program = new LibZ.Tool.Program();
 					return program.Run(args);
 				});

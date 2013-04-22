@@ -90,7 +90,7 @@ namespace LibZ.Bootstrap
 
 	// in LibZ.Manager all clases are actually interface classes
 
-	public partial class LibZResolver { };
+	// internal partial class LibZResolver { };
 
 	namespace Internal
 	{
@@ -125,6 +125,8 @@ namespace LibZ.Bootstrap
 #endif
 
 	#endregion
+
+#if !LIBZ_MANAGER
 
 	#region class LibZResolver
 
@@ -680,6 +682,8 @@ namespace LibZ.Bootstrap
 	}
 
 	#endregion
+
+#endif
 
 	namespace Internal
 	{

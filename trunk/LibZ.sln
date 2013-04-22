@@ -19,6 +19,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.ZLib", "LibZ.Cod
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.LZ4", "LibZ.Codec.LZ4\LibZ.Codec.LZ4.csproj", "{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA} = {9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool.InjectIL", "LibZ.Tool.InjectIL\LibZ.Tool.InjectIL.csproj", "{A391D2AA-228B-4DF4-9C0E-05B386B323E3}"
 EndProject
@@ -62,8 +65,8 @@ Global
 		{A391D2AA-228B-4DF4-9C0E-05B386B323E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A391D2AA-228B-4DF4-9C0E-05B386B323E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A391D2AA-228B-4DF4-9C0E-05B386B323E3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
