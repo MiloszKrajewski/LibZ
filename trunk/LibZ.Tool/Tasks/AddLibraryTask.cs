@@ -1,8 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using LibZ.Manager;
-using Mono.Cecil;
+using System.Collections.Generic;
 
 namespace LibZ.Tool.Tasks
 {
@@ -10,15 +9,21 @@ namespace LibZ.Tool.Tasks
 	{
 		public void Execute(
 			string libzFileName, 
-			string[] patterns, string[] excludePatterns, 
+			string[] includePatterns, string[] excludePatterns, 
 			string codecName, bool move, bool overwrite)
 		{
+			var injectedFileNames = new List<string>();
+
 			using (var container = new LibZContainer(libzFileName, true))
 			{
-				var count = 0;
-				foreach (var fileName in FindFiles(patterns, excludePatterns))
+				foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 				{
 					var assembly = LoadAssembly(fileName);
+					if (assembly == null)
+					{
+						Log.Warn("Assembly from '{0}' could not be loaded", fileName);
+						continue;
+					}
 					var assemblyName = assembly.Name;
 					var managed = IsManaged(assembly);
 					var architecture = GetArchitecture(assembly);
@@ -31,18 +36,23 @@ namespace LibZ.Tool.Tasks
 						Bytes = File.ReadAllBytes(fileName),
 					};
 
-					Log.Info("Appending '{0}' from '{1}'", assemblyInfo, fileName);
+					Log.Info("Appending '{0}' from '{1}'", assemblyInfo.AssemblyName, fileName);
 
 					container.Append(
 						assemblyInfo,
 						new AppendOptions { CodecName = codecName, Overwrite = overwrite, });
-					if (move) DeleteFile(fileName);
 
-					count++;
+					injectedFileNames.Add(fileName);
 				}
 
-				if (count == 0)
-					Log.Warn("No files found: {0}", string.Join(", ", patterns));
+				if (injectedFileNames.Count <= 0)
+				{
+					Log.Warn("No files injected: {0}", string.Join(", ", includePatterns));
+				}
+				else
+				{
+					if (move) foreach (var fn in injectedFileNames) DeleteFile(fn);
+				}
 			}
 		}
 	}

@@ -20,7 +20,6 @@ namespace LibZ.Tool.Commands
 			HasOption("force", "foces signing (signs assemblies which are already signed)", _ => _force = true);
 			HasOption("p|password=", "password for password protected key file", s => _password = s);
 			HasOption("e|exclude=", "file name to exclude (wildcards allowed, optional)", s => _exclude.Add(s));
-			HasAdditionalArguments(1, "<assemblies to sign>");
 		}
 
 		public override int Run(string[] remainingArguments)

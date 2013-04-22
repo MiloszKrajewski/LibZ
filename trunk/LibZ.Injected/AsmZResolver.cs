@@ -15,25 +15,37 @@ namespace LibZ.Injected
 	/// </summary>
 	public class AsmZResolver
 	{
-		private static int _initialized;
+		#region consts
 
 		private static readonly MD5 MD5Service = MD5.Create();
 
-		private static readonly Regex ResourceNamePattern = new Regex(
-			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?", 
+		private static readonly Regex ResourceNameRx = new Regex(
+			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
-		private static readonly Assembly ThisAssembly = typeof (AsmZResolver).Assembly;
+		private static readonly Assembly ThisAssembly = typeof(AsmZResolver).Assembly;
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
+
+		#endregion
+
+		#region static fields
+
+		private static int _initialized;
 
 		private static readonly Dictionary<Guid, Match> ResourceNames 
 			= new Dictionary<Guid, Match>();
 
-		static AsmZResolver()
+		#endregion
+
+		#region public interface
+
+		static public void Initialize()
 		{
+			if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
+
 			foreach (var rn in ThisAssembly.GetManifestResourceNames())
 			{
-				var m = ResourceNamePattern.Match(rn);
+				var m = ResourceNameRx.Match(rn);
 				if (!m.Success) continue;
 				var guid = new Guid(m.Groups["guid"].Value);
 				ResourceNames.Add(guid, m);
@@ -41,10 +53,9 @@ namespace LibZ.Injected
 			AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolver;
 		}
 
-		static public void Initialize()
-		{
-			Interlocked.CompareExchange(ref _initialized, 1, 0);
-		}
+		#endregion
+
+		#region private implementation
 
 		private static Assembly AssemblyResolver(object sender, ResolveEventArgs args)
 		{
@@ -111,5 +122,7 @@ namespace LibZ.Injected
 					Encoding.UTF8.GetBytes(
 						text.ToLowerInvariant())));
 		}
+
+		#endregion
 	}
 }

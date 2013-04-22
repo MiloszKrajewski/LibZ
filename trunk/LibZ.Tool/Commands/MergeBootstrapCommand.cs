@@ -11,7 +11,7 @@ namespace LibZ.Tool.Commands
 {
 	public class MergeBootstrapCommand: ConsoleCommand
 	{
-		private string _exeFileName;
+		private string _mainFileName;
 		private bool _move;
 		private string _bootstrapFileName;
 		private string _keyFileName;
@@ -20,7 +20,7 @@ namespace LibZ.Tool.Commands
 		public MergeBootstrapCommand()
 		{
 			IsCommand("merge-bootstrap", "Merges LibZ.Bootstrap into main executable");
-			HasRequiredOption("m|main=", "main file name (.exe or .dll)", s => _exeFileName = s);
+			HasRequiredOption("a|assembly=", "main file name (.exe or .dll)", s => _mainFileName = s);
 			HasOption("b|bootstrap=", "LibZ.Bootstrap.dll path (optional)", s => _bootstrapFileName = s);
 			HasOption("move", "deletes merged bootstrapper", _ => _move = true);
 			HasOption("k|key=", "key file name", s => _keyFileName = s);
@@ -30,7 +30,7 @@ namespace LibZ.Tool.Commands
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new MergeBootstrapTask();
-			task.Execute(_exeFileName, _bootstrapFileName, _move, _keyFileName, _keyFilePassword);
+			task.Execute(_mainFileName, _bootstrapFileName, _move, _keyFileName, _keyFilePassword);
 
 			return 0;
 		}

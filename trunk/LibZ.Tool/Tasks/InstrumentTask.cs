@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using LibZ.Tool.InjectIL;
 using Mono.Cecil;
@@ -19,37 +17,44 @@ namespace LibZ.Tool.Tasks
 			bool allAsmZResources,
 			bool allLibZResources,
 			ICollection<string> libzFiles,
-			ICollection<string> libzFolders)
+			ICollection<string> libzFolders,
+			string keyFileName, string keyFilePassword)
 		{
+			if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
+			if (libzFiles == null) libzFiles = new string[0];
+			if (libzFolders == null) libzFolders = new string[0];
+
 			var targetAssembly = LoadAssembly(mainFileName);
+			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
 
-			var bootstrapAssembly = FindBootstrapAssembly(targetAssembly, mainFileName);
-
-			_instrumentHelper = new InstrumentHelper(targetAssembly, bootstrapAssembly);
+			_instrumentHelper = new InstrumentHelper(
+				targetAssembly, 
+				() => FindBootstrapAssembly(targetAssembly, mainFileName));
 			_instrumentHelper.InjectLibZInitializer();
 			_instrumentHelper.InjectAsmZResolver(!allAsmZResources);
 			_instrumentHelper.InjectLibZStartup(allLibZResources, libzFiles, libzFolders);
 
-			targetAssembly.Write(mainFileName + ".temp" + Path.GetExtension(mainFileName));
+			SaveAssembly(targetAssembly, mainFileName, keyPair);
 		}
 
-		private static readonly Regex ResourceNamePattern = new Regex(
+		private static readonly Regex ResourceNameRx = new Regex(
 			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
-		private AssemblyDefinition FindBootstrapAssembly(AssemblyDefinition targetAssembly, string mainFileName)
+		private static AssemblyDefinition FindBootstrapAssembly(AssemblyDefinition targetAssembly, string mainFileName)
 		{
-			TypeDefinition typeLibZResolver;
-
-			typeLibZResolver = targetAssembly.MainModule.Types.Single(t => t.FullName == "LibZ.Bootstrap.LibZResolver");
+			TypeDefinition typeLibZResolver = targetAssembly.MainModule.Types
+				.SingleOrDefault(t => t.FullName == "LibZ.Bootstrap.LibZResolver");
 			if (typeLibZResolver != null)
 			{
-				// LibZResolver is merged
+				Log.Debug("LibZResolver has been found merged into main executable");
 				return targetAssembly;
 			}
 
-			var refLibZBootstrap = targetAssembly.MainModule.AssemblyReferences.Single(r => r.Name == "LibZ.Bootstrap");
-			var guid = MD5(refLibZBootstrap.FullName);
+			// TODO:MAK allow merging even if does not reference LibZ.Bootstrap at all
+			var refLibZBootstrap = targetAssembly.MainModule.AssemblyReferences
+				.Single(r => r.Name == "LibZ.Bootstrap");
+			var guid = HashString(refLibZBootstrap.FullName);
 
 			var embedded = targetAssembly.MainModule.Resources
 				.OfType<EmbeddedResource>()
@@ -58,7 +63,7 @@ namespace LibZ.Tool.Tasks
 
 			if (embedded != null)
 			{
-				// LibZResolver is embedded
+				Log.Debug("LibZResolver has been found embedded into main executable");
 				return AssemblyDefinition.ReadAssembly(new MemoryStream(embedded));
 			}
 
@@ -68,15 +73,17 @@ namespace LibZ.Tool.Tasks
 
 			if (File.Exists(libzBootstrapFileName))
 			{
+				Log.Debug("LibZResolver has been found in the same folder as main executable");
 				return AssemblyDefinition.ReadAssembly(libzBootstrapFileName);
 			}
 
+			Log.Warn("LibZResolver has not been found.");
 			return null;
 		}
 
 		private static byte[] TryLoadAssembly(EmbeddedResource resource, string guid)
 		{
-			var match = ResourceNamePattern.Match(resource.Name);
+			var match = ResourceNameRx.Match(resource.Name);
 			if (!match.Success || match.Groups["guid"].Value != guid) return null;
 
 			try

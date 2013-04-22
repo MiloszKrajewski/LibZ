@@ -9,17 +9,20 @@ namespace LibZ.Tool.InjectIL
 {
 	public class InstrumentHelper
 	{
+		private Func<AssemblyDefinition> _bootstrapAssemblyFinder;
 		private readonly AssemblyDefinition _sourceAssembly;
 		private readonly AssemblyDefinition _targetAssembly;
-		private readonly AssemblyDefinition _bootstrapAssembly;
+		// private readonly AssemblyDefinition _bootstrapAssembly;
 
-		public InstrumentHelper(AssemblyDefinition targetAssembly, AssemblyDefinition bootstrapAssembly)
+		public InstrumentHelper(
+			AssemblyDefinition targetAssembly, 
+			Func<AssemblyDefinition> bootstrapAssemblyFinder)
 		{
 			_sourceAssembly = AssemblyDefinition.ReadAssembly(
 				new MemoryStream(
 					Precompiled.LibZInjectedAssembly));
 			_targetAssembly = targetAssembly;
-			_bootstrapAssembly = bootstrapAssembly;
+			_bootstrapAssemblyFinder = bootstrapAssemblyFinder;
 		}
 
 		public void InjectLibZInitializer()
@@ -118,19 +121,20 @@ namespace LibZ.Tool.InjectIL
 
 			if (!remove)
 			{
-				if (_bootstrapAssembly == null)
+				var bootstrapAssembly = _bootstrapAssemblyFinder();
+				if (bootstrapAssembly == null)
 					throw new InvalidOperationException(
 						"LibZ.Bootstrap could not be found so no LibZ initialization can be performed");
 
 				const string typeLibZResolver = "LibZ.Bootstrap.LibZResolver";
-				var targetType = _bootstrapAssembly.MainModule.Types.Single(t => t.FullName == typeLibZResolver);
+				var targetType = bootstrapAssembly.MainModule.Types.Single(t => t.FullName == typeLibZResolver);
 
 				if (allResources)
 				{
 					var targetMethod = targetType.Methods.Single(m => m.Name == "RegisterAllResourceContainers");
 					body.Add(Instruction.Create(OpCodes.Ldtoken, initializerType));
 					body.Add(Instruction.Create(OpCodes.Call, _targetAssembly.ImportMethod<Type>("GetTypeFromHandle")));
-					body.Add(Instruction.Create(OpCodes.Call, targetMethod));
+					body.Add(Instruction.Create(OpCodes.Call, _targetAssembly.MainModule.Import(targetMethod)));
 					body.Add(Instruction.Create(OpCodes.Pop));
 				}
 
@@ -141,7 +145,7 @@ namespace LibZ.Tool.InjectIL
 					{
 						body.Add(Instruction.Create(OpCodes.Ldstr, libzFile));
 						body.Add(Instruction.Create(OpCodes.Ldc_I4_1));
-						body.Add(Instruction.Create(OpCodes.Call, targetMethod));
+						body.Add(Instruction.Create(OpCodes.Call, _targetAssembly.MainModule.Import(targetMethod)));
 						body.Add(Instruction.Create(OpCodes.Pop));
 					}
 				}
@@ -152,7 +156,7 @@ namespace LibZ.Tool.InjectIL
 					foreach (var libzFolder in libzFolders)
 					{
 						body.Add(Instruction.Create(OpCodes.Ldstr, libzFolder));
-						body.Add(Instruction.Create(OpCodes.Call, targetMethod));
+						body.Add(Instruction.Create(OpCodes.Call, _targetAssembly.MainModule.Import(targetMethod)));
 						body.Add(Instruction.Create(OpCodes.Pop));
 					}
 				}

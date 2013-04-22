@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 
 namespace LibZ.Injected
 {
@@ -8,28 +7,36 @@ namespace LibZ.Injected
 	/// </summary>
 	internal class LibZInitializer
 	{
+		#region static fields
+
 		/// <summary>The initialized flag.</summary>
 		private static int _initialized;
 
-		static LibZInitializer()
+		#endregion
+
+		#region public interface
+
+		public static void Initialize()
 		{
+			if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
 			InitializeAsmZ();
 			InitializeLibZ();
 		}
 
-		public static void Initialize()
-		{
-			Interlocked.CompareExchange(ref _initialized, 1, 0);
-		}
+		#endregion
+
+		#region private implementation
 
 		private static void InitializeAsmZ()
 		{
-			Console.WriteLine("InitializeAsmZ");
+			// this method is going to be populated after being injected into target assembly
 		}
 
 		private static void InitializeLibZ()
 		{
-			Console.WriteLine("InitializeLibZ");
+			// this method is going to be populated after being injected into target assembly
 		}
+
+		#endregion
 	}
 }

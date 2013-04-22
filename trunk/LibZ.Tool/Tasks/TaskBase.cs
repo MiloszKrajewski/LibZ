@@ -15,7 +15,7 @@ namespace LibZ.Tool.Tasks
 	{
 		#region consts
 
-		private static readonly MD5 MD5Provider = System.Security.Cryptography.MD5.Create();
+		private static readonly MD5 MD5Service = MD5.Create();
 
 		#endregion
 
@@ -31,7 +31,7 @@ namespace LibZ.Tool.Tasks
 		{
 			try
 			{
-				var tempFileName = string.Format("{0}.{1}", targetFileName, Guid.NewGuid().ToString("N"));
+				var tempFileName = string.Format("{0}.{1:N}", targetFileName, Guid.NewGuid());
 				File.Move(targetFileName, tempFileName);
 				File.Move(sourceFileName, targetFileName);
 				File.Delete(tempFileName);
@@ -63,10 +63,12 @@ namespace LibZ.Tool.Tasks
 			IEnumerable<string> includePatterns,
 			IEnumerable<string> excludePatterns)
 		{
-			return includePatterns.SelectMany(p => FindFiles(p, excludePatterns));
+			return includePatterns.SelectMany(p => FindFiles(p, excludePatterns))
+				.Distinct()
+				.OrderBy(s => s);
 		}
 
-		protected static IEnumerable<string> FindFiles(string pattern, IEnumerable<string> excludePatterns)
+		private static IEnumerable<string> FindFiles(string pattern, IEnumerable<string> excludePatterns)
 		{
 			if (!Path.IsPathRooted(pattern)) pattern = ".\\" + pattern;
 			var directoryName = Path.GetDirectoryName(pattern) ?? ".";
@@ -78,7 +80,7 @@ namespace LibZ.Tool.Tasks
 					ep => WildcardToRegex(ep).IsMatch(Path.GetFileName(fn) ?? string.Empty)));
 		}
 
-		protected static Regex WildcardToRegex(string pattern)
+		private static Regex WildcardToRegex(string pattern)
 		{
 			Regex rx;
 			if (!WildcardCacheRx.TryGetValue(pattern, out rx))
@@ -90,7 +92,7 @@ namespace LibZ.Tool.Tasks
 			return rx;
 		}
 
-		protected static Regex[] WildcardToRegex(IEnumerable<string> patterns)
+		private static Regex[] WildcardToRegex(IEnumerable<string> patterns)
 		{
 			return patterns == null 
 				? new Regex[0] 
@@ -176,23 +178,39 @@ namespace LibZ.Tool.Tasks
 
 		protected static AssemblyDefinition LoadAssembly(string assemblyFileName)
 		{
-			Log.Debug("Loading '{0}'", assemblyFileName);
-			var result = AssemblyDefinition.ReadAssembly(assemblyFileName);
-			Log.Debug("Loaded '{0}'", result.FullName);
-			return result;
+			try
+			{
+				Log.Debug("Loading '{0}'", assemblyFileName);
+				var result = AssemblyDefinition.ReadAssembly(assemblyFileName);
+				Log.Debug("Loaded '{0}'", result.FullName);
+				return result;
+			}
+			catch
+			{
+				Log.Warn("Failed to load assembly from '{0}'", assemblyFileName);
+				return null;
+			}
 		}
 
-		protected AssemblyDefinition LoadAssembly(byte[] bytes)
+		protected static AssemblyDefinition LoadAssembly(byte[] bytes)
 		{
-			Log.Debug("Loading assmbly from resources");
-			var result = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes));
-			Log.Debug("Loaded '{0}'", result.FullName);
-			return result;
+			try
+			{
+				Log.Debug("Loading assmbly from resources");
+				var result = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes));
+				Log.Debug("Loaded '{0}'", result.FullName);
+				return result;
+			}
+			catch
+			{
+				Log.Warn("Failed to load assembly from byte buffer");
+				return null;
+			}
 		}
 
-		protected void SaveAssembly(AssemblyDefinition assembly, string assemblyFileName, StrongNameKeyPair keyPair = null)
+		protected static void SaveAssembly(AssemblyDefinition assembly, string assemblyFileName, StrongNameKeyPair keyPair = null)
 		{
-			var tempFileName = assemblyFileName + ".temp";
+			var tempFileName = String.Format("{0}.{1:N}", assemblyFileName, Guid.NewGuid());
 
 			try
 			{
@@ -236,10 +254,16 @@ namespace LibZ.Tool.Tasks
 
 		#region utilities
 
-		protected static string MD5(string text)
+		protected static Guid Hash(string text)
 		{
-			return
-				new Guid(MD5Provider.ComputeHash(Encoding.UTF8.GetBytes(text.ToLowerInvariant()))).ToString("N").ToLowerInvariant();
+			return new Guid(
+				MD5Service.ComputeHash(
+					Encoding.UTF8.GetBytes(text.ToLowerInvariant())));
+		}
+
+		protected static string HashString(string text)
+		{
+			return Hash(text).ToString("N").ToLowerInvariant();
 		}
 
 		#endregion

@@ -68,11 +68,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\InjectDllCommand.cs" />
     <Compile Include="Commands\InstrumentCommand.cs" />
     <Compile Include="Commands\ListCommand.cs" />
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
+    <Compile Include="Tasks\InjectDllTask.cs" />
     <Compile Include="Tasks\InjectModuleInitializerTask.cs" />
     <Compile Include="Tasks\InstrumentTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
@@ -82,8 +84,8 @@
     <Compile Include="Tasks\SignAssembliesTask.cs" />
     <Compile Include="Tasks\AddLibraryTask.cs" />
     <Compile Include="AssemblyArchitecture.cs" />
-    <Compile Include="Commands\InjectCommand.cs" />
-    <Compile Include="Tasks\InjectResourceTask.cs" />
+    <Compile Include="Commands\InjectLibZCommand.cs" />
+    <Compile Include="Tasks\InjectLibZTask.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Tasks\MergeBootstrapTask.cs" />
     <Compile Include="Tasks\TaskBase.cs" />
