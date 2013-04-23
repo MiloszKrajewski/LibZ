@@ -4,7 +4,7 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
-	public class AddCommand : ConsoleCommand
+	public class AddCommand: ConsoleCommand
 	{
 		private string _libzFileName;
 		private string _codecName;
