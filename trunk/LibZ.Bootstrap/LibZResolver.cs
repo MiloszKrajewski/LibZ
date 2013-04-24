@@ -63,8 +63,10 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 /*
@@ -81,6 +83,7 @@ namespace LibZ.Manager
 namespace LibZ.Bootstrap
 #endif
 {
+	using Internal;
 
 	#region declare visibility
 
