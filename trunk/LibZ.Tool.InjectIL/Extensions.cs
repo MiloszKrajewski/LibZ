@@ -31,19 +31,17 @@ namespace LibZ.Tool.InjectIL
 			return assembly.MainModule.Import(type.GetMethod(methodName, types));
 		}
 
+		// ReSharper disable MethodOverloadWithOptionalParameter
 		public static MethodReference ImportMethod<T>(this AssemblyDefinition assembly, string methodName, params Type[] types)
 		{
 			return assembly.MainModule.Import(typeof (T).GetMethod(methodName, types));
 		}
+		// ReSharper restore MethodOverloadWithOptionalParameter
+
 
 		public static MethodReference ImportCtor<T>(this AssemblyDefinition assembly, params Type[] types)
 		{
 			return assembly.MainModule.Import(typeof (T).GetConstructor(types));
 		}
-
-		//		private static bool AssemblyNamesEqual(string nameA, string nameB)
-		//		{
-		//			return string.Compare(nameA, nameB, StringComparison.InvariantCultureIgnoreCase) == 0;
-		//		}
 	}
 }

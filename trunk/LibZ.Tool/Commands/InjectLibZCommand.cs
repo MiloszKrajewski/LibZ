@@ -7,7 +7,7 @@ namespace LibZ.Tool.Commands
 	public class InjectLibZCommand: ConsoleCommand
 	{
 		private string _mainFileName;
-		private List<string> _libzFileNames = new List<string>();
+		private readonly List<string> _libzFileNames = new List<string>();
 		private bool _move;
 		private string _keyFileName;
 		private string _keyFilePassword;

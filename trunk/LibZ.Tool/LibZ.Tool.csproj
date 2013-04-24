@@ -70,7 +70,6 @@
     <Compile Include="Commands\AddCommand.cs" />
     <Compile Include="Commands\InstrumentLibZCommand.cs" />
     <Compile Include="Commands\InjectDllCommand.cs" />
-    <Compile Include="Commands\InstrumentAsmZCommand.cs" />
     <Compile Include="Commands\ListCommand.cs" />
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
@@ -78,7 +77,6 @@
     <Compile Include="Tasks\InstrumentLibZTask.cs" />
     <Compile Include="Tasks\InjectDllTask.cs" />
     <Compile Include="Tasks\InjectModuleInitializerTask.cs" />
-    <Compile Include="Tasks\InstrumentAsmZTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
     <Compile Include="Tasks\RebuildLibraryTask.cs" />
     <Compile Include="Tasks\SignAndFixAssembliesTask.cs" />

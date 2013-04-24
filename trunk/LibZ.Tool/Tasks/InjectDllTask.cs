@@ -24,13 +24,12 @@ namespace LibZ.Tool.Tasks
 				var sourceAssembly = LoadAssembly(fileName);
 				if (sourceAssembly == null)
 				{
-					Log.Error("Assembly '{0}' could not bne loaded", fileName);
+					Log.Error("Assembly '{0}' could not be loaded", fileName);
 					continue;
 				}
 
-				if (!InjectDll(assembly, sourceAssembly, File.ReadAllBytes(fileName), overwrite)) continue;
-
 				Log.Info("Injecting '{0}' into '{1}'", fileName, mainFileName);
+				if (!InjectDll(assembly, sourceAssembly, File.ReadAllBytes(fileName), overwrite)) continue;
 
 				injectedFileNames.Add(fileName);
 			}
@@ -41,7 +40,11 @@ namespace LibZ.Tool.Tasks
 			}
 			else
 			{
+				Log.Info("Instrumenting assembly with initialization code"); 
+				InstrumentAsmZ(assembly);
+
 				SaveAssembly(assembly, mainFileName, keyPair);
+
 				if (move) foreach (var fn in injectedFileNames) DeleteFile(fn);
 			}
 		}

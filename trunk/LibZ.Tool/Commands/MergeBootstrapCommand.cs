@@ -13,7 +13,7 @@ namespace LibZ.Tool.Commands
 
 		public MergeBootstrapCommand()
 		{
-			IsCommand("merge-bootstrap", "Merges LibZ.Bootstrap into main executable");
+			IsCommand("merge-bootstrap", "(obsolete) Merges LibZ.Bootstrap into main executable");
 			HasRequiredOption("a|assembly=", "main file name (.exe or .dll)", s => _mainFileName = s);
 			HasOption("b|bootstrap=", "LibZ.Bootstrap.dll path (optional)", s => _bootstrapFileName = s);
 			HasOption("move", "deletes merged bootstrapper", _ => _move = true);

@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using LibZ.Tool.InjectIL;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
@@ -89,13 +90,6 @@ namespace LibZ.Tool.Tasks
 				WildcardCacheRx[pattern] = rx = new Regex(p, RegexOptions.IgnoreCase);
 			}
 			return rx;
-		}
-
-		private static Regex[] WildcardToRegex(IEnumerable<string> patterns)
-		{
-			return patterns == null
-				? new Regex[0]
-				: patterns.Select(WildcardToRegex).ToArray();
 		}
 
 		#endregion
@@ -328,6 +322,13 @@ namespace LibZ.Tool.Tasks
 			targetAssembly.MainModule.Resources.Add(resource);
 
 			return true;
+		}
+
+		protected static void InstrumentAsmZ(AssemblyDefinition targetAssembly)
+		{
+			var helper = new InstrumentHelper(targetAssembly);
+			helper.InjectLibZInitializer();
+			helper.InjectAsmZResolver();
 		}
 	}
 }

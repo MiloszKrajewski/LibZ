@@ -15,7 +15,7 @@ namespace LibZ.Tool.Commands
 
 		public InstrumentLibZCommand()
 		{
-			IsCommand("instrument-libz", "Instruments assembly with initialization code");
+			IsCommand("instrument", "Instruments assembly with initialization code");
 			HasRequiredOption("a|assembly=", "assembly to be instrumented", s => _mainFileName = s);
 			HasOption("libz-resources", "registers embedded LibZ container on startup", _ => _allLibZResources = true);
 			HasOption("libz-file", "registers file on startup", s => _libzFiles.Add(s));

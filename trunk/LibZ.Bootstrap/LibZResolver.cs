@@ -63,11 +63,16 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
+
+#if !LIBZ_MANAGER
+using System.Resources;
+using System.Text.RegularExpressions;
+using LibZ.Bootstrap.Internal;
+#endif
+
 
 /*
  * NOTE: This file is a little bit messy and contains multiple classes and namespaces.
@@ -83,8 +88,6 @@ namespace LibZ.Manager
 namespace LibZ.Bootstrap
 #endif
 {
-	using Internal;
-
 	#region declare visibility
 
 #if LIBZ_MANAGER
