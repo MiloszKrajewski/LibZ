@@ -4,7 +4,7 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
-	public class InjectDllCommand : ConsoleCommand
+	public class InjectDllCommand: ConsoleCommand
 	{
 		private string _mainFileName;
 		private string _keyFileName;
@@ -13,7 +13,7 @@ namespace LibZ.Tool.Commands
 		private readonly List<string> _exclude = new List<string>();
 		private bool _overwrite;
 		private bool _move;
-  
+
 		public InjectDllCommand()
 		{
 			IsCommand("inject-dll", "Injects .dll file into assembly as resource");
@@ -29,7 +29,11 @@ namespace LibZ.Tool.Commands
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new InjectDllTask();
-			task.Execute(_mainFileName, _include, _exclude, _keyFileName, _keyFilePassword, _overwrite, _move);
+			task.Execute(
+				_mainFileName,
+				_include.ToArray(), _exclude.ToArray(),
+				_keyFileName, _keyFilePassword,
+				_overwrite, _move);
 			return 0;
 		}
 	}

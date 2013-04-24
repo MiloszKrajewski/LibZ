@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using LibZ.Tool.Tasks;
+﻿using LibZ.Tool.Tasks;
 using ManyConsole;
-using Mono.Cecil;
 
 namespace LibZ.Tool.Commands
 {

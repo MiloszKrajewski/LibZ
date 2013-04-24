@@ -1,10 +1,10 @@
-﻿using LibZ.Tool.Tasks;
+﻿using System.Collections.Generic;
+using LibZ.Tool.Tasks;
 using ManyConsole;
-using System.Collections.Generic;
 
 namespace LibZ.Tool.Commands
 {
-	public class InjectLibZCommand : ConsoleCommand
+	public class InjectLibZCommand: ConsoleCommand
 	{
 		private string _mainFileName;
 		private List<string> _libzFileNames = new List<string>();
