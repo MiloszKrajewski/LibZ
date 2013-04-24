@@ -1,4 +1,5 @@
 ﻿#region Header
+
 // --------------------------------------------------------------------------------------
 // LibZ.Tool.Tasks.ListLibraryContentTask.cs
 // --------------------------------------------------------------------------------------
@@ -12,6 +13,7 @@
 // Created: 4/15/2013 9:13:27 AM : SEPURA/krajewskim on SEPURA1051 
 // 
 // --------------------------------------------------------------------------------------
+
 #endregion
 
 using System.Collections.Generic;
@@ -21,8 +23,6 @@ using LibZ.Manager.Internal;
 
 namespace LibZ.Tool.Tasks
 {
-	using EntryFlags = LibZEntry.EntryFlags;
-
 	public class ListLibraryContentTask: TaskBase
 	{
 		public void Execute(string libzFileName)
@@ -37,7 +37,7 @@ namespace LibZ.Tool.Tasks
 				foreach (var entry in orderedEnties)
 				{
 					var ratio = entry.OriginalLength != 0
-						? entry.StorageLength * 100 / entry.OriginalLength
+						? entry.StorageLength*100/entry.OriginalLength
 						: 100;
 
 					Log.Info(entry.AssemblyName.FullName);
@@ -51,18 +51,17 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
-		private static IEnumerable<string> GetFlagsText(EntryFlags entryFlags)
+		private static IEnumerable<string> GetFlagsText(LibZEntry.EntryFlags entryFlags)
 		{
-			if ((entryFlags & EntryFlags.Unmanaged) != 0)
+			if ((entryFlags & LibZEntry.EntryFlags.Unmanaged) != 0)
 				yield return "Unmanaged";
 
-			if ((entryFlags & EntryFlags.AnyCPU) != 0)
+			if ((entryFlags & LibZEntry.EntryFlags.AnyCPU) != 0)
 				yield return "AnyCPU";
-			else if ((entryFlags & EntryFlags.AMD64) != 0)
+			else if ((entryFlags & LibZEntry.EntryFlags.AMD64) != 0)
 				yield return "x64";
 			else
 				yield return "x86";
-
 		}
 	}
 }

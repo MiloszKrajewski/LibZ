@@ -1,17 +1,14 @@
-﻿using System.IO;
-using System.IO.Compression;
-using Mono.Cecil;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace LibZ.Tool.Tasks
 {
 	public class InjectDllTask: TaskBase
 	{
 		public void Execute(
-			string mainFileName, 
-			IEnumerable<string> includePatterns,
-			IEnumerable<string> excludePatterns,
+			string mainFileName,
+			string[] includePatterns,
+			string[] excludePatterns,
 			string keyFileName, string keyFilePassword,
 			bool overwrite, bool move)
 		{
@@ -24,60 +21,15 @@ namespace LibZ.Tool.Tasks
 
 			foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 			{
-				string flags = string.Empty;
-
-				var inputAssembly = LoadAssembly(fileName);
-				if (inputAssembly == null)
+				var sourceAssembly = LoadAssembly(fileName);
+				if (sourceAssembly == null)
 				{
 					Log.Error("Assembly '{0}' could not bne loaded", fileName);
 					continue;
 				}
 
-				if (!IsManaged(inputAssembly)) flags += "u";
+				if (!InjectDll(assembly, sourceAssembly, File.ReadAllBytes(fileName), overwrite)) continue;
 
-				byte[] input = File.ReadAllBytes(fileName);
-				byte[] output;
-
-				using (var ostream = new MemoryStream())
-				{
-					using (var zstream = new DeflateStream(ostream, CompressionMode.Compress))
-					{
-						zstream.Write(input, 0, input.Length);
-						zstream.Flush();
-					}
-					output = ostream.ToArray();
-				}
-
-				if (output.Length < input.Length) flags += "z"; else output = input;
-
-				var resourceName = string.Format(
-					"asmz://{0}/{1}/{2}", 
-					HashString(inputAssembly.FullName), input.Length, flags);
-
-				var existing = assembly.MainModule.Resources
-					.Where(r => r.Name == resourceName)
-					.ToArray();
-
-				if (existing.Length > 0)
-				{
-					if (overwrite)
-					{
-						Log.Warn("Resource '{0}' already exists and is going to be replaced.", resourceName);
-						foreach (var r in existing)
-							assembly.MainModule.Resources.Remove(r);
-					}
-					else
-					{
-						Log.Warn("Resource '{0}' already exists and will be skipped.", resourceName);
-						continue;
-					}
-				}
-
-				var resource = new EmbeddedResource(
-					resourceName,
-					ManifestResourceAttributes.Public,
-					output);
-				assembly.MainModule.Resources.Add(resource);
 				Log.Info("Injecting '{0}' into '{1}'", fileName, mainFileName);
 
 				injectedFileNames.Add(fileName);

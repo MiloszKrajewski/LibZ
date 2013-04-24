@@ -63,10 +63,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 
 /*
@@ -77,12 +75,12 @@ using System.Threading;
  */
 
 #if LIBZ_MANAGER
+
 namespace LibZ.Manager
 #else
 namespace LibZ.Bootstrap
 #endif
 {
-	using Internal;
 
 	#region declare visibility
 
@@ -95,6 +93,7 @@ namespace LibZ.Bootstrap
 	namespace Internal
 	{
 		public partial class LibZEntry { };
+
 		public partial class LibZReader { };
 	}
 
@@ -753,16 +752,17 @@ namespace LibZ.Bootstrap
 
 			/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
 			/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
-			public bool Unmanaged { get { return (Flags & EntryFlags.Unmanaged) != 0; } }
+			public bool Unmanaged
+			{
+				get { return (Flags & EntryFlags.Unmanaged) != 0; }
+			}
 
 			#endregion
 
 			#region constructor
 
 			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class.</summary>
-			public LibZEntry()
-			{
-			}
+			public LibZEntry() { }
 
 			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class. 
 			/// Copies all field from other object.</summary>
@@ -836,10 +836,16 @@ namespace LibZ.Bootstrap
 
 			/// <summary>Gets the container id.</summary>
 			/// <value>The container id.</value>
-			public Guid ContainerId { get { return _containerId; } }
+			public Guid ContainerId
+			{
+				get { return _containerId; }
+			}
 
 			/// <summary>Gets the entries in the container.</summary>
-			public IEnumerable<LibZEntry> Entries { get { return _entries.Values; } }
+			public IEnumerable<LibZEntry> Entries
+			{
+				get { return _entries.Values; }
+			}
 
 			#endregion
 
@@ -882,7 +888,7 @@ namespace LibZ.Bootstrap
 					_version = _reader.ReadInt32();
 					if (_version != CurrentVersion)
 						throw new NotSupportedException(string.Format("Unsupported LibZ file version ({0})", _version));
-					_stream.Position = _stream.Length - GuidLength - sizeof(long);
+					_stream.Position = _stream.Length - GuidLength - sizeof (long);
 					_magicOffset = _reader.ReadInt64();
 					guid = new Guid(_reader.ReadBytes(GuidLength));
 					if (guid != Magic)
@@ -992,7 +998,7 @@ namespace LibZ.Bootstrap
 				return new LibZEntry {
 					Hash = new Guid(reader.ReadBytes(GuidLength)),
 					AssemblyName = new AssemblyName(reader.ReadString()),
-					Flags = (LibZEntry.EntryFlags) reader.ReadInt32(),
+					Flags = (LibZEntry.EntryFlags)reader.ReadInt32(),
 					Offset = reader.ReadInt64(),
 					OriginalLength = reader.ReadInt32(),
 					StorageLength = reader.ReadInt32(),
@@ -1221,7 +1227,7 @@ namespace LibZ.Bootstrap
 			/// <param name="dictionaryName">Name of the dictionary.</param>
 			public GlobalDictionary(string dictionaryName)
 			{
-				lock (typeof(object))
+				lock (typeof (object))
 				{
 					_data = AppDomain.CurrentDomain.GetData(dictionaryName) as Dictionary<int, object>;
 					if (_data != null) return;
@@ -1273,7 +1279,7 @@ namespace LibZ.Bootstrap
 			#region fields
 
 			/// <summary>MD5 provider.</summary>
-			private readonly static MD5 MD5Provider = MD5Provider.Create();
+			private static readonly MD5 MD5Provider = MD5Provider.Create();
 
 			#endregion
 
@@ -1290,7 +1296,10 @@ namespace LibZ.Bootstrap
 			/// <summary>Computes MD5 for the specified text (case insensitive).</summary>
 			/// <param name="text">The text.</param>
 			/// <returns>MD5.</returns>
-			public static Guid MD5(string text) { return MD5(Encoding.UTF8.GetBytes(text.ToLowerInvariant())); }
+			public static Guid MD5(string text)
+			{
+				return MD5(Encoding.UTF8.GetBytes(text.ToLowerInvariant()));
+			}
 
 			#endregion
 		}

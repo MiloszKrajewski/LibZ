@@ -10,7 +10,7 @@ goto :end
 
 :asmz
 merge\libz inject-dll --assembly libz.exe --include *.dll --include ILMerge.exe --move
-merge\libz instrument --assembly libz.exe --asmz
+merge\libz instrument-asmz --assembly libz.exe
 exit /b
 
 :libz

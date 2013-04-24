@@ -4,7 +4,7 @@ using LibZ.Tool.Interfaces;
 
 namespace LibZ.Codec.LZ4
 {
-	[Export(typeof(ICodec))]
+	[Export(typeof (ICodec))]
 	public class LZ4Codec: ICodec
 	{
 		#region ICodec Members

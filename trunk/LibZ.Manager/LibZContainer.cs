@@ -58,15 +58,14 @@ namespace LibZ.Manager
 {
 	#region class LibZContainer
 
-	using EntryFlags = LibZEntry.EntryFlags;
-
+	
 	/// <summary>Class for reading and writing LibZ containers.</summary>
 	public class LibZContainer: LibZReader
 	{
 		#region fields
 
 		/// <summary>The encoder dictionary.</summary>
-		private readonly static Dictionary<string, Func<byte[], byte[]>> Encoders
+		private static readonly Dictionary<string, Func<byte[], byte[]>> Encoders
 			= new Dictionary<string, Func<byte[], byte[]>>();
 
 		/// <summary>The file writer.</summary>
@@ -154,15 +153,15 @@ namespace LibZ.Manager
 			AssemblyInfo assemblyInfo,
 			AppendOptions options)
 		{
-			var flags = EntryFlags.None;
-			if (assemblyInfo.Unmanaged) flags |= EntryFlags.Unmanaged;
-			if (assemblyInfo.AnyCPU) flags |= EntryFlags.AnyCPU;
-			if (assemblyInfo.AMD64) flags |= EntryFlags.AMD64;
+			var flags = LibZEntry.EntryFlags.None;
+			if (assemblyInfo.Unmanaged) flags |= LibZEntry.EntryFlags.Unmanaged;
+			if (assemblyInfo.AnyCPU) flags |= LibZEntry.EntryFlags.AnyCPU;
+			if (assemblyInfo.AMD64) flags |= LibZEntry.EntryFlags.AMD64;
 
 			var platformId =
 				assemblyInfo.AnyCPU ? string.Empty :
-				assemblyInfo.AMD64 ? "x64:" :
-				"x86:";
+					assemblyInfo.AMD64 ? "x64:" :
+						"x86:";
 			var assemblyName = assemblyInfo.AssemblyName;
 			var bytes = assemblyInfo.Bytes;
 
@@ -246,7 +245,7 @@ namespace LibZ.Manager
 						_stream.Position = oldEntry.Offset;
 						buffer = _reader.ReadBytes(oldEntry.StorageLength);
 					}
-					var newEntry = new LibZEntry(oldEntry) { Offset = stream.Position };
+					var newEntry = new LibZEntry(oldEntry) {Offset = stream.Position};
 					writer.Write(buffer);
 					newEntries.Add(newEntry);
 				}
@@ -292,7 +291,6 @@ namespace LibZ.Manager
 			}
 		}
 
-
 		#endregion
 
 		#region write
@@ -302,7 +300,7 @@ namespace LibZ.Manager
 		{
 			lock (_stream)
 			{
-				_writer.Flush(); 
+				_writer.Flush();
 				_stream.Position = 0;
 				WriteHeadTo(_writer, _containerId);
 				_writer.Flush();
@@ -344,7 +342,7 @@ namespace LibZ.Manager
 			writer.Write(entry.Offset);
 			writer.Write(entry.OriginalLength);
 			writer.Write(entry.StorageLength);
-			writer.Write(entry.CodecName);
+			writer.Write(entry.CodecName ?? string.Empty);
 		}
 
 		/// <summary>Writes the tail to.</summary>
@@ -367,7 +365,7 @@ namespace LibZ.Manager
 		/// <param name="options">The options.</param>
 		private void SetBytes(
 			string resourceName,
-			AssemblyName assemblyName, byte[] data, EntryFlags flags, AppendOptions options)
+			AssemblyName assemblyName, byte[] data, LibZEntry.EntryFlags flags, AppendOptions options)
 		{
 			var codecName = options.CodecName;
 

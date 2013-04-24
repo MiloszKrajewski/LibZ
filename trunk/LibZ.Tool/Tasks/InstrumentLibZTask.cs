@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,13 +8,12 @@ using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
-	public class InstrumentTask: TaskBase
+	public class InstrumentLibZTask: TaskBase
 	{
 		private InstrumentHelper _instrumentHelper;
 
 		public void Execute(
 			string mainFileName,
-			bool allAsmZResources,
 			bool allLibZResources,
 			ICollection<string> libzFiles,
 			ICollection<string> libzFolders,
@@ -27,12 +25,26 @@ namespace LibZ.Tool.Tasks
 
 			var targetAssembly = LoadAssembly(mainFileName);
 			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
+			var requiresAsmZResolver = false;
+
+			var bootstrapAssembly = FindBootstrapAssembly(targetAssembly, mainFileName);
+			if (bootstrapAssembly == null)
+			{
+				var bootstrapAssemblyBytes = InstrumentHelper.BootstrapAssemblyImage;
+				bootstrapAssembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bootstrapAssemblyBytes));
+				InjectDll(
+					targetAssembly,
+					bootstrapAssembly,
+					bootstrapAssemblyBytes,
+					true);
+				requiresAsmZResolver = true;
+			}
 
 			_instrumentHelper = new InstrumentHelper(
-				targetAssembly, 
-				() => FindBootstrapAssembly(targetAssembly, mainFileName));
+				targetAssembly,
+				bootstrapAssembly);
 			_instrumentHelper.InjectLibZInitializer();
-			_instrumentHelper.InjectAsmZResolver(!allAsmZResources);
+			if (requiresAsmZResolver) _instrumentHelper.InjectAsmZResolver();
 			_instrumentHelper.InjectLibZStartup(allLibZResources, libzFiles, libzFolders);
 
 			SaveAssembly(targetAssembly, mainFileName, keyPair);
@@ -44,22 +56,18 @@ namespace LibZ.Tool.Tasks
 
 		private static AssemblyDefinition FindBootstrapAssembly(AssemblyDefinition targetAssembly, string mainFileName)
 		{
-			TypeDefinition typeLibZResolver = targetAssembly.MainModule.Types
+			var typeLibZResolver = targetAssembly.MainModule.Types
 				.SingleOrDefault(t => t.FullName == "LibZ.Bootstrap.LibZResolver");
 			if (typeLibZResolver != null)
 			{
-				Log.Debug("LibZResolver has been found merged into main executable");
+				Log.Debug("LibZResolver has been found merged into main executable already");
 				return targetAssembly;
 			}
 
 			var refLibZBootstrap = targetAssembly.MainModule.AssemblyReferences
 				.FirstOrDefault(r => r.Name == "LibZ.Bootstrap");
 
-			if (refLibZBootstrap == null)
-			{
-				throw new InvalidOperationException(
-					"Target assembly does not reference LibZ.Bootstrap, thus using .libz file is not allowed.");
-			}
+			if (refLibZBootstrap == null) return null;
 
 			var guid = HashString(refLibZBootstrap.FullName);
 
@@ -68,7 +76,6 @@ namespace LibZ.Tool.Tasks
 				.Select(r => TryLoadAssembly(r, guid))
 				.FirstOrDefault(b => b != null);
 
-			// TODO:MAK allow merging even if does not reference LibZ.Bootstrap at all
 			if (embedded != null)
 			{
 				Log.Debug("LibZResolver has been found embedded into main executable");
@@ -76,7 +83,7 @@ namespace LibZ.Tool.Tasks
 			}
 
 			var libzBootstrapFileName = Path.Combine(
-				Path.GetDirectoryName(mainFileName) ?? ".", 
+				Path.GetDirectoryName(mainFileName) ?? ".",
 				refLibZBootstrap.Name + ".dll");
 
 			if (File.Exists(libzBootstrapFileName))
@@ -118,6 +125,5 @@ namespace LibZ.Tool.Tasks
 				return null;
 			}
 		}
-
 	}
 }

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
 using System.Reflection;
+using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
-	class SignAndFixAssembliesTask: TaskBase
+	internal class SignAndFixAssembliesTask: TaskBase
 	{
 		private class AssemblyInfoReference
 		{
@@ -23,14 +23,26 @@ namespace LibZ.Tool.Tasks
 
 			public string FileName { get; set; }
 			public AssemblyDefinition Assembly { get; set; }
-			public AssemblyNameDefinition AssemblyName { get { return Assembly.Name; } }
+
+			public AssemblyNameDefinition AssemblyName
+			{
+				get { return Assembly.Name; }
+			}
+
 			public IEnumerable<AssemblyNameReference> ReferencedNames
 			{
 				get { return Assembly.Modules.SelectMany(m => m.AssemblyReferences); }
 			}
 
-			public List<AssemblyInfoReference> ReferencedBy { get { return _referencedBy; } }
-			public List<AssemblyInfoReference> References { get { return _references; } }
+			public List<AssemblyInfoReference> ReferencedBy
+			{
+				get { return _referencedBy; }
+			}
+
+			public List<AssemblyInfoReference> References
+			{
+				get { return _references; }
+			}
 
 			public bool Rewritten { get; set; }
 			public bool CanBeSigned { get; set; }
@@ -39,7 +51,7 @@ namespace LibZ.Tool.Tasks
 		private readonly List<AssemblyInfo> _assemblyInfos = new List<AssemblyInfo>();
 
 		public void Execute(
-			string keyFileName, string keyFilePassword, 
+			string keyFileName, string keyFilePassword,
 			string[] includePatterns, string[] excludePatterns)
 		{
 			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
@@ -49,8 +61,8 @@ namespace LibZ.Tool.Tasks
 			{
 				var assembly = LoadAssembly(fileName);
 				var assemblyInfo = new AssemblyInfo {
-					FileName = fileName, 
-					Assembly = assembly, 
+					FileName = fileName,
+					Assembly = assembly,
 					CanBeSigned = IsManaged(assembly),
 				};
 				_assemblyInfos.Add(assemblyInfo);
@@ -68,15 +80,15 @@ namespace LibZ.Tool.Tasks
 			{
 				var needsRewrite =
 					!IsSigned(assemblyInfo.Assembly) ||
-					assemblyInfo.References.Any(r => r.Invalid) ||
-					assemblyInfo.References.Any(r => r.Target.Rewritten);
+						assemblyInfo.References.Any(r => r.Invalid) ||
+						assemblyInfo.References.Any(r => r.Target.Rewritten);
 
 				if (!needsRewrite) continue;
 
 				if (!assemblyInfo.CanBeSigned)
 				{
 					Log.Warn(
-						"Assembly '{0}' or one of its dependencies is unmanaged or thus it cannot be signed.", 
+						"Assembly '{0}' or one of its dependencies is unmanaged or thus it cannot be signed.",
 						assemblyInfo.FileName);
 
 					assemblyInfo.ReferencedBy
@@ -92,6 +104,7 @@ namespace LibZ.Tool.Tasks
 				FixupReferencesTo(assemblyInfo);
 			}
 		}
+
 		private static IEnumerable<AssemblyInfo> GetReferencedAssemblies(AssemblyInfo assemblyInfo)
 		{
 			foreach (var reference in assemblyInfo.References) yield return reference.Target;
@@ -137,7 +150,7 @@ namespace LibZ.Tool.Tasks
 
 						foundByLongName.Add(referenceName.FullName);
 
-						var reference = new AssemblyInfoReference() {
+						var reference = new AssemblyInfoReference {
 							ReferencedAssemblyName = referenceName,
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
@@ -157,7 +170,7 @@ namespace LibZ.Tool.Tasks
 
 						foundByShortName.Add(Tuple.Create(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName));
 
-						var reference = new AssemblyInfoReference() {
+						var reference = new AssemblyInfoReference {
 							Source = assemblyInfo,
 							Target = otherAssemblyInfo,
 							Invalid = true,

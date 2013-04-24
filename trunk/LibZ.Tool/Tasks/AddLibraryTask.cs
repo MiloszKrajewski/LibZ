@@ -1,15 +1,15 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using LibZ.Manager;
-using System.Collections.Generic;
 
 namespace LibZ.Tool.Tasks
 {
 	public class AddLibraryTask: TaskBase
 	{
 		public void Execute(
-			string libzFileName, 
-			string[] includePatterns, string[] excludePatterns, 
+			string libzFileName,
+			string[] includePatterns, string[] excludePatterns,
 			string codecName, bool move, bool overwrite)
 		{
 			var injectedFileNames = new List<string>();
@@ -40,7 +40,7 @@ namespace LibZ.Tool.Tasks
 
 					container.Append(
 						assemblyInfo,
-						new AppendOptions { CodecName = codecName, Overwrite = overwrite, });
+						new AppendOptions {CodecName = codecName, Overwrite = overwrite,});
 
 					injectedFileNames.Add(fileName);
 				}

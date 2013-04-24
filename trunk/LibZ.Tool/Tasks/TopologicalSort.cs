@@ -16,8 +16,8 @@ namespace LibZ.Tool.Tasks
 		/// <param name="dependencyResolver">The dependency resolver. Should return items required by given item.</param>
 		/// <returns>Sorted nodes.</returns>
 		public static IEnumerable<T> Sort(
-				IEnumerable<T> nodes,
-				Func<T, IEnumerable<T>> dependencyResolver)
+			IEnumerable<T> nodes,
+			Func<T, IEnumerable<T>> dependencyResolver)
 		{
 			var visited = new HashSet<T>();
 

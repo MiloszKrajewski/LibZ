@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -31,7 +32,7 @@ namespace LibZ.Tool.Tasks
 		{
 			try
 			{
-				var tempFileName = string.Format("{0}.{1:N}", targetFileName, Guid.NewGuid());
+				var tempFileName = String.Format("{0}.{1:N}", targetFileName, Guid.NewGuid());
 				File.Move(targetFileName, tempFileName);
 				File.Move(sourceFileName, targetFileName);
 				File.Delete(tempFileName);
@@ -51,7 +52,7 @@ namespace LibZ.Tool.Tasks
 			{
 				File.Delete(fileName);
 			}
-			// ReSharper disable EmptyGeneralCatchClause
+				// ReSharper disable EmptyGeneralCatchClause
 			catch
 			{
 				Log.Warn("File '{0}' could not be deleted", fileName);
@@ -74,10 +75,9 @@ namespace LibZ.Tool.Tasks
 			var directoryName = Path.GetDirectoryName(pattern) ?? ".";
 			var searchPattern = Path.GetFileName(pattern) ?? "*.dll";
 
-			return Directory
-				.GetFiles(directoryName, searchPattern)
+			return Directory.GetFiles(directoryName, searchPattern)
 				.Where(fn => !excludePatterns.Any(
-					ep => WildcardToRegex(ep).IsMatch(Path.GetFileName(fn) ?? string.Empty)));
+					ep => WildcardToRegex(ep).IsMatch(Path.GetFileName(fn) ?? String.Empty)));
 		}
 
 		private static Regex WildcardToRegex(string pattern)
@@ -85,17 +85,16 @@ namespace LibZ.Tool.Tasks
 			Regex rx;
 			if (!WildcardCacheRx.TryGetValue(pattern, out rx))
 			{
-				WildcardCacheRx[pattern] = rx = new Regex(
-					string.Format("^{0}$", Regex.Escape(pattern).Replace("*", ".*").Replace("?", ".")),
-					RegexOptions.IgnoreCase);
+				var p = String.Format("^{0}$", Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", "."));
+				WildcardCacheRx[pattern] = rx = new Regex(p, RegexOptions.IgnoreCase);
 			}
 			return rx;
 		}
 
 		private static Regex[] WildcardToRegex(IEnumerable<string> patterns)
 		{
-			return patterns == null 
-				? new Regex[0] 
+			return patterns == null
+				? new Regex[0]
 				: patterns.Select(WildcardToRegex).ToArray();
 		}
 
@@ -105,7 +104,7 @@ namespace LibZ.Tool.Tasks
 
 		protected static bool EqualAssemblyNames(string valueA, string valueB)
 		{
-			return string.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
+			return String.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
 		}
 
 		protected static bool IsManaged(AssemblyDefinition assembly)
@@ -138,9 +137,9 @@ namespace LibZ.Tool.Tasks
 			// do not use constructor with filename it does not really load the key (?)
 
 			var keyPair =
-				string.IsNullOrWhiteSpace(password)
-				? new StrongNameKeyPair(File.ReadAllBytes(keyFileName))
-				: GetStrongNameKeyPairFromPfx(keyFileName, password);
+				String.IsNullOrWhiteSpace(password)
+					? new StrongNameKeyPair(File.ReadAllBytes(keyFileName))
+					: GetStrongNameKeyPairFromPfx(keyFileName, password);
 
 			try
 			{
@@ -222,7 +221,7 @@ namespace LibZ.Tool.Tasks
 				else
 				{
 					Log.Debug("Saving and signing '{0}'", assemblyFileName);
-					assembly.Write(tempFileName, new WriterParameters { StrongNameKeyPair = keyPair });
+					assembly.Write(tempFileName, new WriterParameters {StrongNameKeyPair = keyPair});
 				}
 
 				File.Delete(assemblyFileName);
@@ -267,5 +266,68 @@ namespace LibZ.Tool.Tasks
 		}
 
 		#endregion
+
+		protected static bool InjectDll(
+			AssemblyDefinition targetAssembly,
+			AssemblyDefinition sourceAssembly, byte[] sourceAssemblyBytes,
+			bool overwrite)
+		{
+			var flags = String.Empty;
+			if (!IsManaged(sourceAssembly)) flags += "u";
+
+			var input = sourceAssemblyBytes;
+			byte[] output;
+
+			using (var ostream = new MemoryStream())
+			{
+				using (var zstream = new DeflateStream(ostream, CompressionMode.Compress))
+				{
+					zstream.Write(input, 0, input.Length);
+					zstream.Flush();
+				}
+				output = ostream.ToArray();
+			}
+
+			if (output.Length < input.Length)
+			{
+				flags += "z";
+			}
+			else
+			{
+				output = input;
+			}
+
+			var resourceName = String.Format(
+				"asmz://{0}/{1}/{2}",
+				HashString(sourceAssembly.FullName), input.Length, flags);
+
+			var existing = targetAssembly.MainModule.Resources
+				.Where(r => r.Name == resourceName)
+				.ToArray();
+
+			if (existing.Length > 0)
+			{
+				if (overwrite)
+				{
+					Log.Warn("Resource '{0}' already exists and is going to be replaced.", resourceName);
+					foreach (var r in existing)
+						targetAssembly.MainModule.Resources.Remove(r);
+				}
+				else
+				{
+					Log.Warn("Resource '{0}' already exists and will be skipped.", resourceName);
+					return false;
+				}
+			}
+
+			var resource = new EmbeddedResource(
+				resourceName,
+				ManifestResourceAttributes.Public,
+				output);
+
+			targetAssembly.MainModule.Resources.Add(resource);
+
+			return true;
+		}
 	}
 }

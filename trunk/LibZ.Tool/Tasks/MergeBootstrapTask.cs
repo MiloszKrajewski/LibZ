@@ -28,12 +28,11 @@ namespace LibZ.Tool.Tasks
 			{
 				Directory.CreateDirectory(outputFolderPath);
 
-				var engine = new ILMerge
-				{
+				var engine = new ILMerge {
 					OutputFile = outputFileName,
 					Internalize = true,
 				};
-				engine.SetInputAssemblies(new[] { mainFileName, bootstrapFileName });
+				engine.SetInputAssemblies(new[] {mainFileName, bootstrapFileName});
 				engine.Merge();
 
 				using (var inputFile = File.OpenRead(outputFileName))

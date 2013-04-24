@@ -63,6 +63,16 @@ namespace LibZ.Tool.InjectIL {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] LibZBootstrapAssembly {
+            get {
+                object obj = ResourceManager.GetObject("LibZBootstrapAssembly", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] LibZInjectedAssembly {
             get {
                 object obj = ResourceManager.GetObject("LibZInjectedAssembly", resourceCulture);

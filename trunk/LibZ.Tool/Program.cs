@@ -12,13 +12,12 @@ namespace LibZ.Tool
 	public class Program
 	{
 		// ReSharper disable FieldCanBeMadeReadOnly.Local
-		[ImportMany(typeof(ICodec))]
-		private readonly List<ICodec> _codecs = new List<ICodec>();
+		[ImportMany(typeof (ICodec))] private readonly List<ICodec> _codecs = new List<ICodec>();
 		// ReSharper restore FieldCanBeMadeReadOnly.Local
 
 		private void LoadPlugins()
 		{
-			var catalog = 
+			var catalog =
 				new AggregateCatalog(
 					LibZResolver.GetCatalogs(
 						LibZResolver.RegisterMultipleFileContainers(".\\*.libzcodec")));

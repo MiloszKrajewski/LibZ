@@ -27,7 +27,7 @@ namespace LibZ.Injected
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
 		/// <summary>The 'this' assembly (please note, this type is going to be embedded into other assemblies)</summary>
-		private static readonly Assembly ThisAssembly = typeof(AsmZResolver).Assembly;
+		private static readonly Assembly ThisAssembly = typeof (AsmZResolver).Assembly;
 
 		/// <summary>Hash of 'this' assembly name.</summary>
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
@@ -78,8 +78,8 @@ namespace LibZ.Injected
 			var name = args.Name;
 			var result =
 				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + name) ??
-				TryLoadAssembly(name) ??
-				TryLoadAssembly((IntPtr.Size == 4 ? "x64:" : "x86:") + name);
+					TryLoadAssembly(name) ??
+						TryLoadAssembly((IntPtr.Size == 4 ? "x64:" : "x86:") + name);
 
 			if (result != null) Trace.TraceInformation("Found: '{0}'", args.Name);
 

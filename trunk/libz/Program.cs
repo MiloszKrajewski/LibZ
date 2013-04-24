@@ -51,9 +51,9 @@ using LibZ.Bootstrap;
 
 namespace libz
 {
-	class Program
+	internal class Program
 	{
-		static int Main(string[] args)
+		private static int Main(string[] args)
 		{
 			try
 			{

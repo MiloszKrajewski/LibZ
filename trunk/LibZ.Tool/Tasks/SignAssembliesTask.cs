@@ -3,7 +3,7 @@
 	public class SignAssembliesTask: TaskBase
 	{
 		internal void Execute(
-			string keyFileName, bool force, string password, 
+			string keyFileName, bool force, string password,
 			string[] patterns, string[] excludePatterns)
 		{
 			var keyPair = LoadKeyPair(keyFileName, password);

@@ -83,9 +83,13 @@
   <ItemGroup>
     <None Include="Resources\LibZ.Injected.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LibZ.Bootstrap.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy /y /d $(ProjectDir)..\LibZ.Injected\bin\$(ConfigurationName)\LibZ.Injected.dll $(ProjectDir)Resources</PreBuildEvent>
+    <PreBuildEvent>xcopy /y /d $(ProjectDir)..\LibZ.Injected\bin\$(ConfigurationName)\LibZ.Injected.dll $(ProjectDir)Resources
+xcopy /y /d $(ProjectDir)..\LibZ.Bootstrap\bin\$(ConfigurationName)\LibZ.Bootstrap.dll $(ProjectDir)Resources</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
