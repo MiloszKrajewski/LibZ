@@ -52,26 +52,38 @@ using LibZ.Tool.Interfaces;
 
 namespace LibZ.Codec.ZLib
 {
-	[Export(typeof (ICodec))]
+	/// <summary>Demo zlib codec.</summary>
+	[Export(typeof(ICodec))]
 	public class ZLibCodec: ICodec
 	{
 		#region ICodec Members
 
+		/// <summary>Initializes the codec.
+		/// Leave it empty if initialization is not needed.</summary>
 		public void Initialize()
 		{
 			// no need for it
 		}
 
+		/// <summary>Gets the name.</summary>
+		/// <value>The name.</value>
 		public string Name
 		{
 			get { return "zlib"; }
 		}
 
+		/// <summary>Encodes the specified input data.</summary>
+		/// <param name="inputData">The input data.</param>
+		/// <returns>Encodec data.</returns>
 		public byte[] Encode(byte[] inputData)
 		{
 			return ZlibStream.CompressBuffer(inputData);
 		}
 
+		/// <summary>Decodes the specified input data.</summary>
+		/// <param name="inputData">The input data.</param>
+		/// <param name="outputLength">Length of the output.</param>
+		/// <returns>Decoded data.</returns>
 		public byte[] Decode(byte[] inputData, int outputLength)
 		{
 			// apparently 'outputLength' is not needed in this case

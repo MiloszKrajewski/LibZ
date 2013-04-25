@@ -88,6 +88,7 @@ namespace LibZ.Manager
 namespace LibZ.Bootstrap
 #endif
 {
+
 	#region declare visibility
 
 #if LIBZ_MANAGER
@@ -894,7 +895,7 @@ namespace LibZ.Bootstrap
 					_version = _reader.ReadInt32();
 					if (_version != CurrentVersion)
 						throw new NotSupportedException(string.Format("Unsupported LibZ file version ({0})", _version));
-					_stream.Position = _stream.Length - GuidLength - sizeof (long);
+					_stream.Position = _stream.Length - GuidLength - sizeof(long);
 					_magicOffset = _reader.ReadInt64();
 					guid = new Guid(_reader.ReadBytes(GuidLength));
 					if (guid != Magic)
@@ -1233,7 +1234,7 @@ namespace LibZ.Bootstrap
 			/// <param name="dictionaryName">Name of the dictionary.</param>
 			public GlobalDictionary(string dictionaryName)
 			{
-				lock (typeof (object))
+				lock (typeof(object))
 				{
 					_data = AppDomain.CurrentDomain.GetData(dictionaryName) as Dictionary<int, object>;
 					if (_data != null) return;

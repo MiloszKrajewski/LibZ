@@ -4,14 +4,24 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
+	/// <summary>Command to inject .libz container.</summary>
 	public class InjectLibZCommand: ConsoleCommand
 	{
+		#region fields
+
 		private string _mainFileName;
 		private readonly List<string> _libzFileNames = new List<string>();
 		private bool _move;
 		private string _keyFileName;
 		private string _keyFilePassword;
 
+		#endregion
+
+		#region constructor
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="InjectLibZCommand"/> class.
+		/// </summary>
 		public InjectLibZCommand()
 		{
 			IsCommand("inject-libz", "Injects .libz file into assembly as resource");
@@ -22,11 +32,20 @@ namespace LibZ.Tool.Commands
 			HasOption("p|password=", "password for password protected key file", s => _keyFilePassword = s);
 		}
 
+		#endregion
+
+		#region public interface
+
+		/// <summary>Runs the command.</summary>
+		/// <param name="remainingArguments">The remaining arguments.</param>
+		/// <returns>Return code.</returns>
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new InjectLibZTask();
 			task.Execute(_mainFileName, _libzFileNames.ToArray(), _keyFileName, _keyFilePassword, _move);
 			return 0;
 		}
+
+		#endregion
 	}
 }

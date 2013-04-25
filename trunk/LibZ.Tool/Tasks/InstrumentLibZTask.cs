@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,20 +7,46 @@ using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Instruments the assembli with LibZ initialization.
+	/// </summary>
 	public class InstrumentLibZTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>The AsmZ resource name regular expression.</summary>
+		private static readonly Regex ResourceNameRx = new Regex(
+			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
+			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+
+		#endregion
+
+		#region fields
+
+		/// <summary>The instrumentation helper</summary>
 		private InstrumentHelper _instrumentHelper;
 
-		public void Execute(
+		#endregion
+
+		#region public interface
+
+		/// <summary>Executes the task.</summary>
+		/// <param name="mainFileName">Name of the main file.</param>
+		/// <param name="allLibZResources">if set to <c>true</c> loads all LibZ files in resources on startup.</param>
+		/// <param name="libzFiles">The LibZ files to be loaded on startup.</param>
+		/// <param name="libzPatterns">The libz file patterns to be loaded on startup.</param>
+		/// <param name="keyFileName">Name of the key file.</param>
+		/// <param name="keyFilePassword">The key file password.</param>
+		public virtual void Execute(
 			string mainFileName,
 			bool allLibZResources,
-			ICollection<string> libzFiles,
-			ICollection<string> libzFolders,
+			string[] libzFiles,
+			string[] libzPatterns,
 			string keyFileName, string keyFilePassword)
 		{
 			if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
 			if (libzFiles == null) libzFiles = new string[0];
-			if (libzFolders == null) libzFolders = new string[0];
+			if (libzPatterns == null) libzPatterns = new string[0];
 
 			var targetAssembly = LoadAssembly(mainFileName);
 			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
@@ -45,15 +70,19 @@ namespace LibZ.Tool.Tasks
 				bootstrapAssembly);
 			_instrumentHelper.InjectLibZInitializer();
 			if (requiresAsmZResolver) _instrumentHelper.InjectAsmZResolver();
-			_instrumentHelper.InjectLibZStartup(allLibZResources, libzFiles, libzFolders);
+			_instrumentHelper.InjectLibZStartup(allLibZResources, libzFiles, libzPatterns);
 
 			SaveAssembly(targetAssembly, mainFileName, keyPair);
 		}
 
-		private static readonly Regex ResourceNameRx = new Regex(
-			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
-			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+		#endregion
 
+		#region private implementation
+
+		/// <summary>Finds the bootstrap assembly.</summary>
+		/// <param name="targetAssembly">The target assembly.</param>
+		/// <param name="mainFileName">Name of the main file.</param>
+		/// <returns>Loaded bootstrap assembly.</returns>
 		private static AssemblyDefinition FindBootstrapAssembly(AssemblyDefinition targetAssembly, string mainFileName)
 		{
 			var typeLibZResolver = targetAssembly.MainModule.Types
@@ -67,24 +96,25 @@ namespace LibZ.Tool.Tasks
 			var refLibZBootstrap = targetAssembly.MainModule.AssemblyReferences
 				.FirstOrDefault(r => r.Name == "LibZ.Bootstrap");
 
-			if (refLibZBootstrap == null) return null;
-
-			var guid = HashString(refLibZBootstrap.FullName);
-
-			var embedded = targetAssembly.MainModule.Resources
-				.OfType<EmbeddedResource>()
-				.Select(r => TryLoadAssembly(r, guid))
-				.FirstOrDefault(b => b != null);
-
-			if (embedded != null)
+			if (refLibZBootstrap != null)
 			{
-				Log.Debug("LibZResolver has been found embedded into main executable");
-				return AssemblyDefinition.ReadAssembly(new MemoryStream(embedded));
+				var guid = HashString(refLibZBootstrap.FullName);
+
+				var embedded = targetAssembly.MainModule.Resources
+					.OfType<EmbeddedResource>()
+					.Select(r => TryLoadAssembly(r, guid))
+					.FirstOrDefault(b => b != null);
+
+				if (embedded != null)
+				{
+					Log.Debug("LibZResolver has been found embedded into main executable");
+					return AssemblyDefinition.ReadAssembly(new MemoryStream(embedded));
+				}
 			}
 
 			var libzBootstrapFileName = Path.Combine(
 				Path.GetDirectoryName(mainFileName) ?? ".",
-				refLibZBootstrap.Name + ".dll");
+				"LibZ.Bootstrap.dll");
 
 			if (File.Exists(libzBootstrapFileName))
 			{
@@ -96,6 +126,10 @@ namespace LibZ.Tool.Tasks
 			return null;
 		}
 
+		/// <summary>Tries to load assembly for other assembly resources.</summary>
+		/// <param name="resource">The resource.</param>
+		/// <param name="guid">The GUID.</param>
+		/// <returns>Loaded assembly image.</returns>
 		private static byte[] TryLoadAssembly(EmbeddedResource resource, string guid)
 		{
 			var match = ResourceNameRx.Match(resource.Name);
@@ -125,5 +159,7 @@ namespace LibZ.Tool.Tasks
 				return null;
 			}
 		}
+
+		#endregion
 	}
 }

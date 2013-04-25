@@ -4,8 +4,13 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
-	public class AddCommand: ConsoleCommand
+	/// <summary>
+	/// Add dll to libz command.
+	/// </summary>
+	public class AddLibraryCommand: ConsoleCommand
 	{
+		#region fields
+
 		private string _libzFileName;
 		private string _codecName;
 		private bool _move;
@@ -13,7 +18,12 @@ namespace LibZ.Tool.Commands
 		private readonly List<string> _include = new List<string>();
 		private readonly List<string> _exclude = new List<string>();
 
-		public AddCommand()
+		#endregion
+
+		#region constructor
+
+		/// <summary>Initializes a new instance of the <see cref="AddLibraryCommand"/> class.</summary>
+		public AddLibraryCommand()
 		{
 			IsCommand("add", "Adds assemblies to container");
 			HasRequiredOption("l|libz=", ".libz file name", s => _libzFileName = s);
@@ -24,11 +34,20 @@ namespace LibZ.Tool.Commands
 			HasOption("move", "move files (optional, default: false)", _ => _move = true);
 		}
 
+		#endregion
+
+		#region public interface
+
+		/// <summary>Runs the command.</summary>
+		/// <param name="remainingArguments">The remaining arguments.</param>
+		/// <returns>Return code.</returns>
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new AddLibraryTask();
 			task.Execute(_libzFileName, _include.ToArray(), _exclude.ToArray(), _codecName, _move, _overwrite);
 			return 0;
 		}
+
+		#endregion
 	}
 }

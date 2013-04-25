@@ -4,8 +4,11 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
+	/// <summary>Inject DLL command.</summary>
 	public class InjectDllCommand: ConsoleCommand
 	{
+		#region fields
+
 		private string _mainFileName;
 		private string _keyFileName;
 		private string _keyFilePassword;
@@ -14,6 +17,11 @@ namespace LibZ.Tool.Commands
 		private bool _overwrite;
 		private bool _move;
 
+		#endregion
+
+		#region constructor
+
+		/// <summary>Initializes a new instance of the <see cref="InjectDllCommand"/> class.</summary>
 		public InjectDllCommand()
 		{
 			IsCommand("inject-dll", "Injects .dll file into assembly as resource");
@@ -26,6 +34,11 @@ namespace LibZ.Tool.Commands
 			HasOption("p|password=", "password for password protected key file", s => _keyFilePassword = s);
 		}
 
+		#endregion
+
+		/// <summary>Runs the command.</summary>
+		/// <param name="remainingArguments">The remaining arguments.</param>
+		/// <returns>Return code.</returns>
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new InjectDllTask();

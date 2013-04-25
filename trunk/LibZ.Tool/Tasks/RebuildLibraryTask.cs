@@ -2,9 +2,14 @@
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Rebuilds the .libz container.
+	/// </summary>
 	public class RebuildLibraryTask: TaskBase
 	{
-		public void Execute(string libzFileName)
+		/// <summary>Executes the task.</summary>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		public virtual void Execute(string libzFileName)
 		{
 			Log.Info("Opening '{0}'", libzFileName);
 			var tempFileName = libzFileName + ".temp";

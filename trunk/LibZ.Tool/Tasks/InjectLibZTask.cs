@@ -4,8 +4,15 @@ using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>Injects LibZ container into assembly.</summary>
 	public class InjectLibZTask: TaskBase
 	{
+		/// <summary>Executes the task.</summary>
+		/// <param name="mainFileName">Name of the main file.</param>
+		/// <param name="libzFileNames">The libz file names.</param>
+		/// <param name="keyFileName">Name of the key file.</param>
+		/// <param name="keyFilePassword">The key file password.</param>
+		/// <param name="move">if set to <c>true</c> moves injected file (deletes the source file).</param>
 		public virtual void Execute(
 			string mainFileName, string[] libzFileNames,
 			string keyFileName, string keyFilePassword,
@@ -16,7 +23,7 @@ namespace LibZ.Tool.Tasks
 			var injectedFileNames = new List<string>();
 
 			// TODO:MAK exclude?
-			foreach (var libzFileName in FindFiles(libzFileNames, new string[0]))
+			foreach (var libzFileName in FindFiles(libzFileNames))
 			{
 				if (libzFileName == null) throw ArgumentNull("libzFileName");
 				if (!File.Exists(libzFileName)) throw FileNotFound(libzFileName);

@@ -13,22 +13,31 @@ using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Base class for all tasks.
+	/// Contains some utilities potentially used by all of them.
+	/// </summary>
 	public class TaskBase
 	{
 		#region consts
 
+		/// <summary>Hash calculator.</summary>
 		private static readonly MD5 MD5Service = MD5.Create();
 
 		#endregion
 
 		#region static fields
 
+		/// <summary>The wildcard cache.</summary>
 		private static readonly Dictionary<string, Regex> WildcardCacheRx = new Dictionary<string, Regex>();
 
 		#endregion
 
 		#region file utilities
 
+		/// <summary>Renames the file.</summary>
+		/// <param name="sourceFileName">Name of the source file.</param>
+		/// <param name="targetFileName">Name of the target file.</param>
 		protected static void RenameFile(string sourceFileName, string targetFileName)
 		{
 			try
@@ -45,6 +54,8 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
+		/// <summary>Deletes the file.</summary>
+		/// <param name="fileName">Name of the file.</param>
 		protected static void DeleteFile(string fileName)
 		{
 			if (!File.Exists(fileName)) return;
@@ -61,15 +72,26 @@ namespace LibZ.Tool.Tasks
 			// ReSharper restore EmptyGeneralCatchClause
 		}
 
+		/// <summary>Finds the files.</summary>
+		/// <param name="includePatterns">The include patterns.</param>
+		/// <param name="excludePatterns">The exclude patterns.</param>
+		/// <returns>Collection of file names.</returns>
 		protected static IEnumerable<string> FindFiles(
 			IEnumerable<string> includePatterns,
-			IEnumerable<string> excludePatterns)
+			IEnumerable<string> excludePatterns = null)
 		{
-			return includePatterns.SelectMany(p => FindFiles(p, excludePatterns))
+			if (excludePatterns == null) excludePatterns = new string[0];
+			var result = includePatterns.SelectMany(p => FindFiles(p, excludePatterns))
 				.Distinct()
-				.OrderBy(s => s);
+				.ToList();
+			result.Sort((l, r) => string.Compare(l, r, StringComparison.InvariantCultureIgnoreCase));
+			return result;
 		}
 
+		/// <summary>Finds the files.</summary>
+		/// <param name="pattern">The pattern.</param>
+		/// <param name="excludePatterns">The exclude patterns.</param>
+		/// <returns>Collection of file names.</returns>
 		private static IEnumerable<string> FindFiles(string pattern, IEnumerable<string> excludePatterns)
 		{
 			if (!Path.IsPathRooted(pattern)) pattern = ".\\" + pattern;
@@ -81,6 +103,9 @@ namespace LibZ.Tool.Tasks
 					ep => WildcardToRegex(ep).IsMatch(Path.GetFileName(fn) ?? String.Empty)));
 		}
 
+		/// <summary>Converts wildcard to regex.</summary>
+		/// <param name="pattern">The pattern.</param>
+		/// <returns>Regex.</returns>
 		private static Regex WildcardToRegex(string pattern)
 		{
 			Regex rx;
@@ -94,35 +119,12 @@ namespace LibZ.Tool.Tasks
 
 		#endregion
 
-		#region reflection utilities
+		#region signing utilities
 
-		protected static bool EqualAssemblyNames(string valueA, string valueB)
-		{
-			return String.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
-		}
-
-		protected static bool IsManaged(AssemblyDefinition assembly)
-		{
-			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);
-		}
-
-		protected static AssemblyArchitecture GetArchitecture(AssemblyDefinition assembly)
-		{
-			if (assembly.Modules.Any(m => m.Architecture == TargetArchitecture.AMD64))
-				return AssemblyArchitecture.X64;
-			// experimental: if there is a unmanaged code and it is not X64 it has to be X86
-			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.ILOnly) == 0))
-				return AssemblyArchitecture.X86;
-			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.Required32Bit) != 0))
-				return AssemblyArchitecture.X86;
-			return AssemblyArchitecture.AnyCPU;
-		}
-
-		protected static bool IsSigned(AssemblyDefinition assembly)
-		{
-			return assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.StrongNameSigned) != 0);
-		}
-
+		/// <summary>Loads the key pair.</summary>
+		/// <param name="keyFileName">Name of the key file.</param>
+		/// <param name="password">The password.</param>
+		/// <returns>Key pair.</returns>
 		protected static StrongNameKeyPair LoadKeyPair(string keyFileName, string password)
 		{
 			if (String.IsNullOrWhiteSpace(keyFileName)) return null;
@@ -153,6 +155,11 @@ namespace LibZ.Tool.Tasks
 			return keyPair;
 		}
 
+		/// <summary>Gets the strong name key pair from PFX.</summary>
+		/// <param name="pfxFile">The PFX file.</param>
+		/// <param name="password">The password.</param>
+		/// <returns>Key pair.</returns>
+		/// <exception cref="System.ArgumentException">pfxFile</exception>
 		protected static StrongNameKeyPair GetStrongNameKeyPairFromPfx(string pfxFile, string password)
 		{
 			// http://stackoverflow.com/questions/7556846/how-to-use-strongnamekeypair-with-a-password-protected-keyfile-pfx
@@ -169,6 +176,13 @@ namespace LibZ.Tool.Tasks
 			return new StrongNameKeyPair(provider.ExportCspBlob(false));
 		}
 
+		#endregion
+
+		#region reflection utilities
+
+		/// <summary>Loads the assembly.</summary>
+		/// <param name="assemblyFileName">Name of the assembly file.</param>
+		/// <returns>Loaded assembly.</returns>
 		protected static AssemblyDefinition LoadAssembly(string assemblyFileName)
 		{
 			try
@@ -185,6 +199,9 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
+		/// <summary>Loads the assembly.</summary>
+		/// <param name="bytes">The bytes.</param>
+		/// <returns>Loaded assembly.</returns>
 		protected static AssemblyDefinition LoadAssembly(byte[] bytes)
 		{
 			try
@@ -201,7 +218,13 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
-		protected static void SaveAssembly(AssemblyDefinition assembly, string assemblyFileName, StrongNameKeyPair keyPair = null)
+		/// <summary>Saves the assembly.</summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <param name="assemblyFileName">Name of the assembly file.</param>
+		/// <param name="keyPair">The key pair.</param>
+		protected static void SaveAssembly(
+			AssemblyDefinition assembly, string assemblyFileName,
+			StrongNameKeyPair keyPair = null)
 		{
 			var tempFileName = String.Format("{0}.{1:N}", assemblyFileName, Guid.NewGuid());
 
@@ -229,16 +252,62 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
+		/// <summary>Compares assembly names.</summary>
+		/// <param name="valueA">The value A.</param>
+		/// <param name="valueB">The value B.</param>
+		/// <returns></returns>
+		protected static bool EqualAssemblyNames(string valueA, string valueB)
+		{
+			return String.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
+		}
+
+		/// <summary>Determines whether the specified assembly is managed.</summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <returns><c>true</c> if the specified assembly is managed; otherwise, <c>false</c>.</returns>
+		protected static bool IsManaged(AssemblyDefinition assembly)
+		{
+			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);
+		}
+
+		/// <summary>Determines whether the specified assembly is signed.</summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <returns><c>true</c> if the specified assembly is signed; otherwise, <c>false</c>.</returns>
+		protected static bool IsSigned(AssemblyDefinition assembly)
+		{
+			return assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.StrongNameSigned) != 0);
+		}
+
+		/// <summary>Gets the assembly architecture.</summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <returns>Assembly architecture.</returns>
+		protected static AssemblyArchitecture GetArchitecture(AssemblyDefinition assembly)
+		{
+			if (assembly.Modules.Any(m => m.Architecture == TargetArchitecture.AMD64))
+				return AssemblyArchitecture.X64;
+			// experimental: if there is a unmanaged code and it is not X64 it has to be X86
+			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.ILOnly) == 0))
+				return AssemblyArchitecture.X86;
+			if (assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.Required32Bit) != 0))
+				return AssemblyArchitecture.X86;
+			return AssemblyArchitecture.AnyCPU;
+		}
+
 		#endregion
 
 		#region exceptions
 
-		protected static Exception ArgumentNull(string argumentName)
+		/// <summary>Returns ArgumentNullException.</summary>
+		/// <param name="argumentName">Name of the argument.</param>
+		/// <returns>ArgumentNullException</returns>
+		protected static ArgumentNullException ArgumentNull(string argumentName)
 		{
 			return new ArgumentNullException(argumentName);
 		}
 
-		protected static Exception FileNotFound(string fileName)
+		/// <summary>Returns FileNotFoundException.</summary>
+		/// <param name="fileName">Name of the file.</param>
+		/// <returns>FileNotFoundException</returns>
+		protected static FileNotFoundException FileNotFound(string fileName)
 		{
 			return new FileNotFoundException(String.Format("File '{0}' could not be found", fileName));
 		}
@@ -247,6 +316,9 @@ namespace LibZ.Tool.Tasks
 
 		#region utilities
 
+		/// <summary>Hashes the specified text.</summary>
+		/// <param name="text">The text.</param>
+		/// <returns>Hash of given text.</returns>
 		protected static Guid Hash(string text)
 		{
 			return new Guid(
@@ -254,6 +326,9 @@ namespace LibZ.Tool.Tasks
 					Encoding.UTF8.GetBytes(text.ToLowerInvariant())));
 		}
 
+		/// <summary>Hashes the specified text.</summary>
+		/// <param name="text">The text.</param>
+		/// <returns>String representation of the hash.</returns>
 		protected static string HashString(string text)
 		{
 			return Hash(text).ToString("N").ToLowerInvariant();
@@ -261,6 +336,14 @@ namespace LibZ.Tool.Tasks
 
 		#endregion
 
+		#region assembly manipulation
+
+		/// <summary>Injects the DLL.</summary>
+		/// <param name="targetAssembly">The target assembly.</param>
+		/// <param name="sourceAssembly">The source assembly.</param>
+		/// <param name="sourceAssemblyBytes">The source assembly bytes.</param>
+		/// <param name="overwrite">if set to <c>true</c> overwrites existing resource.</param>
+		/// <returns><c>true</c> if assembly has been injected.</returns>
 		protected static bool InjectDll(
 			AssemblyDefinition targetAssembly,
 			AssemblyDefinition sourceAssembly, byte[] sourceAssemblyBytes,
@@ -324,11 +407,15 @@ namespace LibZ.Tool.Tasks
 			return true;
 		}
 
+		/// <summary>Instruments assembly with AsmZ resolver.</summary>
+		/// <param name="targetAssembly">The target assembly.</param>
 		protected static void InstrumentAsmZ(AssemblyDefinition targetAssembly)
 		{
 			var helper = new InstrumentHelper(targetAssembly);
 			helper.InjectLibZInitializer();
 			helper.InjectAsmZResolver();
 		}
+
+		#endregion
 	}
 }

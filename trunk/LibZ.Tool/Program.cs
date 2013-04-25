@@ -9,12 +9,18 @@ using ManyConsole;
 
 namespace LibZ.Tool
 {
+	/// <summary>Main class.</summary>
 	public class Program
 	{
-		// ReSharper disable FieldCanBeMadeReadOnly.Local
-		[ImportMany(typeof (ICodec))] private readonly List<ICodec> _codecs = new List<ICodec>();
-		// ReSharper restore FieldCanBeMadeReadOnly.Local
+		#region fields
 
+		[ImportMany(typeof(ICodec))] private readonly List<ICodec> _codecs = new List<ICodec>();
+
+		#endregion
+
+		#region private implementation
+
+		/// <summary>Loads the plugins.</summary>
 		private void LoadPlugins()
 		{
 			var catalog =
@@ -29,7 +35,8 @@ namespace LibZ.Tool
 			}
 		}
 
-		public void RegisterPlugins()
+		/// <summary>Registers the plugins.</summary>
+		private void RegisterPlugins()
 		{
 			if (_codecs == null) return;
 
@@ -41,6 +48,13 @@ namespace LibZ.Tool
 			}
 		}
 
+		#endregion
+
+		#region public interface
+
+		/// <summary>Runs the application.</summary>
+		/// <param name="args">The arguments.</param>
+		/// <returns>Result code.</returns>
 		public int Run(string[] args)
 		{
 			try
@@ -57,5 +71,7 @@ namespace LibZ.Tool
 				return 1;
 			}
 		}
+
+		#endregion
 	}
 }

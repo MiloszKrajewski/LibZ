@@ -56,9 +56,9 @@ using LibZ.Manager.Internal;
 
 namespace LibZ.Manager
 {
+
 	#region class LibZContainer
 
-	
 	/// <summary>Class for reading and writing LibZ containers.</summary>
 	public class LibZContainer: LibZReader
 	{

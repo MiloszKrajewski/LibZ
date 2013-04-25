@@ -1,14 +1,24 @@
 ﻿namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Task to sign assemblies.
+	/// </summary>
 	public class SignAssembliesTask: TaskBase
 	{
-		internal void Execute(
-			string keyFileName, bool force, string password,
-			string[] patterns, string[] excludePatterns)
+		/// <summary>Executes the task.</summary>
+		/// <param name="includePatterns">The include patterns.</param>
+		/// <param name="excludePatterns">The exclude patterns.</param>
+		/// <param name="keyFileName">Name of the key file.</param>
+		/// <param name="password">The password.</param>
+		/// <param name="force">if set to <c>true</c> assemblies will be signed even if they are already signed.</param>
+		public virtual void Execute(
+			string[] includePatterns, string[] excludePatterns,
+			string keyFileName, string password,
+			bool force)
 		{
 			var keyPair = LoadKeyPair(keyFileName, password);
 
-			foreach (var fileName in FindFiles(patterns, excludePatterns))
+			foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 			{
 				var assembly = LoadAssembly(fileName);
 

@@ -5,9 +5,19 @@ using LibZ.Manager;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Adds assemblies to LibZ library.
+	/// </summary>
 	public class AddLibraryTask: TaskBase
 	{
-		public void Execute(
+		/// <summary>Executes the task.</summary>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		/// <param name="includePatterns">The include patterns.</param>
+		/// <param name="excludePatterns">The exclude patterns.</param>
+		/// <param name="codecName">Name of the codec.</param>
+		/// <param name="move">if set to <c>true</c> moves files (deletes soure files).</param>
+		/// <param name="overwrite">if set to <c>true</c> overwrites existing resources.</param>
+		public virtual void Execute(
 			string libzFileName,
 			string[] includePatterns, string[] excludePatterns,
 			string codecName, bool move, bool overwrite)

@@ -1,31 +1,16 @@
-﻿#region Header
-
-// --------------------------------------------------------------------------------------
-// LibZ.Tool.Tasks.ListLibraryContentTask.cs
-// --------------------------------------------------------------------------------------
-// 
-// 
-//
-// Copyright (c) 2013 Sepura Plc 
-//
-// Sepura Confidential
-//
-// Created: 4/15/2013 9:13:27 AM : SEPURA/krajewskim on SEPURA1051 
-// 
-// --------------------------------------------------------------------------------------
-
-#endregion
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using LibZ.Manager;
 using LibZ.Manager.Internal;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>Lists content of .libz container.</summary>
 	public class ListLibraryContentTask: TaskBase
 	{
-		public void Execute(string libzFileName)
+		/// <summary>Executes the task.</summary>
+		/// <param name="libzFileName">Name of the libz file.</param>
+		public virtual void Execute(string libzFileName)
 		{
 			Log.Info("Opening '{0}'", libzFileName);
 			using (var container = new LibZContainer(libzFileName))
@@ -51,6 +36,9 @@ namespace LibZ.Tool.Tasks
 			}
 		}
 
+		/// <summary>Gets the flags text.</summary>
+		/// <param name="entryFlags">The entry flags.</param>
+		/// <returns>Text representing assembly flags.</returns>
 		private static IEnumerable<string> GetFlagsText(LibZEntry.EntryFlags entryFlags)
 		{
 			if ((entryFlags & LibZEntry.EntryFlags.Unmanaged) != 0)

@@ -1,4 +1,52 @@
-﻿using System;
+﻿#region License
+
+/*
+ * Copyright (c) 2013, Milosz Krajewski
+ * 
+ * Microsoft Public License (Ms-PL)
+ * This license governs use of the accompanying software. 
+ * If you use the software, you accept this license. 
+ * If you do not accept the license, do not use the software.
+ * 
+ * 1. Definitions
+ * The terms "reproduce," "reproduction," "derivative works," and "distribution" have the same 
+ * meaning here as under U.S. copyright law.
+ * A "contribution" is the original software, or any additions or changes to the software.
+ * A "contributor" is any person that distributes its contribution under this license.
+ * "Licensed patents" are a contributor's patent claims that read directly on its contribution.
+ * 
+ * 2. Grant of Rights
+ * (A) Copyright Grant- Subject to the terms of this license, including the license conditions 
+ * and limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
+ * royalty-free copyright license to reproduce its contribution, prepare derivative works of 
+ * its contribution, and distribute its contribution or any derivative works that you create.
+ * (B) Patent Grant- Subject to the terms of this license, including the license conditions and 
+ * limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
+ * royalty-free license under its licensed patents to make, have made, use, sell, offer for sale, 
+ * import, and/or otherwise dispose of its contribution in the software or derivative works of 
+ * the contribution in the software.
+ * 
+ * 3. Conditions and Limitations
+ * (A) No Trademark License- This license does not grant you rights to use any contributors' name, 
+ * logo, or trademarks.
+ * (B) If you bring a patent claim against any contributor over patents that you claim are infringed 
+ * by the software, your patent license from such contributor to the software ends automatically.
+ * (C) If you distribute any portion of the software, you must retain all copyright, patent, trademark, 
+ * and attribution notices that are present in the software.
+ * (D) If you distribute any portion of the software in source code form, you may do so only under this 
+ * license by including a complete copy of this license with your distribution. If you distribute 
+ * any portion of the software in compiled or object code form, you may only do so under a license 
+ * that complies with this license.
+ * (E) The software is licensed "as-is." You bear the risk of using it. The contributors give no express
+ * warranties, guarantees or conditions. You may have additional consumer rights under your local 
+ * laws which this license cannot change. To the extent permitted under your local laws, the 
+ * contributors exclude the implied warranties of merchantability, fitness for a particular 
+ * purpose and non-infringement.
+ */
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,12 +55,32 @@ using Mono.Cecil.Cil;
 
 namespace LibZ.Tool.InjectIL
 {
+	/// <summary>
+	/// Instrumentation helper.
+	/// Please note, initially LibZ was not going to instrument code. This "instrumentation"
+	/// is a an effect of 2-day crash-diving into world of IL manipulation and it's very
+	/// messy. But it works (I hope, at least).
+	/// </summary>
 	public class InstrumentHelper
 	{
+		#region fields
+
+		/// <summary>The assembly to be injected.</summary>
 		private readonly AssemblyDefinition _sourceAssembly;
+
+		/// <summary>The assenbly to inject into.</summary>
 		private readonly AssemblyDefinition _targetAssembly;
+
+		/// <summary>The bootstrap assembly to be referenced.</summary>
 		private AssemblyDefinition _bootstrapAssembly;
 
+		#endregion
+
+		#region constructor
+
+		/// <summary>Initializes a new instance of the <see cref="InstrumentHelper"/> class.</summary>
+		/// <param name="targetAssembly">The target assembly.</param>
+		/// <param name="bootstrapAssembly">The bootstrap assembly.</param>
 		public InstrumentHelper(
 			AssemblyDefinition targetAssembly,
 			AssemblyDefinition bootstrapAssembly = null)
@@ -22,31 +90,40 @@ namespace LibZ.Tool.InjectIL
 			_bootstrapAssembly = bootstrapAssembly;
 		}
 
+		#endregion
+
+		#region static interface
+
+		/// <summary>Gets the bootstrap assembly image.</summary>
+		/// <value>The bootstrap assembly image.</value>
 		public static byte[] BootstrapAssemblyImage
 		{
 			get { return Precompiled.LibZBootstrapAssembly; }
 		}
 
+		/// <summary>Gets the injected assembly image.</summary>
+		/// <value>The injected assembly image.</value>
 		public static byte[] InjectedAssemblyImage
 		{
 			get { return Precompiled.LibZInjectedAssembly; }
 		}
 
+		#endregion
+
+		#region public interface
+
+		/// <summary>Injects the LibZInitializer.</summary>
 		public void InjectLibZInitializer()
 		{
 			const string typeName = "LibZ.Injected.LibZInitializer";
 			var targetType = _targetAssembly.MainModule.Types.SingleOrDefault(t => t.FullName == typeName);
-			if (targetType == null) CloneLibZInitializer();
-		}
+			if (targetType != null) return;
 
-		private void CloneLibZInitializer()
-		{
-			const string typeName = "LibZ.Injected.LibZInitializer";
 			var sourceType = _sourceAssembly.MainModule.Types.Single(t => t.FullName == typeName);
 
 			TemplateCopy.Run(_sourceAssembly, _targetAssembly, sourceType, false);
 
-			var targetType = _targetAssembly.MainModule.Types.Single(t => t.FullName == typeName);
+			targetType = _targetAssembly.MainModule.Types.Single(t => t.FullName == typeName);
 			var targetMethod = targetType.Methods.Single(m => m.Name == "Initialize");
 
 			// find 'module' static constructor
@@ -70,6 +147,7 @@ namespace LibZ.Tool.InjectIL
 			moduleCtor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, targetMethod));
 		}
 
+		/// <summary>Injects the AsmZ (embedded dll) resolver.</summary>
 		public void InjectAsmZResolver()
 		{
 			const string typeLibZInitializer = "LibZ.Injected.LibZInitializer";
@@ -89,9 +167,13 @@ namespace LibZ.Tool.InjectIL
 			body.Add(Instruction.Create(OpCodes.Ret));
 		}
 
-		public void InjectLibZStartup(bool allResources, ICollection<string> libzFiles, ICollection<string> libzFolders)
+		/// <summary>Injects the LibZ (embedded .libz) startup code.</summary>
+		/// <param name="allResources">if set to <c>true</c> registers all embedded .libz resource.</param>
+		/// <param name="libzFiles">The LibZ files.</param>
+		/// <param name="libzPatterns">The LibZ patterns.</param>
+		public void InjectLibZStartup(bool allResources, ICollection<string> libzFiles, ICollection<string> libzPatterns)
 		{
-			var remove = !allResources && libzFiles.Count <= 0 && libzFolders.Count <= 0;
+			var remove = !allResources && libzFiles.Count <= 0 && libzPatterns.Count <= 0;
 
 			const string typeLibZInitializer = "LibZ.Injected.LibZInitializer";
 			var initializerType = _targetAssembly.MainModule.Types.Single(t => t.FullName == typeLibZInitializer);
@@ -133,10 +215,10 @@ namespace LibZ.Tool.InjectIL
 					}
 				}
 
-				if (libzFolders.Count > 0)
+				if (libzPatterns.Count > 0)
 				{
 					var targetMethod = targetType.Methods.Single(m => m.Name == "RegisterMultipleFileContainers");
-					foreach (var libzFolder in libzFolders)
+					foreach (var libzFolder in libzPatterns)
 					{
 						body.Add(Instruction.Create(OpCodes.Ldstr, libzFolder));
 						body.Add(Instruction.Create(OpCodes.Call, _targetAssembly.MainModule.Import(targetMethod)));
@@ -147,5 +229,11 @@ namespace LibZ.Tool.InjectIL
 
 			body.Add(Instruction.Create(OpCodes.Ret));
 		}
+
+		#endregion
+
+		#region private implementation
+
+		#endregion
 	}
 }

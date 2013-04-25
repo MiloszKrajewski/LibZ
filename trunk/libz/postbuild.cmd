@@ -4,7 +4,7 @@ set DIR=%1
 del /q libz.libz 2> nul
 rmdir /q /s merge 2> nul
 xcopy /y /d * merge\
-call :libz
+call :asmz
 rmdir /q /s merge 2> nul
 goto :end
 

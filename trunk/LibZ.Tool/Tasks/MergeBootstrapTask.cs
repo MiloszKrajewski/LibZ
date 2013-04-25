@@ -4,9 +4,19 @@ using ILMerging;
 
 namespace LibZ.Tool.Tasks
 {
+	/// <summary>
+	/// Task to merge LibZ.Bootstrap using ILMerge.
+	/// NOTE: this method is obsolete. It seems to work better when using <see cref="InjectDllTask"/>.
+	/// </summary>
 	public class MergeBootstrapTask: TaskBase
 	{
-		public void Execute(
+		/// <summary>Executes the task.</summary>
+		/// <param name="mainFileName">Name of the main file.</param>
+		/// <param name="bootstrapFileName">Name of the bootstrap file.</param>
+		/// <param name="move">if set to <c>true</c> moves the LibZ.Bootstrap (deletes source file).</param>
+		/// <param name="keyFileName">Name of the key file.</param>
+		/// <param name="keyFilePassword">The key file password.</param>
+		public virtual void Execute(
 			string mainFileName, string bootstrapFileName = null, bool move = true,
 			string keyFileName = null, string keyFilePassword = null)
 		{

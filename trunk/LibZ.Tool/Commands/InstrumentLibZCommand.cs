@@ -4,8 +4,13 @@ using ManyConsole;
 
 namespace LibZ.Tool.Commands
 {
+	/// <summary>
+	/// Instrument LibZ initialization command.
+	/// </summary>
 	public class InstrumentLibZCommand: ConsoleCommand
 	{
+		#region fields
+
 		private string _mainFileName;
 		private bool _allLibZResources;
 		private string _keyFileName;
@@ -13,6 +18,13 @@ namespace LibZ.Tool.Commands
 		private readonly List<string> _libzFiles = new List<string>();
 		private readonly List<string> _libzPatterns = new List<string>();
 
+		#endregion
+
+		#region constructor
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="InstrumentLibZCommand"/> class.
+		/// </summary>
 		public InstrumentLibZCommand()
 		{
 			IsCommand("instrument", "Instruments assembly with initialization code");
@@ -24,15 +36,24 @@ namespace LibZ.Tool.Commands
 			HasOption("p|password=", "password for password protected key file", s => _keyFilePassword = s);
 		}
 
+		#endregion
+
+		#region public interface
+
+		/// <summary>Runs the command.</summary>
+		/// <param name="remainingArguments">The remaining arguments.</param>
+		/// <returns>Return code.</returns>
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new InstrumentLibZTask();
 			task.Execute(
 				_mainFileName,
-				_allLibZResources, _libzFiles, _libzPatterns,
+				_allLibZResources, _libzFiles.ToArray(), _libzPatterns.ToArray(),
 				_keyFileName, _keyFilePassword);
 
 			return 0;
 		}
+
+		#endregion
 	}
 }

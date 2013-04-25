@@ -25,6 +25,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\Debug\LibZ.Tool.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -34,6 +35,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\Release\LibZ.Tool.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ILMerge">
@@ -67,16 +69,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\AddCommand.cs" />
+    <Compile Include="Commands\AddLibraryCommand.cs" />
     <Compile Include="Commands\InstrumentLibZCommand.cs" />
     <Compile Include="Commands\InjectDllCommand.cs" />
-    <Compile Include="Commands\ListCommand.cs" />
+    <Compile Include="Commands\ListLibraryCommand.cs" />
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
     <Compile Include="Commands\MergeBootstrapCommand.cs" />
     <Compile Include="Tasks\InstrumentLibZTask.cs" />
     <Compile Include="Tasks\InjectDllTask.cs" />
-    <Compile Include="Tasks\InjectModuleInitializerTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
     <Compile Include="Tasks\RebuildLibraryTask.cs" />
     <Compile Include="Tasks\SignAndFixAssembliesTask.cs" />
