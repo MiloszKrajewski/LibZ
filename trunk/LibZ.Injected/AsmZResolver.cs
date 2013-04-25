@@ -27,7 +27,7 @@ namespace LibZ.Injected
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
 		/// <summary>The 'this' assembly (please note, this type is going to be embedded into other assemblies)</summary>
-		private static readonly Assembly ThisAssembly = typeof (AsmZResolver).Assembly;
+		private static readonly Assembly ThisAssembly = typeof(AsmZResolver).Assembly;
 
 		/// <summary>Hash of 'this' assembly name.</summary>
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
