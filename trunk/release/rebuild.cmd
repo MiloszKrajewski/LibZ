@@ -5,7 +5,7 @@ set SOLUTION=%1
 set PLATFORM=%2
 
 if "%SOLUTION%"=="" goto :help
-if "%PLATFORM%"=="" set PLATFORM=AnyCPU
+if "%PLATFORM%"=="" set PLATFORM="Any CPU"
 if "%LOG%"=="" set LOG=%TEMP%\build.log
 
 rem ----------------------------------------------------------------------------
