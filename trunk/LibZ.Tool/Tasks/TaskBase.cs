@@ -316,6 +316,20 @@ namespace LibZ.Tool.Tasks
 
 		#region utilities
 
+		private static readonly Regex ResourceNameRx = new Regex(
+			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
+			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+
+		/// <summary>Returns a hash of given resource.</summary>
+		/// <param name="resource">The resource.</param>
+		/// <returns>Hash already in resource name.</returns>
+		protected static Guid? Hash(Resource resource)
+		{
+			var m = ResourceNameRx.Match(resource.Name);
+			if (!m.Success) return null;
+			return new Guid(m.Groups["guid"].Value);
+		}
+
 		/// <summary>Hashes the specified text.</summary>
 		/// <param name="text">The text.</param>
 		/// <returns>Hash of given text.</returns>
@@ -374,12 +388,19 @@ namespace LibZ.Tool.Tasks
 				output = input;
 			}
 
+			var architecture = GetArchitecture(sourceAssembly);
+			var architecturePrefix =
+				architecture == AssemblyArchitecture.X64 ? "x64:" :
+					architecture == AssemblyArchitecture.X86 ? "x86:" :
+						string.Empty;
+			var guid = Hash(architecturePrefix + sourceAssembly.FullName);
+
 			var resourceName = String.Format(
-				"asmz://{0}/{1}/{2}",
-				HashString(sourceAssembly.FullName), input.Length, flags);
+				"asmz://{0:N}/{1}/{2}",
+				guid, input.Length, flags);
 
 			var existing = targetAssembly.MainModule.Resources
-				.Where(r => r.Name == resourceName)
+				.Where(r => Hash(r) == guid)
 				.ToArray();
 
 			if (existing.Length > 0)
