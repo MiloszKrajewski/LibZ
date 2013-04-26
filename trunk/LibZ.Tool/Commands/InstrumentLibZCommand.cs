@@ -30,8 +30,8 @@ namespace LibZ.Tool.Commands
 			IsCommand("instrument", "Instruments assembly with initialization code");
 			HasRequiredOption("a|assembly=", "assembly to be instrumented", s => _mainFileName = s);
 			HasOption("libz-resources", "registers embedded LibZ container on startup", _ => _allLibZResources = true);
-			HasOption("libz-file", "registers file on startup", s => _libzFiles.Add(s));
-			HasOption("libz-pattern", "registers multiple files on startup (wildcards)", s => _libzPatterns.Add(s));
+			HasOption("libz-file=", "registers file on startup", s => _libzFiles.Add(s));
+			HasOption("libz-pattern=", "registers multiple files on startup (wildcards)", s => _libzPatterns.Add(s));
 			HasOption("k|key=", "key file name", s => _keyFileName = s);
 			HasOption("p|password=", "password for password protected key file", s => _keyFilePassword = s);
 		}
