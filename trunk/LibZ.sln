@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{617E7125-F13A-43BF-89A5-62D89FE4C8F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Bootstrap", "LibZ.Bootstrap\LibZ.Bootstrap.csproj", "{66762F06-D368-4A1D-91AD-D5B0300CB879}"
@@ -24,6 +24,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.LZ4", "LibZ.Code
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool.InjectIL", "LibZ.Tool.InjectIL\LibZ.Tool.InjectIL.csproj", "{A391D2AA-228B-4DF4-9C0E-05B386B323E3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{66762F06-D368-4A1D-91AD-D5B0300CB879} = {66762F06-D368-4A1D-91AD-D5B0300CB879}
+		{C50B6D42-3458-4643-A723-7ABB92CBA6E9} = {C50B6D42-3458-4643-A723-7ABB92CBA6E9}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Injected", "LibZ.Injected\LibZ.Injected.csproj", "{C50B6D42-3458-4643-A723-7ABB92CBA6E9}"
 EndProject

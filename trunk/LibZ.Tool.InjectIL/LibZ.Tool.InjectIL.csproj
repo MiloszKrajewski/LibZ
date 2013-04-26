@@ -11,6 +11,7 @@
     <AssemblyName>LibZ.Tool.InjectIL</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -66,16 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\LibZ.Bootstrap\LibZ.Bootstrap.csproj">
-      <Project>{66762F06-D368-4A1D-91AD-D5B0300CB879}</Project>
-      <Name>LibZ.Bootstrap</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LibZ.Injected\LibZ.Injected.csproj">
-      <Project>{c50b6d42-3458-4643-a723-7abb92cba6e9}</Project>
-      <Name>LibZ.Injected</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Precompiled.resx">
