@@ -367,17 +367,7 @@ namespace LibZ.Tool.Tasks
 			if (!IsManaged(sourceAssembly)) flags += "u";
 
 			var input = sourceAssemblyBytes;
-			byte[] output;
-
-			using (var ostream = new MemoryStream())
-			{
-				using (var zstream = new DeflateStream(ostream, CompressionMode.Compress))
-				{
-					zstream.Write(input, 0, input.Length);
-					zstream.Flush();
-				}
-				output = ostream.ToArray();
-			}
+			byte[] output = DefaultCodecs.DeflateEncoder(input);
 
 			if (output.Length < input.Length)
 			{

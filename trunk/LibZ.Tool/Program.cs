@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using Ionic.Zlib;
 using LibZ.Bootstrap;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
@@ -59,6 +60,9 @@ namespace LibZ.Tool
 		{
 			try
 			{
+				LibZContainer.RegisterEncoder("deflate", DefaultCodecs.DeflateEncoder, true);
+				LibZContainer.RegisterCodec("zlib", DefaultCodecs.ZLibEncoder, DefaultCodecs.ZLibDecoder);
+
 				LoadPlugins();
 				RegisterPlugins();
 				var commands = ConsoleCommandDispatcher.FindCommandsInSameAssemblyAs(GetType());

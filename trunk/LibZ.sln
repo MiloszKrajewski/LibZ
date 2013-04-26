@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2010
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{617E7125-F13A-43BF-89A5-62D89FE4C8F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Bootstrap", "LibZ.Bootstrap\LibZ.Bootstrap.csproj", "{66762F06-D368-4A1D-91AD-D5B0300CB879}"
@@ -12,11 +12,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libz", "libz\libz.csproj", "{9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool.Interfaces", "LibZ.Tool.Interfaces\LibZ.Tool.Interfaces.csproj", "{46CEC914-26B0-4027-BA64-78154174274E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.ZLib", "LibZ.Codec.ZLib\LibZ.Codec.ZLib.csproj", "{911706C9-1512-4CC9-85EB-3D7A60E618F6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA} = {9F01B7BC-CCC0-47A2-9C30-FCF4EF61F0FA}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.LZ4", "LibZ.Codec.LZ4\LibZ.Codec.LZ4.csproj", "{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -57,10 +52,6 @@ Global
 		{46CEC914-26B0-4027-BA64-78154174274E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46CEC914-26B0-4027-BA64-78154174274E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46CEC914-26B0-4027-BA64-78154174274E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{911706C9-1512-4CC9-85EB-3D7A60E618F6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
