@@ -45,7 +45,7 @@ namespace LibZ.Tool
 			{
 				Log.Info("Registering codec '{0}'", codec.Name);
 				codec.Initialize();
-				LibZContainer.RegisterCodec(codec.Name, codec.Encode, codec.Decode);
+				LibZContainer.RegisterCodec(codec.Name, codec.Encode, codec.Decode, true);
 			}
 		}
 
