@@ -23,6 +23,7 @@ namespace LibZ.Tool.Tasks
 			string codecName, bool move, bool overwrite)
 		{
 			var injectedFileNames = new List<string>();
+			if (string.IsNullOrEmpty(codecName)) codecName = "deflate";
 
 			using (var container = new LibZContainer(libzFileName, true))
 			{

@@ -21,7 +21,6 @@
         <file src="lib\LibZ.Bootstrap.dll" target="lib\net40-client\LibZ.Bootstrap.dll" />
         <file src="tool\opt\LibZ.Tool.Interfaces.dll" target="tools\opt\LibZ.Tool.Interfaces.dll" />
         <file src="tool\opt\lz4.libzcodec" target="tools\opt\lz4.libzcodec" />
-        <file src="tool\opt\zlib.libzcodec" target="tools\opt\zlib.libzcodec" />
         <file src="tool\libz.exe" target="tools\libz.exe" />
     </files>
 </package>

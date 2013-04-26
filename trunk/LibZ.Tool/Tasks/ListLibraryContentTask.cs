@@ -31,7 +31,7 @@ namespace LibZ.Tool.Tasks
 						entry.CodecName ?? "<none>",
 						entry.OriginalLength,
 						ratio,
-						entry.Hash.ToString("N"));
+						entry.Id.ToString("N"));
 				}
 			}
 		}

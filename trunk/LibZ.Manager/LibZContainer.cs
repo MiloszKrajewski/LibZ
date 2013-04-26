@@ -56,7 +56,6 @@ using LibZ.Manager.Internal;
 
 namespace LibZ.Manager
 {
-
 	#region class LibZContainer
 
 	/// <summary>Class for reading and writing LibZ containers.</summary>
@@ -82,6 +81,7 @@ namespace LibZ.Manager
 		static LibZContainer()
 		{
 			RegisterEncoder("deflate", DeflateEncoder);
+			RegisterEncoder("none", NoneEncoder);
 		}
 
 		/// <summary>Initializes a new instance of the <see cref="LibZContainer"/> class.</summary>
@@ -235,7 +235,7 @@ namespace LibZ.Manager
 			using (var stream = new FileStream(fileName, FileMode.Create))
 			using (var writer = new BinaryWriter(stream))
 			{
-				WriteHeadTo(writer, Guid.NewGuid());
+				WriteHeadTo(writer);
 				var newEntries = new List<LibZEntry>();
 				foreach (var oldEntry in _entries.Values.OrderBy(e => e.Offset))
 				{
@@ -249,7 +249,7 @@ namespace LibZ.Manager
 					writer.Write(buffer);
 					newEntries.Add(newEntry);
 				}
-				WriteTailTo(writer, newEntries);
+				WriteTailTo(writer, _containerId, newEntries);
 			}
 		}
 
@@ -261,18 +261,28 @@ namespace LibZ.Manager
 
 		/// <summary>Encodes the data with specified codec.</summary>
 		/// <param name="codecName">Name of the codec.</param>
-		/// <param name="data">The data.</param>
+		/// <param name="input">The data.</param>
 		/// <returns>Encoded data.</returns>
-		private static byte[] Encode(string codecName, byte[] data)
+		private static byte[] Encode(string codecName, byte[] input)
 		{
-			if (string.IsNullOrEmpty(codecName)) return data;
+			if (string.IsNullOrEmpty(codecName)) return input;
 			Func<byte[], byte[]> encoder;
 			lock (Encoders)
 			{
 				if (!Encoders.TryGetValue(codecName, out encoder))
-					throw new ArgumentException(string.Format("Unknown codecName {0}", codecName));
+					throw new ArgumentException(string.Format("Unknown codec name: '{0}'", codecName));
 			}
-			return encoder(data);
+			var output = encoder(input);
+			// if output is bigger than input, do not use it, return 'null'
+			return output == null || output.Length >= input.Length ? null : output;
+		}
+
+		/// <summary>No-compression encoder.</summary>
+		/// <param name="input">The input data.</param>
+		/// <returns>Input.</returns>
+		private static byte[] NoneEncoder(byte[] input)
+		{
+			return input;
 		}
 
 		/// <summary>Encoder for 'deflate' codec.</summary>
@@ -302,7 +312,7 @@ namespace LibZ.Manager
 			{
 				_writer.Flush();
 				_stream.Position = 0;
-				WriteHeadTo(_writer, _containerId);
+				WriteHeadTo(_writer);
 				_writer.Flush();
 			}
 		}
@@ -314,7 +324,7 @@ namespace LibZ.Manager
 			{
 				_writer.Flush();
 				_stream.Position = _magicOffset;
-				WriteTailTo(_writer, _entries.Values);
+				WriteTailTo(_writer, _containerId, _entries.Values);
 				_writer.Flush();
 				_stream.SetLength(_stream.Position);
 				_dirty = false;
@@ -323,11 +333,9 @@ namespace LibZ.Manager
 
 		/// <summary>Writes the head to.</summary>
 		/// <param name="writer">The writer.</param>
-		/// <param name="containerId">The container id.</param>
-		private static void WriteHeadTo(BinaryWriter writer, Guid containerId)
+		private static void WriteHeadTo(BinaryWriter writer)
 		{
 			writer.Write(Magic.ToByteArray());
-			writer.Write(containerId.ToByteArray());
 			writer.Write(CurrentVersion);
 		}
 
@@ -336,8 +344,9 @@ namespace LibZ.Manager
 		/// <param name="entry">The entry.</param>
 		private static void WriteEntryTo(BinaryWriter writer, LibZEntry entry)
 		{
-			writer.Write(entry.Hash.ToByteArray());
+			writer.Write(entry.Id.ToByteArray());
 			writer.Write(entry.AssemblyName.FullName);
+			writer.Write(entry.Hash.ToByteArray());
 			writer.Write((int)entry.Flags);
 			writer.Write(entry.Offset);
 			writer.Write(entry.OriginalLength);
@@ -347,10 +356,12 @@ namespace LibZ.Manager
 
 		/// <summary>Writes the tail to.</summary>
 		/// <param name="writer">The writer.</param>
+		/// <param name="containerId">The container id.</param>
 		/// <param name="entries">The entries.</param>
-		private static void WriteTailTo(BinaryWriter writer, ICollection<LibZEntry> entries)
+		private static void WriteTailTo(BinaryWriter writer, Guid containerId, ICollection<LibZEntry> entries)
 		{
 			var magicOffset = writer.BaseStream.Position;
+			writer.Write(containerId.ToByteArray());
 			writer.Write(entries.Count);
 			foreach (var entry in entries) WriteEntryTo(writer, entry);
 			writer.Write(magicOffset);
@@ -360,12 +371,12 @@ namespace LibZ.Manager
 		/// <summary>Saves entry to file.</summary>
 		/// <param name="resourceName">Name of the resource.</param>
 		/// <param name="assemblyName">Name of the assembly.</param>
-		/// <param name="data">The content of the assembly.</param>
+		/// <param name="input">The content of the assembly.</param>
 		/// <param name="flags">The flags.</param>
 		/// <param name="options">The options.</param>
 		private void SetBytes(
 			string resourceName,
-			AssemblyName assemblyName, byte[] data, LibZEntry.EntryFlags flags, AppendOptions options)
+			AssemblyName assemblyName, byte[] input, LibZEntry.EntryFlags flags, AppendOptions options)
 		{
 			var codecName = options.CodecName;
 
@@ -373,34 +384,37 @@ namespace LibZ.Manager
 			{
 				// prepare entry
 				var entry = new LibZEntry {
-					Hash = Hash.MD5(resourceName),
+					Id = Hash.MD5(resourceName),
+					Hash = Hash.MD5(input),
 					AssemblyName = assemblyName,
 					Offset = _magicOffset,
 					Flags = flags,
-					OriginalLength = data.Length,
+					OriginalLength = input.Length,
 				};
 
 				// add it to dictionary
 				if (options.Overwrite)
 				{
-					_entries[entry.Hash] = entry;
+					_entries[entry.Id] = entry;
 				}
 				else
 				{
-					_entries.Add(entry.Hash, entry);
+					_entries.Add(entry.Id, entry);
 				}
 
 				// encode it
-				var encoded = Encode(codecName, data);
+				var encoded = Encode(codecName, input);
 				if (encoded != null)
 				{
 					entry.CodecName = codecName;
-					data = encoded;
+					input = encoded;
 				}
 
 				// write it
-				_magicOffset += entry.StorageLength = WriteBytes(_stream, _magicOffset, data);
+				_magicOffset += entry.StorageLength = WriteBytes(_stream, _magicOffset, input);
 				_stream.SetLength(_stream.Position);
+
+				_containerId = Guid.NewGuid();
 
 				_dirty = true;
 			}

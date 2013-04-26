@@ -244,6 +244,7 @@ namespace LibZ.Bootstrap
 				Decoders = new Dictionary<string, Func<byte[], int, byte[]>>();
 				SearchPath = searchPath;
 
+				RegisterDecoder("none", LibZReader.NoneDecoder);
 				RegisterDecoder("deflate", LibZReader.DeflateDecoder);
 
 				// initialize assembly resolver
@@ -727,7 +728,7 @@ namespace LibZ.Bootstrap
 
 			/// <summary>Gets or sets the hash.</summary>
 			/// <value>The hash.</value>
-			public Guid Hash { get; protected internal set; }
+			public Guid Id { get; protected internal set; }
 
 			/// <summary>Gets or sets the name of the assembly.</summary>
 			/// <value>The name of the assembly.</value>
@@ -753,6 +754,10 @@ namespace LibZ.Bootstrap
 			/// <value>The codec name.</value>
 			public string CodecName { get; protected internal set; }
 
+			/// <summary>MD5 hash.</summary>
+			/// <value>The MD5 hash.</value>
+			public Guid Hash { get; protected internal set; }
+
 			#endregion
 
 			#region derived properties
@@ -776,6 +781,7 @@ namespace LibZ.Bootstrap
 			/// <param name="other">The other entry.</param>
 			public LibZEntry(LibZEntry other)
 			{
+				Id = other.Id;
 				Hash = other.Hash;
 				AssemblyName = other.AssemblyName;
 				Flags = other.Flags;
@@ -891,7 +897,6 @@ namespace LibZ.Bootstrap
 					var guid = new Guid(_reader.ReadBytes(GuidLength));
 					if (guid != Magic)
 						throw new ArgumentException("Invalid LibZ file header");
-					_containerId = new Guid(_reader.ReadBytes(GuidLength));
 					_version = _reader.ReadInt32();
 					if (_version != CurrentVersion)
 						throw new NotSupportedException(string.Format("Unsupported LibZ file version ({0})", _version));
@@ -901,11 +906,12 @@ namespace LibZ.Bootstrap
 					if (guid != Magic)
 						throw new ArgumentException("Invalid LibZ file footer");
 					_stream.Position = _magicOffset;
+					_containerId = new Guid(_reader.ReadBytes(GuidLength));
 					var count = _reader.ReadInt32();
 					for (var i = 0; i < count; i++)
 					{
 						var entry = ReadEntry(_reader);
-						_entries.Add(entry.Hash, entry);
+						_entries.Add(entry.Id, entry);
 					}
 				}
 			}
@@ -1003,8 +1009,9 @@ namespace LibZ.Bootstrap
 			private static LibZEntry ReadEntry(BinaryReader reader)
 			{
 				return new LibZEntry {
-					Hash = new Guid(reader.ReadBytes(GuidLength)),
+					Id = new Guid(reader.ReadBytes(GuidLength)),
 					AssemblyName = new AssemblyName(reader.ReadString()),
+					Hash = new Guid(reader.ReadBytes(GuidLength)),
 					Flags = (LibZEntry.EntryFlags)reader.ReadInt32(),
 					Offset = reader.ReadInt64(),
 					OriginalLength = reader.ReadInt32(),
@@ -1016,6 +1023,15 @@ namespace LibZ.Bootstrap
 			#endregion
 
 			#region utility
+
+			/// <summary>No-compression decoder.</summary>
+			/// <param name="input">The input.</param>
+			/// <param name="outputLength">Length of the output.</param>
+			/// <returns>Input.</returns>
+			internal static byte[] NoneDecoder(byte[] input, int outputLength)
+			{
+				return input;
+			}
 
 			/// <summary>Deflate decoder implementation.</summary>
 			/// <param name="input">The input.</param>
