@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -23,6 +22,10 @@ namespace LibZ.Tool.Tasks
 
 		/// <summary>Hash calculator.</summary>
 		private static readonly MD5 MD5Service = MD5.Create();
+
+		protected static readonly Regex ResourceNameRx = new Regex(
+			@"asmz://(?<guid>[0-9a-fA-F]{32})/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
+			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
 		#endregion
 
@@ -316,10 +319,6 @@ namespace LibZ.Tool.Tasks
 
 		#region utilities
 
-		private static readonly Regex ResourceNameRx = new Regex(
-			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
-			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
-
 		/// <summary>Returns a hash of given resource.</summary>
 		/// <param name="resource">The resource.</param>
 		/// <returns>Hash already in resource name.</returns>
@@ -367,7 +366,7 @@ namespace LibZ.Tool.Tasks
 			if (!IsManaged(sourceAssembly)) flags += "u";
 
 			var input = sourceAssemblyBytes;
-			byte[] output = DefaultCodecs.DeflateEncoder(input);
+			var output = DefaultCodecs.DeflateEncoder(input);
 
 			if (output.Length < input.Length)
 			{

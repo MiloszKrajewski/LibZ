@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text.RegularExpressions;
 using LibZ.Tool.InjectIL;
 using Mono.Cecil;
 
@@ -12,15 +11,6 @@ namespace LibZ.Tool.Tasks
 	/// </summary>
 	public class InstrumentLibZTask: TaskBase
 	{
-		#region consts
-
-		/// <summary>The AsmZ resource name regular expression.</summary>
-		private static readonly Regex ResourceNameRx = new Regex(
-			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
-			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
-
-		#endregion
-
 		#region fields
 
 		/// <summary>The instrumentation helper</summary>

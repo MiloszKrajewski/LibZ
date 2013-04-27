@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using ModuleByReference;
-using System.Linq;
 
 namespace ModuleBetween
 {

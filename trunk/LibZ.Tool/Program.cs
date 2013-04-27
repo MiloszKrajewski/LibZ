@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using Ionic.Zlib;
 using LibZ.Bootstrap;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
