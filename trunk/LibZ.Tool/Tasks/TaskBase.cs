@@ -23,6 +23,7 @@ namespace LibZ.Tool.Tasks
 		/// <summary>Hash calculator.</summary>
 		private static readonly MD5 MD5Service = MD5.Create();
 
+		/// <summary>The regular expression to parse resource name</summary>
 		protected static readonly Regex ResourceNameRx = new Regex(
 			@"asmz://(?<guid>[0-9a-fA-F]{32})/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
