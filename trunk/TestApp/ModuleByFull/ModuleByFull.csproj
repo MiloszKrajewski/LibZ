@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A9605A14-6DBE-413E-BFD1-5E104BA2E7EE}</ProjectGuid>
+    <ProjectGuid>{18ED1582-CE3C-468F-B627-37B6938BE72D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LibZ.Codec.LZ4</RootNamespace>
-    <AssemblyName>LibZ.Codec.LZ4</AssemblyName>
+    <RootNamespace>ModuleByFull</RootNamespace>
+    <AssemblyName>ModuleByFull</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +20,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\LibZ.Codec.LZ4.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,14 +28,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\LibZ.Codec.LZ4.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LZ4">
-      <HintPath>..\external\LZ4.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -46,23 +39,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LZ4Codec.cs" />
+    <Compile Include="ModuleByFullCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\LibZ.Tool.Interfaces\LibZ.Tool.Interfaces.csproj">
-      <Project>{46cec914-26b0-4027-ba64-78154174274e}</Project>
-      <Name>LibZ.Tool.Interfaces</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="postbuild.cmd">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName)==Release call postbuild.cmd</PostBuildEvent>
+    <PostBuildEvent>xcopy /y /d $(TargetPath) $(ProjectDir)..\TestApp\bin\x86\$(ConfigurationName)\
+xcopy /y /d $(TargetPath) $(ProjectDir)..\TestApp\bin\x64\$(ConfigurationName)\</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

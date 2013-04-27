@@ -23,7 +23,7 @@ namespace LibZ.Injected
 
 		/// <summary>The resource name regular expression.</summary>
 		private static readonly Regex ResourceNameRx = new Regex(
-			@"asmz://(?<guid>[^/]*)/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
+			@"asmz://(?<guid>[0-9a-fA-F]{32})/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
 		/// <summary>The 'this' assembly (please note, this type is going to be embedded into other assemblies)</summary>
@@ -57,7 +57,14 @@ namespace LibZ.Injected
 				var m = ResourceNameRx.Match(rn);
 				if (!m.Success) continue;
 				var guid = new Guid(m.Groups["guid"].Value);
-				ResourceNames.Add(guid, m);
+				if (ResourceNames.ContainsKey(guid))
+				{
+					Trace.TraceError("Duplicated assembly name, ignoring.");
+				}
+				else
+				{
+					ResourceNames[guid] = m;
+				}
 			}
 
 			AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolver;
