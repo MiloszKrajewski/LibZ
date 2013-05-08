@@ -1,0 +1,11 @@
+release/tool/
+release/lib/
+bin/
+obj/
+ipch/
+*.nupkg
+*.opensdf
+*.user
+*.suo
+*.sdf
+*.snk
