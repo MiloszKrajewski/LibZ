@@ -523,10 +523,9 @@ namespace LibZ.Bootstrap
 				{
 					lock (Decoders) Decoders.Add(codecName, decoder);
 				}
-				catch (ArgumentException e)
+				catch
 				{
-					throw Helpers.Error(new ArgumentException(
-						string.Format("Codec '{0}' already registered", codecName), e));
+					Helpers.Warn(string.Format("Codec '{0}' already registered", codecName));
 				}
 			}
 		}

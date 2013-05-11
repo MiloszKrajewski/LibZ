@@ -33,8 +33,9 @@
     <DocumentationFile>bin\Release\LibZ.Codec.LZ4.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LZ4">
-      <HintPath>..\external\LZ4.dll</HintPath>
+    <Reference Include="LZ4, Version=1.0.1.93, Culture=neutral, PublicKeyToken=035f6c002b5d3816, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\lz4net.1.0.1.93\lib\net40-client\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -56,6 +57,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="postbuild.cmd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

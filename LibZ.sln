@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Tool.InjectIL", "LibZ.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Injected", "LibZ.Injected\LibZ.Injected.csproj", "{C50B6D42-3458-4643-A723-7ABB92CBA6E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.Doboz", "LibZ.Codec.Doboz\LibZ.Codec.Doboz.csproj", "{48C3B10C-6370-4575-8D34-6BD43BA2772D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C50B6D42-3458-4643-A723-7ABB92CBA6E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48C3B10C-6370-4575-8D34-6BD43BA2772D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48C3B10C-6370-4575-8D34-6BD43BA2772D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48C3B10C-6370-4575-8D34-6BD43BA2772D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48C3B10C-6370-4575-8D34-6BD43BA2772D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
