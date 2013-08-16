@@ -14,7 +14,7 @@ namespace LibZ.Injected
 	/// <summary>
 	/// AsmZResolver. Mini resolver getting assemblies straight from resources.
 	/// </summary>
-	public class AsmZResolver
+	internal class AsmZResolver
 	{
 		#region consts
 
@@ -28,6 +28,9 @@ namespace LibZ.Injected
 
 		/// <summary>The 'this' assembly (please note, this type is going to be embedded into other assemblies)</summary>
 		private static readonly Assembly ThisAssembly = typeof(AsmZResolver).Assembly;
+
+		/// <summary>This assembly short name (for debugging).</summary>
+		private static readonly string ThisAssemblyName = ThisAssembly.GetName().Name;
 
 		/// <summary>Hash of 'this' assembly name.</summary>
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
@@ -59,7 +62,7 @@ namespace LibZ.Injected
 				var guid = new Guid(m.Groups["guid"].Value);
 				if (ResourceNames.ContainsKey(guid))
 				{
-					Trace.TraceError("Duplicated assembly name, ignoring.");
+					Warn(string.Format("Duplicated assembly id '{0}', ignoring.", guid.ToString("N")));
 				}
 				else
 				{
@@ -80,7 +83,7 @@ namespace LibZ.Injected
 		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly AssemblyResolver(object sender, ResolveEventArgs args)
 		{
-			Trace.TraceInformation("Resolving: '{0}'", args.Name);
+			Debug(string.Format("Resolving: '{0}'", args.Name));
 
 			var name = args.Name;
 			var result =
@@ -88,7 +91,10 @@ namespace LibZ.Injected
 					TryLoadAssembly(name) ??
 						TryLoadAssembly((IntPtr.Size == 4 ? "x64:" : "x86:") + name);
 
-			if (result != null) Trace.TraceInformation("Found: '{0}'", args.Name);
+			if (result != null)
+				Debug(string.Format("Found: '{0}'", args.Name));
+			else
+				Warn(string.Format("Not found: '{0}'", args.Name));
 
 			return result;
 		}
@@ -103,7 +109,7 @@ namespace LibZ.Injected
 				var guid = Hash(resourceName);
 				Match match;
 				if (!ResourceNames.TryGetValue(guid, out match)) return null;
-				Trace.TraceInformation("Trying to load '{0}'", resourceName);
+				Debug(string.Format("Trying to load '{0}'", resourceName));
 				resourceName = match.Groups[0].Value;
 				var flags = match.Groups["flags"].Value;
 				var size = int.Parse(match.Groups["size"].Value);
@@ -114,7 +120,8 @@ namespace LibZ.Injected
 
 				using (var rstream = ThisAssembly.GetManifestResourceStream(resourceName))
 				{
-					if (rstream == null) return null;
+					if (rstream == null)
+						return null;
 					using (var zstream = compressed ? new DeflateStream(rstream, CompressionMode.Decompress) : rstream)
 					{
 						zstream.Read(buffer, 0, size);
@@ -122,23 +129,24 @@ namespace LibZ.Injected
 				}
 
 				return unmanaged
-					? LoadUnmanagedAssembly(guid, buffer)
+					? LoadUnmanagedAssembly(resourceName, guid, buffer)
 					: Assembly.Load(buffer);
 			}
 			catch (Exception e)
 			{
-				Trace.TraceError("{0}: {1}", e.GetType().Name, e.Message);
+				Error(string.Format("{0}: {1}", e.GetType().Name, e.Message));
 				return null;
 			}
 		}
 
 		/// <summary>Loads the unmanaged assembly.</summary>
+		/// <param name="resourceName">Name of the assembly.</param>
 		/// <param name="guid">The GUID.</param>
 		/// <param name="assemblyImage">The assembly binary image.</param>
 		/// <returns>Loaded assembly or <c>null</c>.</returns>
-		private static Assembly LoadUnmanagedAssembly(Guid guid, byte[] assemblyImage)
+		private static Assembly LoadUnmanagedAssembly(string resourceName, Guid guid, byte[] assemblyImage)
 		{
-			Trace.TraceInformation("Trying to load as unmanaged assembly");
+			Debug(string.Format("Trying to load as unmanaged assembly '{0}'", resourceName));
 
 			var folderPath = Path.Combine(Path.GetTempPath(), ThisAssemblyGuid.ToString("N"));
 			Directory.CreateDirectory(folderPath);
@@ -162,6 +170,24 @@ namespace LibZ.Injected
 				HashProvider.ComputeHash(
 					Encoding.UTF8.GetBytes(
 						text.ToLowerInvariant())));
+		}
+
+		private static void Debug(string message)
+		{
+			if (message != null)
+				Trace.TraceInformation(string.Format("INFO (AsmZ/{0}) {1}", ThisAssemblyName, message));
+		}
+
+		private static void Warn(string message)
+		{
+			if (message != null)
+				Trace.TraceWarning(string.Format("WARN (AsmZ/{0}) {1}", ThisAssemblyName, message));
+		}
+
+		private static void Error(string message)
+		{
+			if (message != null)
+				Trace.TraceError(string.Format("ERROR (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
 		#endregion

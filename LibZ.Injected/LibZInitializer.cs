@@ -22,6 +22,7 @@ namespace LibZ.Injected
 			if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
 			InitializeAsmZ();
 			InitializeLibZ();
+			InitializeDecoders();
 		}
 
 		#endregion
@@ -36,6 +37,11 @@ namespace LibZ.Injected
 
 		/// <summary>Initializes the LibZ resolver.</summary>
 		private static void InitializeLibZ()
+		{
+			// this method is going to be populated after being injected into target assembly
+		}
+
+		private static void InitializeDecoders()
 		{
 			// this method is going to be populated after being injected into target assembly
 		}

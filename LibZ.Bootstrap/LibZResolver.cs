@@ -148,7 +148,7 @@ namespace LibZ.Bootstrap
 			@"^libz://[0-9A-Fa-f]{32}$",
 			RegexOptions.IgnoreCase);
 
-		const StringComparison IgnoreCase = StringComparison.InvariantCultureIgnoreCase;
+		const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 
 		#endregion
 
@@ -544,9 +544,17 @@ namespace LibZ.Bootstrap
 			try
 			{
 				var name = args.Name;
-				return
+				Helpers.Debug(string.Format("Resolving: '{0}'", name));
+				var result =
 					TryLoadAssembly3(name) ??
 					MatchByShortName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
+
+				if (result != null)
+					Helpers.Debug(string.Format("Found: '{0}'", name));
+				else
+					Helpers.Warn(string.Format("Not found: '{0}'", name));
+
+				return result;
 			}
 			catch (Exception e)
 			{
@@ -1333,12 +1341,22 @@ namespace LibZ.Bootstrap
 		/// <summary>Simple helper functions.</summary>
 		public static class Helpers
 		{
+			#region consts
+
+			/// <summary>This assembly</summary>
+			private static readonly Assembly ThisAssembly = typeof(Helpers).Assembly;
+
+			/// <summary>This assembly name</summary>
+			private static readonly string ThisAssemblyName = ThisAssembly.GetName().Name;
+
+			#endregion
+
 			/// <summary>Sends debug message.</summary>
 			/// <param name="message">The message.</param>
 			internal static void Debug(string message)
 			{
 				if (message == null) return;
-				Trace.TraceInformation(message);
+				Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends warning message.</summary>
@@ -1346,7 +1364,7 @@ namespace LibZ.Bootstrap
 			internal static void Warn(string message)
 			{
 				if (message == null) return;
-				Trace.TraceWarning(message);
+				Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends error message.</summary>
@@ -1358,11 +1376,11 @@ namespace LibZ.Bootstrap
 				if (message == null) return;
 				if (ignored)
 				{
-					Trace.TraceWarning(message);
+					Warn(message);
 				}
 				else
 				{
-					Trace.TraceError(message);
+					Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
 				}
 			}
 

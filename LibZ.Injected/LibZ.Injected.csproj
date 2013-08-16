@@ -38,8 +38,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsmZResolver.cs" />
+    <Compile Include="Decoders\DobozDecoder.cs" />
     <Compile Include="LibZInitializer.cs" />
-    <Compile Include="LZ4Decoder.cs" />
+    <Compile Include="Decoders\LZ4Decoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

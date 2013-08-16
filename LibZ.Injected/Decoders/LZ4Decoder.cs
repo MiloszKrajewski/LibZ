@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 // ReSharper disable InconsistentNaming
 
-namespace LibZ.Injected
+namespace LibZ.Injected.Decoders
 {
-	class LZ4Decoder
+	internal class LZ4Decoder
 	{
 		#region consts
 
