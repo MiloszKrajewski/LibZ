@@ -35,6 +35,9 @@ namespace LibZ.Injected
 		/// <summary>Hash of 'this' assembly name.</summary>
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
 
+		/// <summary>The loaded assemblies cache.</summary>
+		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies = new Dictionary<Guid, Assembly>();
+
 		#endregion
 
 		#region static fields
@@ -109,28 +112,44 @@ namespace LibZ.Injected
 				var guid = Hash(resourceName);
 				Match match;
 				if (!ResourceNames.TryGetValue(guid, out match)) return null;
+
+				lock (LoadedAssemblies)
+				{
+					Assembly cached;
+					if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
+				}
+
 				Debug(string.Format("Trying to load '{0}'", resourceName));
 				resourceName = match.Groups[0].Value;
 				var flags = match.Groups["flags"].Value;
 				var size = int.Parse(match.Groups["size"].Value);
 				var compressed = flags.Contains("z");
 				var unmanaged = flags.Contains("u");
+				var portable = flags.Contains("p");
 
 				var buffer = new byte[size];
 
 				using (var rstream = ThisAssembly.GetManifestResourceStream(resourceName))
 				{
-					if (rstream == null)
-						return null;
+					if (rstream == null) return null;
 					using (var zstream = compressed ? new DeflateStream(rstream, CompressionMode.Decompress) : rstream)
 					{
 						zstream.Read(buffer, 0, size);
 					}
 				}
 
-				return unmanaged
+				var loaded = unmanaged || portable
 					? LoadUnmanagedAssembly(resourceName, guid, buffer)
 					: Assembly.Load(buffer);
+
+				lock (LoadedAssemblies)
+				{
+					Assembly cached;
+					if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
+					if (loaded != null) LoadedAssemblies[guid] = loaded;
+				}
+
+				return loaded;
 			}
 			catch (Exception e)
 			{
@@ -146,19 +165,19 @@ namespace LibZ.Injected
 		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly LoadUnmanagedAssembly(string resourceName, Guid guid, byte[] assemblyImage)
 		{
-			Debug(string.Format("Trying to load as unmanaged assembly '{0}'", resourceName));
+			Debug(string.Format("Trying to load as unmanaged/portable assembly '{0}'", resourceName));
 
-			var folderPath = Path.Combine(Path.GetTempPath(), ThisAssemblyGuid.ToString("N"));
+			var folderPath = Path.Combine(
+				Path.GetTempPath(),
+				ThisAssemblyGuid.ToString("N"));
 			Directory.CreateDirectory(folderPath);
 			var filePath = Path.Combine(folderPath, guid.ToString("N") + ".dll");
 			var fileInfo = new FileInfo(filePath);
 
 			if (!fileInfo.Exists || fileInfo.Length != assemblyImage.Length)
-			{
 				File.WriteAllBytes(filePath, assemblyImage);
-			}
 
-			return Assembly.LoadFile(filePath);
+			return Assembly.LoadFrom(filePath);
 		}
 
 		/// <summary>Calculates hash of given text (usually assembly name).</summary>

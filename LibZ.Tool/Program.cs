@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using System.Diagnostics;
 using LibZ.Bootstrap;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
@@ -59,6 +60,8 @@ namespace LibZ.Tool
 		{
 			try
 			{
+				WriteAppInfo();
+
 				LibZContainer.RegisterEncoder("deflate", DefaultCodecs.DeflateEncoder, true);
 				LibZContainer.RegisterCodec("zlib", DefaultCodecs.ZLibEncoder, DefaultCodecs.ZLibDecoder);
 
@@ -73,6 +76,15 @@ namespace LibZ.Tool
 				Log.Debug(e.StackTrace);
 				return 1;
 			}
+		}
+
+		private void WriteAppInfo()
+		{
+			var version = GetType().Assembly.GetName().Version;
+			Console.WriteLine();
+			Console.WriteLine("LibZ {0}, Copyright (c) 2013 Milosz Krajewski", version);
+			Console.WriteLine("https://libz.codeplex.com/");
+			Console.WriteLine();
 		}
 
 		#endregion

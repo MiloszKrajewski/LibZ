@@ -165,6 +165,8 @@ namespace LibZ.Bootstrap
 		/// <summary>The containers.</summary>
 		private static readonly List<LibZReader> ContainerRepository;
 
+		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies;
+
 		#endregion
 
 		#region shared static properies
@@ -230,6 +232,7 @@ namespace LibZ.Bootstrap
 				if (!SharedData.IsOwner) return;
 
 				ContainerRepository = new List<LibZReader>();
+				LoadedAssemblies = new Dictionary<Guid, Assembly>();
 				Lock = new ReaderWriterLockSlim();
 
 				// intialize paths
@@ -643,34 +646,65 @@ namespace LibZ.Bootstrap
 
 			try
 			{
-				var data = container.GetBytes(entry, Decoders);
+				return CacheAssembly(guid, () => {
+					var data = container.GetBytes(entry, Decoders);
 
-				// managed assemblies can be loaded straight from memory
-				if (!entry.Unmanaged)
-					return Assembly.Load(data);
-
-				// unmanaged ones needs to be saved first
-				var folderPath = Path.Combine(
-					Path.GetTempPath(),
-					container.ContainerId.ToString("N"));
-				Directory.CreateDirectory(folderPath);
-
-				var filePath = Path.Combine(folderPath, guid.ToString("N") + ".dll");
-
-				// if file exits and length is matching do not write it
-				// from security point of view this is not the best approach
-				// but it saves some time
-				var fileInfo = new FileInfo(filePath);
-				if (!fileInfo.Exists || fileInfo.Length != data.Length)
-					File.WriteAllBytes(filePath, data);
-
-				return Assembly.LoadFile(filePath);
+					// managed assemblies can be loaded straight from memory
+					return entry.Unmanaged || entry.Portable
+						? LoadUnmanagedAssembly(container.ContainerId, guid, data)
+						: Assembly.Load(data);
+				});
 			}
 			catch (Exception e)
 			{
 				Helpers.Error(e);
 				return null;
 			}
+		}
+
+		private static Assembly CacheAssembly(Guid guid, Func<Assembly> loader)
+		{
+			lock (LoadedAssemblies)
+			{
+				Assembly cached;
+				if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
+			}
+
+			var loaded = loader();
+
+			lock (LoadedAssemblies)
+			{
+				Assembly cached;
+				if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
+				if (loaded != null) LoadedAssemblies[guid] = loaded;
+			}
+
+			return loaded;
+		}
+
+		/// <summary>Tries the load unmanaged assembly.</summary>
+		/// <param name="containerId">The container id.</param>
+		/// <param name="assemblyId">The assembly id.</param>
+		/// <param name="data">The data.</param>
+		/// <returns>Loaded assembly.</returns>
+		private static Assembly LoadUnmanagedAssembly(Guid containerId, Guid assemblyId, byte[] data)
+		{
+			// unmanaged ones needs to be saved first
+			var folderPath = Path.Combine(
+				Path.GetTempPath(),
+				containerId.ToString("N"));
+			Directory.CreateDirectory(folderPath);
+
+			var filePath = Path.Combine(folderPath, assemblyId.ToString("N") + ".dll");
+
+			// if file exits and length is matching do not write it
+			// from security point of view this is not the best approach
+			// but it saves some time
+			var fileInfo = new FileInfo(filePath);
+			if (!fileInfo.Exists || fileInfo.Length != data.Length)
+				File.WriteAllBytes(filePath, data);
+
+			return Assembly.LoadFrom(filePath);
 		}
 
 		#endregion
@@ -727,6 +761,9 @@ namespace LibZ.Bootstrap
 
 				/// <summary>Set when assembly is targetting 64-bit architectule.</summary>
 				AMD64 = 0x04,
+
+				/// <summary>Indicates PCL assembly.</summary>
+				Portable = 0x08,
 			}
 
 			#endregion
@@ -774,6 +811,13 @@ namespace LibZ.Bootstrap
 			public bool Unmanaged
 			{
 				get { return (Flags & EntryFlags.Unmanaged) != 0; }
+			}
+
+			/// <summary>Gets a value indicating whether assembly is portable.</summary>
+			/// <value><c>true</c> if portable; otherwise, <c>false</c>.</value>
+			public bool Portable
+			{
+				get { return (Flags & EntryFlags.Portable) != 0; }
 			}
 
 			#endregion

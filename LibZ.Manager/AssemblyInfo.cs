@@ -14,6 +14,9 @@ namespace LibZ.Manager
 		/// <summary>Is unmanaged.</summary>
 		public bool Unmanaged;
 
+		/// <summary>Is portable.</summary>
+		public bool Portable;
+
 		/// <summary>Is AnyCPU</summary>
 		public bool AnyCPU;
 

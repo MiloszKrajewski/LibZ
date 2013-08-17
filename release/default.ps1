@@ -1,5 +1,5 @@
 Properties {
-	$release = "1.0.3.4"
+	$release = "1.0.3.7"
 	$src = "..\"
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
@@ -11,6 +11,10 @@ FormatTaskName (("-"*79) + "`n`n    {0}`n`n" + ("-"*79))
 
 Task default -depends Release
 
+Task Dist -depends Release {
+	copy-item tool\* d:\bin
+}
+
 Task Release -depends Rebuild {
 	Create-Folder lib
 	Create-Folder tool
@@ -21,6 +25,8 @@ Task Release -depends Rebuild {
 	copy-item "$src\libz\bin\Release\*.exe" tool\
 	copy-item "$src\libz\bin\Release\*.dll" tool\
 	copy-item tool\LibZ.Bootstrap.dll lib\
+	copy-item tool\LibZ.Tool.Interfaces.dll lib\
+	copy-item "$src\LibZ.Bootstrap\LibZResolver.cs" lib\
 	copy-item tool\* temp\
 	copy-item "$src\LibZ.Codec.LZ4\bin\Release\*.dll" temp\lz4\
 	copy-item "$src\LibZ.Codec.Doboz\bin\Release\*.dll" temp\doboz\
@@ -33,7 +39,7 @@ Task Release -depends Rebuild {
 }
 
 Task Version {
-	Update-AssemblyVersion $src $release 'Tests'
+	Update-AssemblyVersion $src $release 'Tests','LibZ.Tool.Interfaces'
 }
 
 Task Rebuild -depends VsVars,Clean,KeyGen,Version {

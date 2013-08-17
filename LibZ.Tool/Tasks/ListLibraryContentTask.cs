@@ -26,8 +26,8 @@ namespace LibZ.Tool.Tasks
 						: 100;
 
 					Log.Info(entry.AssemblyName.FullName);
-					Log.Debug("    flags:{0}, codec:'{1}', size:{2}, compession:{3}%, id:{4})",
-						string.Join(",", GetFlagsText(entry.Flags)),
+					Log.Debug("    flags:{0}, codec:'{1}', size:{2}, compession:{3}%, id:{4}",
+						string.Join("|", GetFlagsText(entry.Flags)),
 						entry.CodecName ?? "<none>",
 						entry.OriginalLength,
 						ratio,
@@ -50,6 +50,9 @@ namespace LibZ.Tool.Tasks
 				yield return "x64";
 			else
 				yield return "x86";
+
+			if ((entryFlags & LibZEntry.EntryFlags.Portable) != 0)
+				yield return "Portable";
 		}
 	}
 }

@@ -38,12 +38,14 @@ namespace LibZ.Tool.Tasks
 					var assemblyName = assembly.Name;
 					var managed = IsManaged(assembly);
 					var architecture = GetArchitecture(assembly);
+					var portable = IsPortable(assembly);
 
 					var assemblyInfo = new AssemblyInfo {
 						AssemblyName = new AssemblyName(assemblyName.FullName),
 						AnyCPU = architecture == AssemblyArchitecture.AnyCPU,
 						AMD64 = architecture == AssemblyArchitecture.X64,
 						Unmanaged = !managed,
+						Portable = portable,
 						Bytes = File.ReadAllBytes(fileName),
 					};
 

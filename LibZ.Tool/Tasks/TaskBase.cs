@@ -28,12 +28,20 @@ namespace LibZ.Tool.Tasks
 			@"asmz://(?<guid>[0-9a-fA-F]{32})/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
 			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
+		/// <summary>The regular expression to detect portable assemblies.</summary>
+		protected static readonly Regex PortableAssemblyRx = new Regex(
+			@"(^|,)\s*Retargetable\s*\=\s*Yes\s*(,|$)",
+			RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+
 		#endregion
 
 		#region static fields
 
 		/// <summary>The wildcard cache.</summary>
 		private static readonly Dictionary<string, Regex> WildcardCacheRx = new Dictionary<string, Regex>();
+
+		/// <summary>Ignore case constant.</summary>
+		private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 
 		#endregion
 
@@ -68,7 +76,7 @@ namespace LibZ.Tool.Tasks
 			{
 				File.Delete(fileName);
 			}
-				// ReSharper disable EmptyGeneralCatchClause
+			// ReSharper disable EmptyGeneralCatchClause
 			catch
 			{
 				Log.Warn("File '{0}' could not be deleted", fileName);
@@ -210,7 +218,7 @@ namespace LibZ.Tool.Tasks
 		{
 			try
 			{
-				Log.Debug("Loading assmbly from resources");
+				Log.Debug("Loading assembly from resources");
 				var result = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes));
 				Log.Debug("Loaded '{0}'", result.FullName);
 				return result;
@@ -242,12 +250,15 @@ namespace LibZ.Tool.Tasks
 				else
 				{
 					Log.Debug("Saving and signing '{0}'", assemblyFileName);
-					assembly.Write(tempFileName, new WriterParameters {StrongNameKeyPair = keyPair});
+					assembly.Write(tempFileName, new WriterParameters { StrongNameKeyPair = keyPair });
 				}
 
 				File.Delete(assemblyFileName);
 				File.Move(tempFileName, assemblyFileName);
-				// TODO:MAK delete .pdb it is no longer valid
+
+				// TODO:MAK pdb may also be merged, but it's not a priority for me
+				var pdbFileName = Path.ChangeExtension(assemblyFileName, "pdb");
+				if (File.Exists(pdbFileName)) File.Delete(pdbFileName);
 			}
 			catch
 			{
@@ -262,7 +273,7 @@ namespace LibZ.Tool.Tasks
 		/// <returns></returns>
 		protected static bool EqualAssemblyNames(string valueA, string valueB)
 		{
-			return String.Compare(valueA, valueB, StringComparison.InvariantCultureIgnoreCase) == 0;
+			return String.Compare(valueA, valueB, IgnoreCase) == 0;
 		}
 
 		/// <summary>Determines whether the specified assembly is managed.</summary>
@@ -271,6 +282,17 @@ namespace LibZ.Tool.Tasks
 		protected static bool IsManaged(AssemblyDefinition assembly)
 		{
 			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);
+		}
+
+		/// <summary>Determines whether the specified assembly is portable.
+		/// It uses probably very simplified method of finding retargetable references.</summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <returns><c>true</c> if the specified assembly is portable; otherwise, <c>false</c>.</returns>
+		protected static bool IsPortable(AssemblyDefinition assembly)
+		{
+			return assembly.Modules
+				.SelectMany(m => m.AssemblyReferences)
+				.Any(r => r.IsRetargetable);
 		}
 
 		/// <summary>Determines whether the specified assembly is signed.</summary>
@@ -365,6 +387,7 @@ namespace LibZ.Tool.Tasks
 		{
 			var flags = String.Empty;
 			if (!IsManaged(sourceAssembly)) flags += "u";
+			if (IsPortable(sourceAssembly)) flags += "p";
 
 			var input = sourceAssemblyBytes;
 			var output = DefaultCodecs.DeflateEncoder(input);

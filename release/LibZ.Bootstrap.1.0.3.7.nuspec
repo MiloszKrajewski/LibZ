@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>LibZ.Bootstrap</id>
-        <version>1.0.3.4</version>
+        <version>1.0.3.7</version>
         <title>LibZ.Bootstrap</title>
         <authors>Milosz Krajewski</authors>
         <owners>Milosz Krajewski</owners>
@@ -20,7 +20,7 @@ Package contains a tool to create LibZ files and Bootstrapper DLL (optional).</d
     </metadata>
     <files>
         <file src="lib\LibZ.Bootstrap.dll" target="lib\net40-client\LibZ.Bootstrap.dll" />
-        <file src="..\LibZ.Bootstrap\LibZResolver.cs" target="src\LibZResolver.cs" />
+        <file src="lib\LibZResolver.cs" target="src\LibZResolver.cs" />
         <file src="tool\doboz.libzcodec" target="tools\doboz.libzcodec" />
         <file src="tool\libz.exe" target="tools\libz.exe" />
         <file src="tool\lz4.libzcodec" target="tools\lz4.libzcodec" />

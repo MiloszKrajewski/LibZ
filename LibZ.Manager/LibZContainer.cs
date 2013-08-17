@@ -157,6 +157,7 @@ namespace LibZ.Manager
 			if (assemblyInfo.Unmanaged) flags |= LibZEntry.EntryFlags.Unmanaged;
 			if (assemblyInfo.AnyCPU) flags |= LibZEntry.EntryFlags.AnyCPU;
 			if (assemblyInfo.AMD64) flags |= LibZEntry.EntryFlags.AMD64;
+			if (assemblyInfo.Portable) flags |= LibZEntry.EntryFlags.Portable;
 
 			var platformId =
 				assemblyInfo.AnyCPU ? string.Empty :
