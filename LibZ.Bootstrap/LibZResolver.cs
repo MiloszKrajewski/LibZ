@@ -82,7 +82,6 @@ using LibZ.Bootstrap.Internal;
  */
 
 #if LIBZ_MANAGER
-
 namespace LibZ.Manager
 #else
 namespace LibZ.Bootstrap
@@ -191,7 +190,7 @@ namespace LibZ.Bootstrap
 			set { SharedData.Set(1, value); }
 		}
 
-		/// <summary>Gets the search path. Please note, this list os not thread save. 
+		/// <summary>Gets the search path. Please note, this list is not thread save. 
 		/// If you are going to modify it, put it inside lock statement.</summary>
 		/// <value>The search path.</value>
 		public static List<string> SearchPath
