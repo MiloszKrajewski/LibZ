@@ -193,19 +193,19 @@ namespace LibZ.Injected
 
 		private static void Debug(string message)
 		{
-			if (message != null)
+			if (message != null && trace)
 				Trace.TraceInformation(string.Format("INFO (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
 		private static void Warn(string message)
 		{
-			if (message != null)
+			if (message != null && trace)
 				Trace.TraceWarning(string.Format("WARN (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
 		private static void Error(string message)
 		{
-			if (message != null)
+			if (message != null && trace)
 				Trace.TraceError(string.Format("ERROR (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 

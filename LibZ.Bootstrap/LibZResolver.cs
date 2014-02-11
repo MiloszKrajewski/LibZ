@@ -71,6 +71,8 @@ using System.Threading;
 using System.Resources;
 using System.Text.RegularExpressions;
 using LibZ.Bootstrap.Internal;
+using Microsoft.Win32;
+
 #endif
 
 
@@ -1386,6 +1388,12 @@ namespace LibZ.Bootstrap
 		{
 			#region consts
 
+			/// <summary>Trace key path.</summary>
+			public const string REGISTRY_KEY_PATH = @"Software\Softpark\LibZ";
+
+			/// <summary>Trace key name.</summary>
+			public const string REGISTRY_KEY_NAME = @"Trace";
+
 			/// <summary>This assembly</summary>
 			private static readonly Assembly ThisAssembly = typeof(Helpers).Assembly;
 
@@ -1394,20 +1402,56 @@ namespace LibZ.Bootstrap
 
 			#endregion
 
+			#region static fields
+
+			private static readonly bool Trace;
+
+			#endregion
+
+			static Helpers()
+			{
+				Trace =
+					GetRegistryBool(Registry.CurrentUser, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+						GetRegistryBool(Registry.LocalMachine, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+							false;
+			}
+
+			/// <summary>Gets bool value from registry.</summary>
+			/// <param name="root">The root key.</param>
+			/// <param name="path">The path to key.</param>
+			/// <param name="name">The name of value.</param>
+			/// <returns>Value of given... value.</returns>
+			public static bool? GetRegistryBool(RegistryKey root, string path, string name)
+			{
+				if (root == null) return null;
+				var key = root.OpenSubKey(path);
+				if (key == null) return null;
+				var value = key.GetValue(name);
+				if (value == null) return null;
+				try
+				{
+					return Convert.ToInt32(value) != 0;
+				}
+				catch
+				{
+					return null;
+				}
+			}
+
 			/// <summary>Sends debug message.</summary>
 			/// <param name="message">The message.</param>
 			internal static void Debug(string message)
 			{
-				if (message == null) return;
-				Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
+				if (message == null || !Trace) return;
+				System.Diagnostics.Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends warning message.</summary>
 			/// <param name="message">The message.</param>
 			internal static void Warn(string message)
 			{
-				if (message == null) return;
-				Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
+				if (message == null || !Trace) return;
+				System.Diagnostics.Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends error message.</summary>
@@ -1416,14 +1460,14 @@ namespace LibZ.Bootstrap
 			/// so problem is reported as Warning instead of Error.</param>
 			internal static void Error(string message, bool ignored = false)
 			{
-				if (message == null) return;
+				if (message == null || !Trace) return;
 				if (ignored)
 				{
 					Warn(message);
 				}
 				else
 				{
-					Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
+					System.Diagnostics.Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
 				}
 			}
 
