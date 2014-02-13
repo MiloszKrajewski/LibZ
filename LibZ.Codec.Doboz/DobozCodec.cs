@@ -6,7 +6,7 @@ namespace LibZ.Codec.Doboz
 {
 	/// <summary>Demo LZ4 codec.</summary>
 	[Export(typeof(ICodec))]
-	public class LZ4Codec: ICodec
+	public class DobozCodec: ICodec
 	{
 		#region ICodec Members
 

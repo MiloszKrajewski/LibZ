@@ -71,7 +71,7 @@ namespace LibZ.Manager
 		private BinaryWriter _writer;
 
 		/// <summary>The dirty flag.</summary>
-		protected bool _dirty;
+		private bool _dirty;
 
 		#endregion
 

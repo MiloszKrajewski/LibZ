@@ -1,52 +1,4 @@
-﻿#region License
-
-/*
- * Copyright (c) 2013, Milosz Krajewski
- * 
- * Microsoft Public License (Ms-PL)
- * This license governs use of the accompanying software. 
- * If you use the software, you accept this license. 
- * If you do not accept the license, do not use the software.
- * 
- * 1. Definitions
- * The terms "reproduce," "reproduction," "derivative works," and "distribution" have the same 
- * meaning here as under U.S. copyright law.
- * A "contribution" is the original software, or any additions or changes to the software.
- * A "contributor" is any person that distributes its contribution under this license.
- * "Licensed patents" are a contributor's patent claims that read directly on its contribution.
- * 
- * 2. Grant of Rights
- * (A) Copyright Grant- Subject to the terms of this license, including the license conditions 
- * and limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
- * royalty-free copyright license to reproduce its contribution, prepare derivative works of 
- * its contribution, and distribute its contribution or any derivative works that you create.
- * (B) Patent Grant- Subject to the terms of this license, including the license conditions and 
- * limitations in section 3, each contributor grants you a non-exclusive, worldwide, 
- * royalty-free license under its licensed patents to make, have made, use, sell, offer for sale, 
- * import, and/or otherwise dispose of its contribution in the software or derivative works of 
- * the contribution in the software.
- * 
- * 3. Conditions and Limitations
- * (A) No Trademark License- This license does not grant you rights to use any contributors' name, 
- * logo, or trademarks.
- * (B) If you bring a patent claim against any contributor over patents that you claim are infringed 
- * by the software, your patent license from such contributor to the software ends automatically.
- * (C) If you distribute any portion of the software, you must retain all copyright, patent, trademark, 
- * and attribution notices that are present in the software.
- * (D) If you distribute any portion of the software in source code form, you may do so only under this 
- * license by including a complete copy of this license with your distribution. If you distribute 
- * any portion of the software in compiled or object code form, you may only do so under a license 
- * that complies with this license.
- * (E) The software is licensed "as-is." You bear the risk of using it. The contributors give no express
- * warranties, guarantees or conditions. You may have additional consumer rights under your local 
- * laws which this license cannot change. To the extent permitted under your local laws, the 
- * contributors exclude the implied warranties of merchantability, fitness for a particular 
- * purpose and non-infringement.
- */
-
-#endregion
-
-#region conditionals
+﻿#region conditionals
 
 #if !LIBZ_MANAGER && !LIBZ_BOOTSTRAP
 #define LIBZ_INTERNAL
@@ -63,18 +15,15 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-
-#if !LIBZ_MANAGER
-using System.Resources;
 using System.Text.RegularExpressions;
-using LibZ.Bootstrap.Internal;
+using System.Threading;
 using Microsoft.Win32;
-
+#if !LIBZ_MANAGER
+using LibZ.Bootstrap.Internal;
 #endif
-
 
 /*
  * NOTE: This file is a little bit messy and contains multiple classes and namespaces.
@@ -86,6 +35,7 @@ using Microsoft.Win32;
 #if LIBZ_MANAGER
 namespace LibZ.Manager
 #else
+
 namespace LibZ.Bootstrap
 #endif
 {
@@ -114,6 +64,7 @@ namespace LibZ.Bootstrap
 	namespace Internal
 	{
 		internal partial class LibZEntry { };
+
 		internal partial class LibZReader { };
 	}
 
@@ -143,13 +94,13 @@ namespace LibZ.Bootstrap
 		#region consts
 
 		/// <summary>
-		/// Regular expression for embedded containers.
+		///     Regular expression for embedded containers.
 		/// </summary>
 		private static readonly Regex LibZResourceNameRx = new Regex(
 			@"^libz://[0-9A-Fa-f]{32}$",
 			RegexOptions.IgnoreCase);
 
-		const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
+		private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 
 		#endregion
 
@@ -192,8 +143,10 @@ namespace LibZ.Bootstrap
 			set { SharedData.Set(1, value); }
 		}
 
-		/// <summary>Gets the search path. Please note, this list is not thread save. 
-		/// If you are going to modify it, put it inside lock statement.</summary>
+		/// <summary>
+		///     Gets the search path. Please note, this list is not thread save.
+		///     If you are going to modify it, put it inside lock statement.
+		/// </summary>
 		/// <value>The search path.</value>
 		public static List<string> SearchPath
 		{
@@ -221,7 +174,9 @@ namespace LibZ.Bootstrap
 
 		#region static constructor
 
-		/// <summary>Initializes the <see cref="LibZResolver"/> class.</summary>
+		/// <summary>
+		///     Initializes the <see cref="LibZResolver" /> class.
+		/// </summary>
 		static LibZResolver()
 		{
 			// this is VERY bad, I know
@@ -230,7 +185,8 @@ namespace LibZ.Bootstrap
 			// I need something known to both of them
 			lock (typeof(object))
 			{
-				if (!SharedData.IsOwner) return;
+				if (!SharedData.IsOwner)
+					return;
 
 				ContainerRepository = new List<LibZReader>();
 				LoadedAssemblies = new Dictionary<Guid, Assembly>();
@@ -264,7 +220,8 @@ namespace LibZ.Bootstrap
 			try
 			{
 				var existing = ContainerRepository.FirstOrDefault(c => c.ContainerId == container.ContainerId);
-				if (existing != null) return existing.ContainerId;
+				if (existing != null)
+					return existing.ContainerId;
 
 				Lock.EnterWriteLock();
 				try
@@ -317,8 +274,10 @@ namespace LibZ.Bootstrap
 
 		#region public interface
 
-		/// <summary>Application startup. It is used to postpone assembly loading until 
-		/// LibZResolver is intialized.</summary>
+		/// <summary>
+		///     Application startup. It is used to postpone assembly loading until
+		///     LibZResolver is intialized.
+		/// </summary>
 		/// <param name="action">The action.</param>
 		/// <returns>Exit code.</returns>
 		public static int Startup(Action action)
@@ -327,10 +286,14 @@ namespace LibZ.Bootstrap
 			return 0;
 		}
 
-		/// <summary>Application startup. It is used to postpone assembly loading until 
-		/// LibZResolver is intialized.</summary>
+		/// <summary>
+		///     Application startup. It is used to postpone assembly loading until
+		///     LibZResolver is intialized.
+		/// </summary>
 		/// <param name="action">The action.</param>
-		/// <returns>Exit code returned by <paramref name="action"/>.</returns>
+		/// <returns>
+		///     Exit code returned by <paramref name="action" />.
+		/// </returns>
 		public static int Startup(Func<int> action)
 		{
 			return action();
@@ -365,8 +328,10 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Registers the container.</summary>
 		/// <param name="stream">The stream.</param>
-		/// <param name="optional">if set to <c>true</c> container is optional,
-		/// so failure to load does not cause exception.</param>
+		/// <param name="optional">
+		///     if set to <c>true</c> container is optional,
+		///     so failure to load does not cause exception.
+		/// </param>
 		/// <returns>GUID of added container.</returns>
 		/// <exception cref="System.ArgumentNullException">stream</exception>
 		public static Guid RegisterStreamContainer(
@@ -381,15 +346,18 @@ namespace LibZ.Bootstrap
 			catch (Exception e)
 			{
 				Helpers.Error(e, optional);
-				if (!optional) throw;
+				if (!optional)
+					throw;
 				return Guid.Empty;
 			}
 		}
 
 		/// <summary>Registers the container from file.</summary>
 		/// <param name="libzFileName">Name of the libz file.</param>
-		/// <param name="optional">if set to <c>true</c> container is optional,
-		/// so failure to load does not cause exception.</param>
+		/// <param name="optional">
+		///     if set to <c>true</c> container is optional,
+		///     so failure to load does not cause exception.
+		/// </param>
 		/// <returns>GUID of added container.</returns>
 		/// <exception cref="System.IO.FileNotFoundException"></exception>
 		public static Guid RegisterFileContainer(
@@ -414,7 +382,8 @@ namespace LibZ.Bootstrap
 			catch (Exception e)
 			{
 				Helpers.Error(e, optional);
-				if (!optional) throw;
+				if (!optional)
+					throw;
 				return Guid.Empty;
 			}
 		}
@@ -422,8 +391,10 @@ namespace LibZ.Bootstrap
 		/// <summary>Registers the container from resources.</summary>
 		/// <param name="assemblyHook">The assembly hook.</param>
 		/// <param name="libzFileName">Name of the libz file.</param>
-		/// <param name="optional">if set to <c>true</c> container is optional,
-		/// so failure to load does not cause exception.</param>
+		/// <param name="optional">
+		///     if set to <c>true</c> container is optional,
+		///     so failure to load does not cause exception.
+		/// </param>
 		/// <returns>GUID of added container.</returns>
 		public static Guid RegisterResourceContainer(
 			Type assemblyHook, string libzFileName, bool optional = true)
@@ -445,7 +416,8 @@ namespace LibZ.Bootstrap
 			catch (Exception e)
 			{
 				Helpers.Error(e, optional);
-				if (!optional) throw;
+				if (!optional)
+					throw;
 				return Guid.Empty;
 			}
 		}
@@ -457,11 +429,14 @@ namespace LibZ.Bootstrap
 		{
 			try
 			{
-				if (libzFileNamePattern == null) libzFileNamePattern = ".\\";
+				if (libzFileNamePattern == null)
+					libzFileNamePattern = ".\\";
 				var folder = Path.GetDirectoryName(libzFileNamePattern);
-				if (string.IsNullOrWhiteSpace(folder)) folder = ".";
+				if (string.IsNullOrWhiteSpace(folder))
+					folder = ".";
 				var pattern = Path.GetFileName(libzFileNamePattern);
-				if (string.IsNullOrWhiteSpace(pattern)) pattern = "*.libz";
+				if (string.IsNullOrWhiteSpace(pattern))
+					pattern = "*.libz";
 				var proxies = Directory
 					.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder), pattern)
 					.Select(fn => RegisterFileContainer(fn))
@@ -505,9 +480,11 @@ namespace LibZ.Bootstrap
 		/// <summary>Registers the decoder.</summary>
 		/// <param name="codecName">Name of the codec.</param>
 		/// <param name="decoder">The decoder function.</param>
-		/// <param name="overwrite">if set to <c>true</c> overwrites previously registered decoder. 
-		/// Useful when decoder has multiple versions (for example safe and unsafe one) but at startup
-		/// we have access to only one of them.</param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> overwrites previously registered decoder.
+		///     Useful when decoder has multiple versions (for example safe and unsafe one) but at startup
+		///     we have access to only one of them.
+		/// </param>
 		/// <exception cref="System.ArgumentException">codecName is null or empty.</exception>
 		/// <exception cref="System.ArgumentNullException">decoder is null.</exception>
 		public static void RegisterDecoder(string codecName, Func<byte[], int, byte[]> decoder, bool overwrite = false)
@@ -519,13 +496,15 @@ namespace LibZ.Bootstrap
 
 			if (overwrite)
 			{
-				lock (Decoders) Decoders[codecName] = decoder;
+				lock (Decoders)
+					Decoders[codecName] = decoder;
 			}
 			else
 			{
 				try
 				{
-					lock (Decoders) Decoders.Add(codecName, decoder);
+					lock (Decoders)
+						Decoders.Add(codecName, decoder);
 				}
 				catch
 				{
@@ -541,8 +520,12 @@ namespace LibZ.Bootstrap
 		#region resolve
 
 		/// <summary>Tries to load missing assembly from LibZ containers.</summary>
-		/// <param name="args">The <see cref="ResolveEventArgs"/> instance containing the event data.</param>
-		/// <returns>Loaded assembly (or <c>null</c>)</returns>
+		/// <param name="args">
+		///     The <see cref="ResolveEventArgs" /> instance containing the event data.
+		/// </param>
+		/// <returns>
+		///     Loaded assembly (or <c>null</c>)
+		/// </returns>
 		private static Assembly Resolve(ResolveEventArgs args)
 		{
 			try
@@ -551,7 +534,7 @@ namespace LibZ.Bootstrap
 				Helpers.Debug(string.Format("Resolving: '{0}'", name));
 				var result =
 					TryLoadAssembly3(name) ??
-					MatchByShortName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
+						MatchByShortName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
 
 				if (result != null)
 					Helpers.Debug(string.Format("Found: '{0}'", name));
@@ -598,21 +581,25 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Tries the load assembly for 3 platforms, native, any cpu, then "opossite".</summary>
 		/// <param name="assemblyName">Name of the assembly.</param>
-		/// <returns>Loaded assembly or <c>null</c>.</returns>
+		/// <returns>
+		///     Loaded assembly or <c>null</c>.
+		/// </returns>
 		private static Assembly TryLoadAssembly3(string assemblyName)
 		{
 			return
 				// try native one first
 				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + assemblyName) ??
-				// ...then AnyCPU
-				TryLoadAssembly(assemblyName) ??
-				// ...then try the opposite platform (as far as I understand x64 may use x86)
-				(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
+					// ...then AnyCPU
+					TryLoadAssembly(assemblyName) ??
+						// ...then try the opposite platform (as far as I understand x64 may use x86)
+						(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
 		}
 
 		/// <summary>Tries to load assembly by its resource name.</summary>
 		/// <param name="resourceName">Name of the resource.</param>
-		/// <returns>Loaded assembly or <c>null</c>.</returns>
+		/// <returns>
+		///     Loaded assembly or <c>null</c>.
+		/// </returns>
 		private static Assembly TryLoadAssembly(string resourceName)
 		{
 			var guid = Hash.MD5(resourceName ?? string.Empty);
@@ -639,11 +626,14 @@ namespace LibZ.Bootstrap
 		/// <summary>Tries the load assembly.</summary>
 		/// <param name="container">The container.</param>
 		/// <param name="guid">The GUID.</param>
-		/// <returns>Loaded assembly or <c>null</c></returns>
+		/// <returns>
+		///     Loaded assembly or <c>null</c>
+		/// </returns>
 		private static Assembly TryLoadAssembly(LibZReader container, Guid guid)
 		{
 			var entry = container.TryGetEntry(guid);
-			if (entry == null) return null;
+			if (entry == null)
+				return null;
 
 			try
 			{
@@ -668,7 +658,8 @@ namespace LibZ.Bootstrap
 			lock (LoadedAssemblies)
 			{
 				Assembly cached;
-				if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
+				if (LoadedAssemblies.TryGetValue(guid, out cached))
+					return cached;
 			}
 
 			var loaded = loader();
@@ -676,8 +667,10 @@ namespace LibZ.Bootstrap
 			lock (LoadedAssemblies)
 			{
 				Assembly cached;
-				if (LoadedAssemblies.TryGetValue(guid, out cached)) return cached;
-				if (loaded != null) LoadedAssemblies[guid] = loaded;
+				if (LoadedAssemblies.TryGetValue(guid, out cached))
+					return cached;
+				if (loaded != null)
+					LoadedAssemblies[guid] = loaded;
 			}
 
 			return loaded;
@@ -714,7 +707,9 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Finds the file on search path.</summary>
 		/// <param name="libzFileName">Name of the libz file.</param>
-		/// <returns>Full path of found LibZ file, or <c>null</c>.</returns>
+		/// <returns>
+		///     Full path of found LibZ file, or <c>null</c>.
+		/// </returns>
 		private static string FindFile(string libzFileName)
 		{
 			if (Path.IsPathRooted(libzFileName))
@@ -808,14 +803,18 @@ namespace LibZ.Bootstrap
 			#region derived properties
 
 			/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
-			/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
+			/// <value>
+			///     <c>true</c> if unmanaged; otherwise, <c>false</c>.
+			/// </value>
 			public bool Unmanaged
 			{
 				get { return (Flags & EntryFlags.Unmanaged) != 0; }
 			}
 
 			/// <summary>Gets a value indicating whether assembly is portable.</summary>
-			/// <value><c>true</c> if portable; otherwise, <c>false</c>.</value>
+			/// <value>
+			///     <c>true</c> if portable; otherwise, <c>false</c>.
+			/// </value>
 			public bool Portable
 			{
 				get { return (Flags & EntryFlags.Portable) != 0; }
@@ -825,11 +824,15 @@ namespace LibZ.Bootstrap
 
 			#region constructor
 
-			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="LibZEntry" /> class.
+			/// </summary>
 			public LibZEntry() { }
 
-			/// <summary>Initializes a new instance of the <see cref="LibZEntry"/> class. 
-			/// Copies all field from other object.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="LibZEntry" /> class.
+			///     Copies all field from other object.
+			/// </summary>
 			/// <param name="other">The other entry.</param>
 			public LibZEntry(LibZEntry other)
 			{
@@ -874,6 +877,8 @@ namespace LibZ.Bootstrap
 
 			#region fields
 
+			// ReSharper disable InconsistentNaming
+
 			/// <summary>The container id</summary>
 			protected Guid _containerId = Guid.Empty;
 
@@ -881,7 +886,7 @@ namespace LibZ.Bootstrap
 			protected long _magicOffset;
 
 			/// <summary>The actual version of container file format.</summary>
-			protected int _version;
+			private int _version;
 
 			/// <summary>The map of entries.</summary>
 			protected Dictionary<Guid, LibZEntry> _entries = new Dictionary<Guid, LibZEntry>();
@@ -893,7 +898,9 @@ namespace LibZ.Bootstrap
 			protected BinaryReader _reader;
 
 			/// <summary>Indicates if object has been already disposed.</summary>
-			protected bool _disposed;
+			private bool _disposed;
+
+			// ReSharper restore InconsistentNaming
 
 			#endregion
 
@@ -916,7 +923,9 @@ namespace LibZ.Bootstrap
 
 			#region static constructor
 
-			/// <summary>Initializes the <see cref="LibZReader"/> class.</summary>
+			/// <summary>
+			///     Initializes the <see cref="LibZReader" /> class.
+			/// </summary>
 			static LibZReader()
 			{
 				RegisterDecoder("deflate", DeflateDecoder);
@@ -926,10 +935,14 @@ namespace LibZ.Bootstrap
 
 			#region constructor
 
-			/// <summary>Initializes a new instance of the <see cref="LibZReader"/> class.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="LibZReader" /> class.
+			/// </summary>
 			protected LibZReader() { }
 
-			/// <summary>Initializes a new instance of the <see cref="LibZReader"/> class.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="LibZReader" /> class.
+			/// </summary>
 			/// <param name="stream">The stream.</param>
 			public LibZReader(Stream stream)
 			{
@@ -975,9 +988,11 @@ namespace LibZ.Bootstrap
 			/// <summary>Registers the decoder.</summary>
 			/// <param name="codecName">The codec name.</param>
 			/// <param name="decoder">The decoder.</param>
-			/// <param name="overwrite">if set to <c>true</c> overwrites previously registered decoder. 
-			/// Useful when decoder has multiple versions (for example safe and unsafe one) but at startup
-			/// we have access to only one of them.</param>
+			/// <param name="overwrite">
+			///     if set to <c>true</c> overwrites previously registered decoder.
+			///     Useful when decoder has multiple versions (for example safe and unsafe one) but at startup
+			///     we have access to only one of them.
+			/// </param>
 			/// <exception cref="System.ArgumentException">codecName is null or empty</exception>
 			/// <exception cref="System.ArgumentNullException">decoder is null.</exception>
 			public static void RegisterDecoder(string codecName, Func<byte[], int, byte[]> decoder, bool overwrite = false)
@@ -991,13 +1006,15 @@ namespace LibZ.Bootstrap
 
 				if (overwrite)
 				{
-					lock (decoders) decoders[codecName] = decoder;
+					lock (decoders)
+						decoders[codecName] = decoder;
 				}
 				else
 				{
 					try
 					{
-						lock (decoders) decoders.Add(codecName, decoder);
+						lock (decoders)
+							decoders.Add(codecName, decoder);
 					}
 					catch (ArgumentException e)
 					{
@@ -1009,7 +1026,9 @@ namespace LibZ.Bootstrap
 
 			/// <summary>Tries the get entry.</summary>
 			/// <param name="guid">The GUID.</param>
-			/// <returns>Entry with specified GUID or <c>null</c>.</returns>
+			/// <returns>
+			///     Entry with specified GUID or <c>null</c>.
+			/// </returns>
 			public LibZEntry TryGetEntry(Guid guid)
 			{
 				LibZEntry result;
@@ -1048,7 +1067,8 @@ namespace LibZ.Bootstrap
 				string codecName, byte[] data, int outputLength,
 				IDictionary<string, Func<byte[], int, byte[]>> decoders)
 			{
-				if (string.IsNullOrEmpty(codecName)) return data;
+				if (string.IsNullOrEmpty(codecName))
+					return data;
 				Func<byte[], int, byte[]> decoder;
 				lock (decoders)
 				{
@@ -1107,9 +1127,11 @@ namespace LibZ.Bootstrap
 			protected static byte[] ReadBytes(Stream stream, long position, int length)
 			{
 				var result = new byte[length];
-				if (position >= 0) stream.Position = position;
+				if (position >= 0)
+					stream.Position = position;
 				var read = stream.Read(result, 0, length);
-				if (read < length) throw new IOException("LibZ container is corrupted");
+				if (read < length)
+					throw new IOException("LibZ container is corrupted");
 				return result;
 			}
 
@@ -1118,8 +1140,8 @@ namespace LibZ.Bootstrap
 			#region IDisposable Members
 
 			/// <summary>
-			/// Releases unmanaged resources and performs other cleanup operations before the
-			/// object is reclaimed by garbage collection.
+			///     Releases unmanaged resources and performs other cleanup operations before the
+			///     object is reclaimed by garbage collection.
 			/// </summary>
 			~LibZReader()
 			{
@@ -1127,7 +1149,7 @@ namespace LibZ.Bootstrap
 			}
 
 			/// <summary>
-			/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+			///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 			/// </summary>
 			public void Dispose()
 			{
@@ -1136,13 +1158,16 @@ namespace LibZ.Bootstrap
 			}
 
 			/// <summary>
-			/// Releases unmanaged and - optionally - managed resources
+			///     Releases unmanaged and - optionally - managed resources
 			/// </summary>
-			/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; 
-			/// <c>false</c> to release only unmanaged resources.</param>
+			/// <param name="disposing">
+			///     <c>true</c> to release both managed and unmanaged resources;
+			///     <c>false</c> to release only unmanaged resources.
+			/// </param>
 			private void Dispose(bool disposing)
 			{
-				if (_disposed) return;
+				if (_disposed)
+					return;
 
 				try
 				{
@@ -1176,7 +1201,8 @@ namespace LibZ.Bootstrap
 			protected static void TryDispose<T>(ref T subject) where T: class
 			{
 				var disposable = subject as IDisposable;
-				if (ReferenceEquals(disposable, null)) return;
+				if (ReferenceEquals(disposable, null))
+					return;
 				disposable.Dispose();
 				subject = null;
 			}
@@ -1209,7 +1235,9 @@ namespace LibZ.Bootstrap
 
 			#region constructor
 
-			/// <summary>Initializes a new instance of the <see cref="LibZCatalog"/> class.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="LibZCatalog" /> class.
+			/// </summary>
 			/// <param name="reader">The reader.</param>
 			public LibZCatalog(LibZReader reader)
 			{
@@ -1219,11 +1247,13 @@ namespace LibZ.Bootstrap
 			/// <summary>Initializes this instance. Deffers querying assemblies until it is actually needed.</summary>
 			private void Initialize()
 			{
-				if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
+				if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
+					return;
 				_catalogs = new List<TypeCatalog>();
 				_parts = new List<ComposablePartDefinition>();
 
-				if (_reader == null) return;
+				if (_reader == null)
+					return;
 
 				var assemblyNames = _reader.Entries.Select(e => e.AssemblyName).ToList();
 
@@ -1248,8 +1278,9 @@ namespace LibZ.Bootstrap
 			#region overrides
 
 			/// <summary>Gets the part definitions that are contained in the catalog.</summary>
-			/// <returns>The <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" /> 
-			/// contained in the <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartCatalog" />.
+			/// <returns>
+			///     The <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" />
+			///     contained in the <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartCatalog" />.
 			/// </returns>
 			public override IQueryable<ComposablePartDefinition> Parts
 			{
@@ -1261,17 +1292,19 @@ namespace LibZ.Bootstrap
 			}
 
 			/// <summary>
-			/// Gets a list of export definitions that match the constraint defined by the specified
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ImportDefinition" /> object.
+			///     Gets a list of export definitions that match the constraint defined by the specified
+			///     <see cref="T:System.ComponentModel.Composition.Primitives.ImportDefinition" /> object.
 			/// </summary>
-			/// <param name="definition">The conditions of the
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" />
-			/// objects to be returned.</param>
+			/// <param name="definition">
+			///     The conditions of the
+			///     <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" />
+			///     objects to be returned.
+			/// </param>
 			/// <returns>
-			/// A collection of <see cref="T:System.Tuple`2" /> containing the
-			/// <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" /> objects
-			/// and their associated <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" />
-			/// objects for objects that match the constraint specified by <paramref name="definition" />.
+			///     A collection of <see cref="T:System.Tuple`2" /> containing the
+			///     <see cref="T:System.ComponentModel.Composition.Primitives.ExportDefinition" /> objects
+			///     and their associated <see cref="T:System.ComponentModel.Composition.Primitives.ComposablePartDefinition" />
+			///     objects for objects that match the constraint specified by <paramref name="definition" />.
 			/// </returns>
 			public override IEnumerable<Tuple<ComposablePartDefinition, ExportDefinition>> GetExports(ImportDefinition definition)
 			{
@@ -1298,14 +1331,17 @@ namespace LibZ.Bootstrap
 
 			#region constructor
 
-			/// <summary>Initializes a new instance of the <see cref="GlobalDictionary"/> class.</summary>
+			/// <summary>
+			///     Initializes a new instance of the <see cref="GlobalDictionary" /> class.
+			/// </summary>
 			/// <param name="dictionaryName">Name of the dictionary.</param>
 			public GlobalDictionary(string dictionaryName)
 			{
 				lock (typeof(object))
 				{
 					_data = AppDomain.CurrentDomain.GetData(dictionaryName) as Dictionary<int, object>;
-					if (_data != null) return;
+					if (_data != null)
+						return;
 
 					_data = new Dictionary<int, object>();
 					AppDomain.CurrentDomain.SetData(dictionaryName, _data);
@@ -1318,18 +1354,23 @@ namespace LibZ.Bootstrap
 			#region public interface
 
 			/// <summary>Gets a value indicating whether this instance owns the dictionary.</summary>
-			/// <value><c>true</c> if this instance owns the dictionary; otherwise, <c>false</c>.</value>
+			/// <value>
+			///     <c>true</c> if this instance owns the dictionary; otherwise, <c>false</c>.
+			/// </value>
 			public bool IsOwner { get; private set; }
 
 			/// <summary>Gets the value in specified slot.</summary>
 			/// <typeparam name="T">Type of slot.</typeparam>
 			/// <param name="slot">The slot.</param>
 			/// <param name="defaultValue">The default value.</param>
-			/// <returns>Value stored in slot or <paramref name="defaultValue"/></returns>
+			/// <returns>
+			///     Value stored in slot or <paramref name="defaultValue" />
+			/// </returns>
 			public T Get<T>(int slot, T defaultValue = default (T))
 			{
 				object result;
-				if (!_data.TryGetValue(slot, out result)) return defaultValue;
+				if (!_data.TryGetValue(slot, out result))
+					return defaultValue;
 				return (T)result;
 			}
 
@@ -1400,20 +1441,19 @@ namespace LibZ.Bootstrap
 			/// <summary>This assembly name</summary>
 			private static readonly string ThisAssemblyName = ThisAssembly.GetName().Name;
 
-			#endregion
-
-			#region static fields
-
-			private static readonly bool Trace;
+			/// <summary>Flag indicating if Trace should be used.</summary>
+			private static readonly bool UseTrace;
 
 			#endregion
 
+			/// <summary>Initializes the <see cref="Helpers"/> class.</summary>
 			static Helpers()
 			{
-				Trace =
-					GetRegistryBool(Registry.CurrentUser, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
-						GetRegistryBool(Registry.LocalMachine, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
-							false;
+				var value =
+					GetRegistryDWORD(Registry.CurrentUser, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+						GetRegistryDWORD(Registry.LocalMachine, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+							0;
+				UseTrace = value != 0;
 			}
 
 			/// <summary>Gets bool value from registry.</summary>
@@ -1421,60 +1461,64 @@ namespace LibZ.Bootstrap
 			/// <param name="path">The path to key.</param>
 			/// <param name="name">The name of value.</param>
 			/// <returns>Value of given... value.</returns>
-			public static bool? GetRegistryBool(RegistryKey root, string path, string name)
+			private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
 			{
-				if (root == null) return null;
-				var key = root.OpenSubKey(path);
-				if (key == null) return null;
-				var value = key.GetValue(name);
-				if (value == null) return null;
+				// ReSharper disable PossibleNullReferenceException
 				try
 				{
-					return Convert.ToInt32(value) != 0;
+					return Convert.ToUInt32(root.OpenSubKey(path, false).GetValue(name));
 				}
 				catch
 				{
 					return null;
 				}
+				// ReSharper restore PossibleNullReferenceException
 			}
 
 			/// <summary>Sends debug message.</summary>
 			/// <param name="message">The message.</param>
 			internal static void Debug(string message)
 			{
-				if (message == null || !Trace) return;
-				System.Diagnostics.Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
+				if (message == null || !UseTrace)
+					return;
+				Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends warning message.</summary>
 			/// <param name="message">The message.</param>
 			internal static void Warn(string message)
 			{
-				if (message == null || !Trace) return;
-				System.Diagnostics.Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
+				if (message == null || !UseTrace)
+					return;
+				Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
 			}
 
 			/// <summary>Sends error message.</summary>
 			/// <param name="message">The message.</param>
-			/// <param name="ignored"><c>true</c> if exception is going to be ignored, 
-			/// so problem is reported as Warning instead of Error.</param>
+			/// <param name="ignored">
+			///     <c>true</c> if exception is going to be ignored,
+			///     so problem is reported as Warning instead of Error.
+			/// </param>
 			internal static void Error(string message, bool ignored = false)
 			{
-				if (message == null || !Trace) return;
+				if (message == null || !UseTrace)
+					return;
 				if (ignored)
 				{
 					Warn(message);
 				}
 				else
 				{
-					System.Diagnostics.Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
+					Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
 				}
 			}
 
 			/// <summary>Sends exception and error message.</summary>
 			/// <param name="exception">The exception.</param>
-			/// <param name="ignored"><c>true</c> if exception is going to be ignored, 
-			/// so problem is reported as Warning instead of Error.</param>
+			/// <param name="ignored">
+			///     <c>true</c> if exception is going to be ignored,
+			///     so problem is reported as Warning instead of Error.
+			/// </param>
 			internal static TException Error<TException>(TException exception, bool ignored = false)
 				where TException: Exception
 			{

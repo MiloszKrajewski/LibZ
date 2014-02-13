@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace LibZ.Injected
 {
@@ -35,8 +36,11 @@ namespace LibZ.Injected
 		/// <summary>Hash of 'this' assembly name.</summary>
 		private static readonly Guid ThisAssemblyGuid = Hash(ThisAssembly.FullName);
 
-		/// <summary>The loaded assemblies cache.</summary>
-		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies = new Dictionary<Guid, Assembly>();
+		/// <summary>Trace key path.</summary>
+		public const string REGISTRY_KEY_PATH = @"Software\Softpark\LibZ";
+
+		/// <summary>Trace key name.</summary>
+		public const string REGISTRY_KEY_NAME = @"Trace";
 
 		#endregion
 
@@ -49,7 +53,24 @@ namespace LibZ.Injected
 		private static readonly Dictionary<Guid, Match> ResourceNames
 			= new Dictionary<Guid, Match>();
 
+		/// <summary>The loaded assemblies cache.</summary>
+		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies = new Dictionary<Guid, Assembly>();
+
+		/// <summary>Flag indicating if Trace should be used.</summary>
+		private static readonly bool UseTrace;
+
 		#endregion
+
+		/// <summary>Initializes the <see cref="AsmZResolver"/> class.</summary>
+		static AsmZResolver()
+		{
+			var value =
+				GetRegistryDWORD(Registry.CurrentUser, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+					GetRegistryDWORD(Registry.LocalMachine, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+						0;
+			UseTrace = value != 0;
+		}
+
 
 		#region public interface
 
@@ -65,7 +86,7 @@ namespace LibZ.Injected
 				var guid = new Guid(m.Groups["guid"].Value);
 				if (ResourceNames.ContainsKey(guid))
 				{
-					Warn(string.Format("Duplicated assembly id '{0}', ignoring.", guid.ToString("N")));
+					Warn(string.Format("Duplicated assembly id '{0:N}', ignoring.", guid));
 				}
 				else
 				{
@@ -79,6 +100,25 @@ namespace LibZ.Injected
 		#endregion
 
 		#region private implementation
+
+		/// <summary>Gets bool value from registry.</summary>
+		/// <param name="root">The root key.</param>
+		/// <param name="path">The path to key.</param>
+		/// <param name="name">The name of value.</param>
+		/// <returns>Value of given... value.</returns>
+		private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
+		{
+			// ReSharper disable PossibleNullReferenceException
+			try
+			{
+				return Convert.ToUInt32(root.OpenSubKey(path, false).GetValue(name));
+			}
+			catch
+			{
+				return null;
+			}
+			// ReSharper restore PossibleNullReferenceException
+		}
 
 		/// <summary>Assembly resolver.</summary>
 		/// <param name="sender">The sender.</param>
@@ -171,7 +211,7 @@ namespace LibZ.Injected
 				Path.GetTempPath(),
 				ThisAssemblyGuid.ToString("N"));
 			Directory.CreateDirectory(folderPath);
-			var filePath = Path.Combine(folderPath, guid.ToString("N") + ".dll");
+			var filePath = Path.Combine(folderPath, string.Format("{0:N}.dll", guid));
 			var fileInfo = new FileInfo(filePath);
 
 			if (!fileInfo.Exists || fileInfo.Length != assemblyImage.Length)
@@ -193,19 +233,19 @@ namespace LibZ.Injected
 
 		private static void Debug(string message)
 		{
-			if (message != null && trace)
+			if (message != null && UseTrace)
 				Trace.TraceInformation(string.Format("INFO (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
 		private static void Warn(string message)
 		{
-			if (message != null && trace)
+			if (message != null && UseTrace)
 				Trace.TraceWarning(string.Format("WARN (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
 		private static void Error(string message)
 		{
-			if (message != null && trace)
+			if (message != null && UseTrace)
 				Trace.TraceError(string.Format("ERROR (AsmZ/{0}) {1}", ThisAssemblyName, message));
 		}
 
