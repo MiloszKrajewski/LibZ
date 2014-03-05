@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using LibZ.Manager;
+using LibZ.Msil;
 
 namespace LibZ.Tool.Tasks
 {
@@ -29,16 +30,16 @@ namespace LibZ.Tool.Tasks
 			{
 				foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 				{
-					var assembly = LoadAssembly(fileName);
+					var assembly = MsilUtilities.LoadAssembly(fileName);
 					if (assembly == null)
 					{
 						Log.Warn("Assembly from '{0}' could not be loaded", fileName);
 						continue;
 					}
 					var assemblyName = assembly.Name;
-					var managed = IsManaged(assembly);
-					var architecture = GetArchitecture(assembly);
-					var portable = IsPortable(assembly);
+					var managed = MsilUtilities.IsManaged(assembly);
+					var architecture = MsilUtilities.GetArchitecture(assembly);
+					var portable = MsilUtilities.IsPortable(assembly);
 
 					var assemblyInfo = new AssemblyInfo {
 						AssemblyName = new AssemblyName(assemblyName.FullName),

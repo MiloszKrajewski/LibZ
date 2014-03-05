@@ -1,4 +1,5 @@
-﻿namespace LibZ.Tool.Tasks
+﻿using LibZ.Msil;
+namespace LibZ.Tool.Tasks
 {
 	/// <summary>
 	/// Task to sign assemblies.
@@ -16,19 +17,19 @@
 			string keyFileName, string password,
 			bool force)
 		{
-			var keyPair = LoadKeyPair(keyFileName, password);
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, password);
 
 			foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 			{
-				var assembly = LoadAssembly(fileName);
+				var assembly = MsilUtilities.LoadAssembly(fileName);
 
-				if (IsManaged(assembly))
+				if (MsilUtilities.IsManaged(assembly))
 				{
 					Log.Warn("Assembly '{0}' is unmanaged ones, thus cannot be resigned", fileName);
 					continue;
 				}
 
-				if (IsSigned(assembly))
+				if (MsilUtilities.IsSigned(assembly))
 				{
 					if (force)
 					{
@@ -41,7 +42,7 @@
 					}
 				}
 
-				SaveAssembly(assembly, fileName, keyPair);
+				MsilUtilities.SaveAssembly(assembly, fileName, keyPair);
 			}
 		}
 	}

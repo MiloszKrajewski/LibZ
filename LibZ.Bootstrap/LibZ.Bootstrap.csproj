@@ -53,7 +53,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y /d $(TargetPath) $(ProjectDir)..\LibZ.Tool.InjectIL\Resources</PostBuildEvent>
+    <PostBuildEvent>copy /y /d $(TargetPath) $(ProjectDir)..\LibZ.Tool.InjectIL\Resources\LibZ.Bootstrap.40.dll</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

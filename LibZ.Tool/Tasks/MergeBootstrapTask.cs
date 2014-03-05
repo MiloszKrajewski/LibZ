@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using ILMerging;
+using LibZ.Msil;
 
 namespace LibZ.Tool.Tasks
 {
@@ -22,7 +23,7 @@ namespace LibZ.Tool.Tasks
 		{
 			// TODO:MAK check if targetPlatform is set properly
 
-			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 
 			if (string.IsNullOrWhiteSpace(bootstrapFileName))
 				bootstrapFileName = Path.Combine(Path.GetDirectoryName(mainFileName) ?? ".", "LibZ.Bootstrap.dll");
@@ -64,7 +65,8 @@ namespace LibZ.Tool.Tasks
 			if (keyFileName != null)
 			{
 				Log.Info("Resigning '{0}'", mainFileName);
-				SaveAssembly(LoadAssembly(mainFileName), mainFileName, keyPair);
+				MsilUtilities.SaveAssembly(
+					MsilUtilities.LoadAssembly(mainFileName), mainFileName, keyPair);
 			}
 		}
 	}

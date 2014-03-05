@@ -63,7 +63,7 @@ namespace LibZ.Tool.InjectIL
 	/// is a an effect of 2-day crash-diving into world of IL manipulation and it's very
 	/// messy. But it works (I hope, at least).
 	/// Lot of those methods use some simplifications which are good enough for LibZ
-	/// but wouldn't stand again 'real' assembly merging.
+	/// but wouldn't stand against 'real' assembly merging.
 	/// </summary>
 	public class TemplateCopy
 	{

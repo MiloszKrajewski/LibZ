@@ -50,6 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using LibZ.Msil;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -63,10 +64,25 @@ namespace LibZ.Tool.InjectIL
 	/// </summary>
 	public class InstrumentHelper
 	{
+		#region consts
+
+		/// <summary>The Silverlight/portable version.</summary>
+		private static readonly Version Version2050 = new Version(2, 0, 5, 0);
+
+		/// <summary>.NET 2, 3, 3.5</summary>
+		private static readonly Version Version2000 = new Version(2, 0, 0, 0);
+
+		/// <summary>.NET 4, 4.5</summary>
+		private static readonly Version Version4000 = new Version(4, 0, 0, 0);
+
+		#endregion
+
 		#region fields
 
 		/// <summary>The assembly to be injected.</summary>
 		private readonly AssemblyDefinition _sourceAssembly;
+
+		private readonly byte[] _sourceAssemblyImage;
 
 		/// <summary>The assenbly to inject into.</summary>
 		private readonly AssemblyDefinition _targetAssembly;
@@ -74,38 +90,38 @@ namespace LibZ.Tool.InjectIL
 		/// <summary>The bootstrap assembly to be referenced.</summary>
 		private AssemblyDefinition _bootstrapAssembly;
 
+		private byte[] _bootstrapAssemblyImage;
+
 		#endregion
 
 		#region constructor
 
-		/// <summary>Initializes a new instance of the <see cref="InstrumentHelper"/> class.</summary>
+		/// <summary>
+		/// Initializes a new instance of the <see cref="InstrumentHelper" /> class.
+		/// </summary>
 		/// <param name="targetAssembly">The target assembly.</param>
-		/// <param name="bootstrapAssembly">The bootstrap assembly.</param>
+		/// <param name="bootstrapAssembly">The bootstrap assembly (optional).</param>
 		public InstrumentHelper(
 			AssemblyDefinition targetAssembly,
 			AssemblyDefinition bootstrapAssembly = null)
 		{
-			_sourceAssembly = AssemblyDefinition.ReadAssembly(new MemoryStream(InjectedAssemblyImage));
+			var frameworkVersion = MsilUtilities.GetFrameworkVersion(targetAssembly);
+			_sourceAssemblyImage = GetInjectedAssemblyImage(frameworkVersion);
+			_sourceAssembly = MsilUtilities.LoadAssembly(_sourceAssemblyImage);
+
+			if (bootstrapAssembly == null)
+			{
+				_bootstrapAssemblyImage = GetBootstrapAssemblyImage(frameworkVersion);
+				_bootstrapAssembly = MsilUtilities.LoadAssembly(_bootstrapAssemblyImage);
+			}
+			else
+			{
+				_bootstrapAssembly = bootstrapAssembly;
+				// TODO:MAK it should not be needed, but it would be nice if it gets populated in the future
+				_bootstrapAssemblyImage = null; 
+			}
+
 			_targetAssembly = targetAssembly;
-			_bootstrapAssembly = bootstrapAssembly;
-		}
-
-		#endregion
-
-		#region static interface
-
-		/// <summary>Gets the bootstrap assembly image.</summary>
-		/// <value>The bootstrap assembly image.</value>
-		public static byte[] BootstrapAssemblyImage
-		{
-			get { return Precompiled.LibZBootstrapAssembly; }
-		}
-
-		/// <summary>Gets the injected assembly image.</summary>
-		/// <value>The injected assembly image.</value>
-		public static byte[] InjectedAssemblyImage
-		{
-			get { return Precompiled.LibZInjectedAssembly; }
 		}
 
 		#endregion
@@ -188,7 +204,7 @@ namespace LibZ.Tool.InjectIL
 				{
 					_bootstrapAssembly = AssemblyDefinition.ReadAssembly(
 						new MemoryStream(
-							Precompiled.LibZInjectedAssembly));
+							Precompiled.LibZInjected40Assembly));
 				}
 
 				const string typeLibZResolver = "LibZ.Bootstrap.LibZResolver";
@@ -233,6 +249,32 @@ namespace LibZ.Tool.InjectIL
 		#endregion
 
 		#region private implementation
+
+		/// <summary>Gets the injected assembly.</summary>
+		/// <param name="frameworkVersion">The framework version.</param>
+		/// <returns>Assembly.</returns>
+		public static byte[] GetInjectedAssemblyImage(Version frameworkVersion)
+		{
+			return
+				frameworkVersion == Version2050 ? null :
+					frameworkVersion < Version2000 ? null :
+						frameworkVersion == Version2000 ? Precompiled.LibZInjected35Assembly :
+							frameworkVersion == Version4000 ? Precompiled.LibZInjected40Assembly :
+								null;
+		}
+
+		/// <summary>Gets the bootstrap assembly.</summary>
+		/// <param name="frameworkVersion">The framework version.</param>
+		/// <returns>Assembly.</returns>
+		public static byte[] GetBootstrapAssemblyImage(Version frameworkVersion)
+		{
+			return
+				frameworkVersion == Version2050 ? null :
+					frameworkVersion < Version2000 ? null :
+						frameworkVersion == Version2000 ? Precompiled.LibZBootstrap35Assembly :
+							frameworkVersion == Version4000 ? Precompiled.LibZBootstrap40Assembly :
+								null;
+		}
 
 		#endregion
 	}

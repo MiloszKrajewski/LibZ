@@ -1,13 +1,15 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using LibZ.Msil;
 using LibZ.Tool.InjectIL;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>
-	/// Instruments the assembli with LibZ initialization.
+	/// Instruments the assembly with LibZ initialization.
 	/// </summary>
 	public class InstrumentLibZTask: TaskBase
 	{
@@ -34,23 +36,32 @@ namespace LibZ.Tool.Tasks
 			string[] libzPatterns,
 			string keyFileName, string keyFilePassword)
 		{
-			if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
-			if (libzFiles == null) libzFiles = new string[0];
-			if (libzPatterns == null) libzPatterns = new string[0];
+			if (!File.Exists(mainFileName))
+				throw FileNotFound(mainFileName);
+			if (libzFiles == null)
+				libzFiles = new string[0];
+			if (libzPatterns == null)
+				libzPatterns = new string[0];
 
-			var targetAssembly = LoadAssembly(mainFileName);
-			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
+			var targetAssembly = MsilUtilities.LoadAssembly(mainFileName);
+
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 			var requiresAsmZResolver = false;
 
-			var bootstrapAssembly = FindBootstrapAssembly(targetAssembly, mainFileName);
+			var bootstrapAssembly = 
+				FindBootstrapAssembly(targetAssembly, mainFileName);
+
 			if (bootstrapAssembly == null)
 			{
-				var bootstrapAssemblyBytes = InstrumentHelper.BootstrapAssemblyImage;
-				bootstrapAssembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bootstrapAssemblyBytes));
+				var version = MsilUtilities.GetFrameworkVersion(targetAssembly);
+
+				var bootstrapAssemblyImage = InstrumentHelper.GetBootstrapAssemblyImage(version);
+				bootstrapAssembly = MsilUtilities.LoadAssembly(bootstrapAssemblyImage);
+
 				InjectDll(
 					targetAssembly,
 					bootstrapAssembly,
-					bootstrapAssemblyBytes,
+					bootstrapAssemblyImage,
 					true);
 				requiresAsmZResolver = true;
 			}
@@ -58,11 +69,13 @@ namespace LibZ.Tool.Tasks
 			_instrumentHelper = new InstrumentHelper(
 				targetAssembly,
 				bootstrapAssembly);
+
 			_instrumentHelper.InjectLibZInitializer();
-			if (requiresAsmZResolver) _instrumentHelper.InjectAsmZResolver();
+			if (requiresAsmZResolver)
+				_instrumentHelper.InjectAsmZResolver();
 			_instrumentHelper.InjectLibZStartup(allLibZResources, libzFiles, libzPatterns);
 
-			SaveAssembly(targetAssembly, mainFileName, keyPair);
+			MsilUtilities.SaveAssembly(targetAssembly, mainFileName, keyPair);
 		}
 
 		#endregion

@@ -3,9 +3,12 @@ release/lib/
 bin/
 obj/
 ipch/
-*.nupkg
 *.opensdf
 *.user
 *.suo
 *.sdf
 *.snk
+
+# NuGet packages
+packages/**
+!packages/repositories.config

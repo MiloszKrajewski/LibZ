@@ -8,8 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition.Hosting;
-using System.ComponentModel.Composition.Primitives;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -21,6 +19,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Win32;
+#if !NET35
+using System.ComponentModel.Composition.Hosting;
+using System.ComponentModel.Composition.Primitives;
+#endif
 #if !LIBZ_MANAGER
 using LibZ.Bootstrap.Internal;
 #endif
@@ -154,6 +156,8 @@ namespace LibZ.Bootstrap
 			private set { SharedData.Set(3, value); }
 		}
 
+		#if !NET35
+
 		/// <summary>Gets or sets the GetCatalog callback.</summary>
 		/// <value>The GetCatalog callback.</value>
 		private static Func<Guid, ComposablePartCatalog> GetCatalogCallback
@@ -170,9 +174,20 @@ namespace LibZ.Bootstrap
 			set { SharedData.Set(5, value); }
 		}
 
+		#endif
+
 		#endregion
 
 		#region static constructor
+
+		private static bool IsEmptyString(string text)
+		{
+#if !NET35
+			return string.IsNullOrWhiteSpace(text);
+#else
+			return string.IsNullOrEmpty(text) || text.All(char.IsWhiteSpace);
+#endif
+		}
 
 		/// <summary>
 		///     Initializes the <see cref="LibZResolver" /> class.
@@ -195,11 +210,14 @@ namespace LibZ.Bootstrap
 				// intialize paths
 				var searchPath = new List<string> { AppDomain.CurrentDomain.BaseDirectory };
 				var systemPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-				searchPath.AddRange(systemPath.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)));
+				searchPath.AddRange(systemPath.Split(';').Where(p => !IsEmptyString(p)));
 
 				RegisterStreamCallback = RegisterStreamImplementation;
+
+				#if !NET35
 				GetCatalogCallback = GetCatalogImplementation;
 				GetAllCatalogsCallback = GetAllCatalogsImplementation;
+				#endif
 
 				Decoders = new Dictionary<string, Func<byte[], int, byte[]>>();
 				SearchPath = searchPath;
@@ -240,6 +258,8 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		#if !NET35
+
 		private static ComposablePartCatalog GetCatalogImplementation(Guid guid)
 		{
 			Lock.EnterReadLock();
@@ -270,6 +290,8 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		#endif
+
 		#endregion
 
 		#region public interface
@@ -299,6 +321,8 @@ namespace LibZ.Bootstrap
 			return action();
 		}
 
+		#if !NET35
+
 		/// <summary>Gets the catalog.</summary>
 		/// <param name="handle">The handle.</param>
 		/// <returns>Catalog for given container.</returns>
@@ -325,6 +349,8 @@ namespace LibZ.Bootstrap
 		{
 			return GetAllCatalogsCallback();
 		}
+
+		#endif
 
 		/// <summary>Registers the container.</summary>
 		/// <param name="stream">The stream.</param>
@@ -432,13 +458,15 @@ namespace LibZ.Bootstrap
 				if (libzFileNamePattern == null)
 					libzFileNamePattern = ".\\";
 				var folder = Path.GetDirectoryName(libzFileNamePattern);
-				if (string.IsNullOrWhiteSpace(folder))
+				if (IsEmptyString(folder))
 					folder = ".";
 				var pattern = Path.GetFileName(libzFileNamePattern);
-				if (string.IsNullOrWhiteSpace(pattern))
+				if (IsEmptyString(pattern))
 					pattern = "*.libz";
 				var proxies = Directory
+					// ReSharper disable AssignNullToNotNullAttribute
 					.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder), pattern)
+					// ReSharper restore AssignNullToNotNullAttribute
 					.Select(fn => RegisterFileContainer(fn))
 					.Where(p => p != Guid.Empty)
 					.ToArray();
@@ -1214,6 +1242,8 @@ namespace LibZ.Bootstrap
 
 		#region class LibZCatalog
 
+		#if !NET35
+
 		/// <summary>Catalog (in MEF sense) for given LibZReader.</summary>
 		internal class LibZCatalog: ComposablePartCatalog
 		{
@@ -1314,6 +1344,8 @@ namespace LibZ.Bootstrap
 
 			#endregion
 		}
+
+		#endif
 
 		#endregion
 

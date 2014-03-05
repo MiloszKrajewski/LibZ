@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using LibZ.Msil;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
@@ -18,16 +19,19 @@ namespace LibZ.Tool.Tasks
 			string keyFileName, string keyFilePassword,
 			bool move)
 		{
-			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
-			var assembly = LoadAssembly(mainFileName);
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
+			var assembly = MsilUtilities.LoadAssembly(mainFileName);
 			var injectedFileNames = new List<string>();
 
 			// TODO:MAK exclude?
 			foreach (var libzFileName in FindFiles(libzFileNames))
 			{
-				if (libzFileName == null) throw ArgumentNull("libzFileName");
-				if (!File.Exists(libzFileName)) throw FileNotFound(libzFileName);
-				if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
+				if (libzFileName == null) 
+					throw ArgumentNull("libzFileName");
+				if (!File.Exists(libzFileName)) 
+					throw FileNotFound(libzFileName);
+				if (!File.Exists(mainFileName)) 
+					throw FileNotFound(mainFileName);
 
 				var fileName = Path.GetFileName(libzFileName); // TODO:MAK relative path?
 
@@ -47,8 +51,10 @@ namespace LibZ.Tool.Tasks
 			}
 			else
 			{
-				SaveAssembly(assembly, mainFileName, keyPair);
-				if (move) foreach (var fn in injectedFileNames) DeleteFile(fn);
+				MsilUtilities.SaveAssembly(assembly, mainFileName, keyPair);
+				if (move) 
+					foreach (var fn in injectedFileNames) 
+						DeleteFile(fn);
 			}
 		}
 	}

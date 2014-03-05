@@ -71,15 +71,21 @@
   <ItemGroup>
     <EmbeddedResource Include="Precompiled.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Precompiled.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Precompiled.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\LibZ.Injected.dll" />
+    <Content Include="Resources\LibZ.Bootstrap.35.dll" />
+    <Content Include="Resources\LibZ.Bootstrap.40.dll" />
+    <Content Include="Resources\LibZ.Injected.35.dll" />
+    <Content Include="Resources\LibZ.Injected.40.dll" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\LibZ.Bootstrap.dll" />
+    <ProjectReference Include="..\LibZ.Msil\LibZ.Msil.csproj">
+      <Project>{68297D08-A36C-4C4D-8E41-2644FD7B3896}</Project>
+      <Name>LibZ.Msil</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

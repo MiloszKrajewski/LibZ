@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DC6CFABD-2B97-481B-8334-4DECDAF289EA}</ProjectGuid>
+    <ProjectGuid>{3588BF3E-909B-44BB-8906-591D4CF2C21F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LibZ.Injected</RootNamespace>
     <AssemblyName>LibZ.Injected</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
@@ -37,16 +37,17 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsmZResolver.cs" />
-    <Compile Include="LibZInitializer.cs" />
+    <Compile Include="..\LibZ.Injected\AsmZResolver.cs">
+      <Link>AsmZResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\LibZ.Injected\LibZInitializer.cs">
+      <Link>LibZInitializer.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Decoders\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y /d $(TargetPath) $(ProjectDir)..\LibZ.Tool.InjectIL\Resources\LibZ.Injected.40.dll</PostBuildEvent>
+    <PostBuildEvent>copy /y /d $(TargetPath) $(ProjectDir)..\LibZ.Tool.InjectIL\Resources\LibZ.Injected.35.dll</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

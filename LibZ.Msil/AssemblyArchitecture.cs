@@ -1,4 +1,4 @@
-﻿namespace LibZ.Tool
+﻿namespace LibZ.Msil
 {
 	/// <summary>
 	/// Assembly architecture.

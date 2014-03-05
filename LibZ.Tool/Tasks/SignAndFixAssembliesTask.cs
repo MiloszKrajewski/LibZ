@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using LibZ.Msil;
 using Mono.Cecil;
 
 namespace LibZ.Tool.Tasks
@@ -54,16 +55,16 @@ namespace LibZ.Tool.Tasks
 			string keyFileName, string keyFilePassword,
 			string[] includePatterns, string[] excludePatterns)
 		{
-			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 			var fileNames = FindFiles(includePatterns, excludePatterns).ToArray();
 
 			foreach (var fileName in fileNames)
 			{
-				var assembly = LoadAssembly(fileName);
+				var assembly = MsilUtilities.LoadAssembly(fileName);
 				var assemblyInfo = new AssemblyInfo {
 					FileName = fileName,
 					Assembly = assembly,
-					CanBeSigned = IsManaged(assembly),
+					CanBeSigned = MsilUtilities.IsManaged(assembly),
 				};
 				_assemblyInfos.Add(assemblyInfo);
 			}
@@ -79,7 +80,7 @@ namespace LibZ.Tool.Tasks
 			foreach (var assemblyInfo in sorted)
 			{
 				var needsRewrite =
-					!IsSigned(assemblyInfo.Assembly) ||
+					!MsilUtilities.IsSigned(assemblyInfo.Assembly) ||
 						assemblyInfo.References.Any(r => r.Invalid) ||
 						assemblyInfo.References.Any(r => r.Target.Rewritten);
 
@@ -96,8 +97,8 @@ namespace LibZ.Tool.Tasks
 						.ForEach(a => a.CanBeSigned = false);
 				}
 
-				SaveAssembly(assemblyInfo.Assembly, assemblyInfo.FileName, keyPair);
-				assemblyInfo.Assembly = LoadAssembly(assemblyInfo.FileName);
+				MsilUtilities.SaveAssembly(assemblyInfo.Assembly, assemblyInfo.FileName, keyPair);
+				assemblyInfo.Assembly = MsilUtilities.LoadAssembly(assemblyInfo.FileName);
 				assemblyInfo.ReferencedBy.ForEach(r => r.Invalid = true);
 				assemblyInfo.Rewritten = true;
 
@@ -107,7 +108,7 @@ namespace LibZ.Tool.Tasks
 
 		private static IEnumerable<AssemblyInfo> GetReferencedAssemblies(AssemblyInfo assemblyInfo)
 		{
-			foreach (var reference in assemblyInfo.References) yield return reference.Target;
+			return assemblyInfo.References.Select(reference => reference.Target);
 		}
 
 		private static void FixupReferencesTo(AssemblyInfo assemblyInfo)
@@ -145,8 +146,10 @@ namespace LibZ.Tool.Tasks
 
 					foreach (var otherAssemblyInfo in _assemblyInfos)
 					{
-						if (found) break;
-						if (!EqualAssemblyNames(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName)) continue;
+						if (found) 
+							break;
+						if (!MsilUtilities.EqualAssemblyNames(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName)) 
+							continue;
 
 						foundByLongName.Add(referenceName.FullName);
 
@@ -165,8 +168,10 @@ namespace LibZ.Tool.Tasks
 
 					foreach (var otherAssemblyInfo in _assemblyInfos)
 					{
-						if (found) break;
-						if (!EqualAssemblyNames(referenceName.Name, otherAssemblyInfo.AssemblyName.Name)) continue;
+						if (found) 
+							break;
+						if (!MsilUtilities.EqualAssemblyNames(referenceName.Name, otherAssemblyInfo.AssemblyName.Name)) 
+							continue;
 
 						foundByShortName.Add(Tuple.Create(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName));
 

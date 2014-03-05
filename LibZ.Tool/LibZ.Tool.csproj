@@ -87,7 +87,6 @@
     <Compile Include="Commands\SignCommand.cs" />
     <Compile Include="Tasks\SignAssembliesTask.cs" />
     <Compile Include="Tasks\AddLibraryTask.cs" />
-    <Compile Include="AssemblyArchitecture.cs" />
     <Compile Include="Commands\InjectLibZCommand.cs" />
     <Compile Include="Tasks\InjectLibZTask.cs" />
     <Compile Include="Log.cs" />
@@ -109,6 +108,10 @@
     <ProjectReference Include="..\LibZ.Manager\LibZ.Manager.csproj">
       <Project>{9526e061-2e22-421b-86a6-198b51960918}</Project>
       <Name>LibZ.Manager</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LibZ.Msil\LibZ.Msil.csproj">
+      <Project>{68297D08-A36C-4C4D-8E41-2644FD7B3896}</Project>
+      <Name>LibZ.Msil</Name>
     </ProjectReference>
     <ProjectReference Include="..\LibZ.Tool.InjectIL\LibZ.Tool.InjectIL.csproj">
       <Project>{A391D2AA-228B-4DF4-9C0E-05B386B323E3}</Project>

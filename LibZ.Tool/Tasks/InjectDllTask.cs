@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using LibZ.Msil;
 
 namespace LibZ.Tool.Tasks
 {
@@ -24,14 +25,14 @@ namespace LibZ.Tool.Tasks
 		{
 			if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
 
-			var keyPair = LoadKeyPair(keyFileName, keyFilePassword);
+			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 
-			var assembly = LoadAssembly(mainFileName);
+			var assembly = MsilUtilities.LoadAssembly(mainFileName);
 			var injectedFileNames = new List<string>();
 
 			foreach (var fileName in FindFiles(includePatterns, excludePatterns))
 			{
-				var sourceAssembly = LoadAssembly(fileName);
+				var sourceAssembly = MsilUtilities.LoadAssembly(fileName);
 				if (sourceAssembly == null)
 				{
 					Log.Error("Assembly '{0}' could not be loaded", fileName);
@@ -53,9 +54,11 @@ namespace LibZ.Tool.Tasks
 				Log.Info("Instrumenting assembly with initialization code");
 				InstrumentAsmZ(assembly);
 
-				SaveAssembly(assembly, mainFileName, keyPair);
+				MsilUtilities.SaveAssembly(assembly, mainFileName, keyPair);
 
-				if (move) foreach (var fn in injectedFileNames) DeleteFile(fn);
+				if (move) 
+					foreach (var fn in injectedFileNames) 
+						DeleteFile(fn);
 			}
 		}
 	}
