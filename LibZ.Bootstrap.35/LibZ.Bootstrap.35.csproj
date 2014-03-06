@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\LibZ.Bootstrap\LibZResolver.cs">
+    <Compile Include="..\LibZ.Bootstrap.40\LibZResolver.cs">
       <Link>LibZResolver.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

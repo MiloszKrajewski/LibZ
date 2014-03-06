@@ -8,16 +8,20 @@ using System.Text.RegularExpressions;
 using LibZ.Msil;
 using LibZ.Tool.InjectIL;
 using Mono.Cecil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>
-	/// Base class for all tasks.
-	/// Contains some utilities potentially used by all of them.
+	///     Base class for all tasks.
+	///     Contains some utilities potentially used by all of them.
 	/// </summary>
 	public class TaskBase
 	{
 		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
 		/// <summary>Hash calculator.</summary>
 		private static readonly MD5 MD5Service = MD5.Create();
@@ -66,13 +70,14 @@ namespace LibZ.Tool.Tasks
 		/// <param name="fileName">Name of the file.</param>
 		protected static void DeleteFile(string fileName)
 		{
-			if (!File.Exists(fileName)) return;
+			if (!File.Exists(fileName))
+				return;
 
 			try
 			{
 				File.Delete(fileName);
 			}
-			// ReSharper disable EmptyGeneralCatchClause
+				// ReSharper disable EmptyGeneralCatchClause
 			catch
 			{
 				Log.Warn("File '{0}' could not be deleted", fileName);
@@ -88,7 +93,8 @@ namespace LibZ.Tool.Tasks
 			IEnumerable<string> includePatterns,
 			IEnumerable<string> excludePatterns = null)
 		{
-			if (excludePatterns == null) excludePatterns = new string[0];
+			if (excludePatterns == null)
+				excludePatterns = new string[0];
 			var result = includePatterns.SelectMany(p => FindFiles(p, excludePatterns))
 				.Distinct()
 				.ToList();
@@ -102,7 +108,8 @@ namespace LibZ.Tool.Tasks
 		/// <returns>Collection of file names.</returns>
 		private static IEnumerable<string> FindFiles(string pattern, IEnumerable<string> excludePatterns)
 		{
-			if (!Path.IsPathRooted(pattern)) pattern = ".\\" + pattern;
+			if (!Path.IsPathRooted(pattern))
+				pattern = ".\\" + pattern;
 			var directoryName = Path.GetDirectoryName(pattern) ?? ".";
 			var searchPattern = Path.GetFileName(pattern) ?? "*.dll";
 
@@ -155,7 +162,8 @@ namespace LibZ.Tool.Tasks
 		protected static Guid? Hash(Resource resource)
 		{
 			var m = ResourceNameRx.Match(resource.Name);
-			if (!m.Success) return null;
+			if (!m.Success)
+				return null;
 			return new Guid(m.Groups["guid"].Value);
 		}
 
@@ -185,16 +193,22 @@ namespace LibZ.Tool.Tasks
 		/// <param name="targetAssembly">The target assembly.</param>
 		/// <param name="sourceAssembly">The source assembly.</param>
 		/// <param name="sourceAssemblyBytes">The source assembly bytes.</param>
-		/// <param name="overwrite">if set to <c>true</c> overwrites existing resource.</param>
-		/// <returns><c>true</c> if assembly has been injected.</returns>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> overwrites existing resource.
+		/// </param>
+		/// <returns>
+		///     <c>true</c> if assembly has been injected.
+		/// </returns>
 		protected static bool InjectDll(
 			AssemblyDefinition targetAssembly,
 			AssemblyDefinition sourceAssembly, byte[] sourceAssemblyBytes,
 			bool overwrite)
 		{
 			var flags = String.Empty;
-			if (!MsilUtilities.IsManaged(sourceAssembly)) flags += "u";
-			if (MsilUtilities.IsPortable(sourceAssembly)) flags += "p";
+			if (!MsilUtilities.IsManaged(sourceAssembly))
+				flags += "u";
+			if (MsilUtilities.IsPortable(sourceAssembly))
+				flags += "p";
 
 			var input = sourceAssemblyBytes;
 			var output = DefaultCodecs.DeflateEncoder(input);

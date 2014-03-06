@@ -90,7 +90,8 @@ namespace LibZ.Tool.InjectIL
 		/// <summary>The bootstrap assembly to be referenced.</summary>
 		private AssemblyDefinition _bootstrapAssembly;
 
-		private byte[] _bootstrapAssemblyImage;
+		/// <summary>The bootstrap assembly image</summary>
+		private readonly byte[] _bootstrapAssemblyImage;
 
 		#endregion
 

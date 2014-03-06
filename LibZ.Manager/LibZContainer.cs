@@ -156,12 +156,12 @@ namespace LibZ.Manager
 			var flags = LibZEntry.EntryFlags.None;
 			if (assemblyInfo.Unmanaged) flags |= LibZEntry.EntryFlags.Unmanaged;
 			if (assemblyInfo.AnyCPU) flags |= LibZEntry.EntryFlags.AnyCPU;
-			if (assemblyInfo.AMD64) flags |= LibZEntry.EntryFlags.AMD64;
+			if (assemblyInfo.X64) flags |= LibZEntry.EntryFlags.X64;
 			if (assemblyInfo.Portable) flags |= LibZEntry.EntryFlags.Portable;
 
 			var platformId =
 				assemblyInfo.AnyCPU ? string.Empty :
-					assemblyInfo.AMD64 ? "x64:" :
+					assemblyInfo.X64 ? "x64:" :
 						"x86:";
 			var assemblyName = assemblyInfo.AssemblyName;
 			var bytes = assemblyInfo.Bytes;

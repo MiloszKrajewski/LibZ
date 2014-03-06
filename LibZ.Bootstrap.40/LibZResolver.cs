@@ -1,4 +1,4 @@
-﻿#region conditionals
+﻿#region conditinals
 
 #if !LIBZ_MANAGER && !LIBZ_BOOTSTRAP
 #define LIBZ_INTERNAL
@@ -156,7 +156,7 @@ namespace LibZ.Bootstrap
 			private set { SharedData.Set(3, value); }
 		}
 
-		#if !NET35
+#if !NET35
 
 		/// <summary>Gets or sets the GetCatalog callback.</summary>
 		/// <value>The GetCatalog callback.</value>
@@ -174,7 +174,7 @@ namespace LibZ.Bootstrap
 			set { SharedData.Set(5, value); }
 		}
 
-		#endif
+#endif
 
 		#endregion
 
@@ -214,10 +214,10 @@ namespace LibZ.Bootstrap
 
 				RegisterStreamCallback = RegisterStreamImplementation;
 
-				#if !NET35
+#if !NET35
 				GetCatalogCallback = GetCatalogImplementation;
 				GetAllCatalogsCallback = GetAllCatalogsImplementation;
-				#endif
+#endif
 
 				Decoders = new Dictionary<string, Func<byte[], int, byte[]>>();
 				SearchPath = searchPath;
@@ -258,7 +258,7 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		#if !NET35
+#if !NET35
 
 		private static ComposablePartCatalog GetCatalogImplementation(Guid guid)
 		{
@@ -290,7 +290,7 @@ namespace LibZ.Bootstrap
 			}
 		}
 
-		#endif
+#endif
 
 		#endregion
 
@@ -321,7 +321,7 @@ namespace LibZ.Bootstrap
 			return action();
 		}
 
-		#if !NET35
+#if !NET35
 
 		/// <summary>Gets the catalog.</summary>
 		/// <param name="handle">The handle.</param>
@@ -350,7 +350,7 @@ namespace LibZ.Bootstrap
 			return GetAllCatalogsCallback();
 		}
 
-		#endif
+#endif
 
 		/// <summary>Registers the container.</summary>
 		/// <param name="stream">The stream.</param>
@@ -617,9 +617,9 @@ namespace LibZ.Bootstrap
 			return
 				// try native one first
 				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + assemblyName) ??
-					// ...then AnyCPU
+				// ...then AnyCPU
 					TryLoadAssembly(assemblyName) ??
-						// ...then try the opposite platform (as far as I understand x64 may use x86)
+				// ...then try the opposite platform (as far as I understand x64 may use x86)
 						(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
 		}
 
@@ -784,7 +784,7 @@ namespace LibZ.Bootstrap
 				AnyCPU = 0x02,
 
 				/// <summary>Set when assembly is targetting 64-bit architectule.</summary>
-				AMD64 = 0x04,
+				X64 = 0x04,
 
 				/// <summary>Indicates PCL assembly.</summary>
 				Portable = 0x08,
@@ -1242,7 +1242,7 @@ namespace LibZ.Bootstrap
 
 		#region class LibZCatalog
 
-		#if !NET35
+#if !NET35
 
 		/// <summary>Catalog (in MEF sense) for given LibZReader.</summary>
 		internal class LibZCatalog: ComposablePartCatalog
@@ -1345,7 +1345,7 @@ namespace LibZ.Bootstrap
 			#endregion
 		}
 
-		#endif
+#endif
 
 		#endregion
 

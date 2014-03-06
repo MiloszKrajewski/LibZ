@@ -2,17 +2,24 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.Diagnostics;
 using LibZ.Bootstrap;
 using LibZ.Manager;
 using LibZ.Tool.Interfaces;
 using ManyConsole;
+using NLog;
 
 namespace LibZ.Tool
 {
 	/// <summary>Main class.</summary>
 	public class Program
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		#region fields
 
 		[ImportMany(typeof(ICodec))] private readonly List<ICodec> _codecs = new List<ICodec>();
@@ -39,7 +46,8 @@ namespace LibZ.Tool
 		/// <summary>Registers the plugins.</summary>
 		private void RegisterPlugins()
 		{
-			if (_codecs == null) return;
+			if (_codecs == null)
+				return;
 
 			foreach (var codec in _codecs)
 			{
@@ -82,8 +90,8 @@ namespace LibZ.Tool
 		{
 			var version = GetType().Assembly.GetName().Version;
 			Console.WriteLine();
-			Console.WriteLine("LibZ {0}, Copyright (c) 2013 Milosz Krajewski", version);
-			Console.WriteLine("https://libz.codeplex.com/");
+			Console.WriteLine(@"LibZ {0}, Copyright (c) 2013 Milosz Krajewski", version);
+			Console.WriteLine(@"https://libz.codeplex.com/");
 			Console.WriteLine();
 		}
 

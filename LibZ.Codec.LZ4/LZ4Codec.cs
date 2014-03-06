@@ -6,7 +6,9 @@ namespace LibZ.Codec.LZ4
 {
 	/// <summary>Demo LZ4 codec.</summary>
 	[Export(typeof(ICodec))]
+	// ReSharper disable InconsistentNaming
 	public class LZ4Codec: ICodec
+	// ReSharper restore InconsistentNaming
 	{
 		#region ICodec Members
 

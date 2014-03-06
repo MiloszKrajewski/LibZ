@@ -20,7 +20,7 @@ namespace LibZ.Manager
 		/// <summary>Is AnyCPU</summary>
 		public bool AnyCPU;
 
-		/// <summary>Is AMD64</summary>
-		public bool AMD64;
+		/// <summary>Is X64</summary>
+		public bool X64;
 	}
 }

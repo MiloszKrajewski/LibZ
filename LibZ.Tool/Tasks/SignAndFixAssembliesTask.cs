@@ -4,11 +4,19 @@ using System.Linq;
 using System.Reflection;
 using LibZ.Msil;
 using Mono.Cecil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	internal class SignAndFixAssembliesTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		private class AssemblyInfoReference
 		{
 			public AssemblyNameReference ReferencedAssemblyName { get; set; }
@@ -84,7 +92,8 @@ namespace LibZ.Tool.Tasks
 						assemblyInfo.References.Any(r => r.Invalid) ||
 						assemblyInfo.References.Any(r => r.Target.Rewritten);
 
-				if (!needsRewrite) continue;
+				if (!needsRewrite)
+					continue;
 
 				if (!assemblyInfo.CanBeSigned)
 				{
@@ -146,9 +155,9 @@ namespace LibZ.Tool.Tasks
 
 					foreach (var otherAssemblyInfo in _assemblyInfos)
 					{
-						if (found) 
+						if (found)
 							break;
-						if (!MsilUtilities.EqualAssemblyNames(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName)) 
+						if (!MsilUtilities.EqualAssemblyNames(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName))
 							continue;
 
 						foundByLongName.Add(referenceName.FullName);
@@ -168,9 +177,9 @@ namespace LibZ.Tool.Tasks
 
 					foreach (var otherAssemblyInfo in _assemblyInfos)
 					{
-						if (found) 
+						if (found)
 							break;
-						if (!MsilUtilities.EqualAssemblyNames(referenceName.Name, otherAssemblyInfo.AssemblyName.Name)) 
+						if (!MsilUtilities.EqualAssemblyNames(referenceName.Name, otherAssemblyInfo.AssemblyName.Name))
 							continue;
 
 						foundByShortName.Add(Tuple.Create(referenceName.FullName, otherAssemblyInfo.AssemblyName.FullName));

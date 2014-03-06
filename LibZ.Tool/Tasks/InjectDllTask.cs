@@ -1,29 +1,42 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using LibZ.Msil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>
-	/// Injects .dll into assembly.
+	///     Injects .dll into assembly.
 	/// </summary>
 	public class InjectDllTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		/// <summary>Executes the task.</summary>
 		/// <param name="mainFileName">Name of the main file.</param>
 		/// <param name="includePatterns">The include patterns.</param>
 		/// <param name="excludePatterns">The exclude patterns.</param>
 		/// <param name="keyFileName">Name of the key file.</param>
 		/// <param name="keyFilePassword">The key file password.</param>
-		/// <param name="overwrite">if set to <c>true</c> overwrites .dll already embedded.</param>
-		/// <param name="move">if set to <c>true</c> moves assembly (deletes source files).</param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> overwrites .dll already embedded.
+		/// </param>
+		/// <param name="move">
+		///     if set to <c>true</c> moves assembly (deletes source files).
+		/// </param>
 		public virtual void Execute(
 			string mainFileName,
 			string[] includePatterns, string[] excludePatterns,
 			string keyFileName, string keyFilePassword,
 			bool overwrite, bool move)
 		{
-			if (!File.Exists(mainFileName)) throw FileNotFound(mainFileName);
+			if (!File.Exists(mainFileName))
+				throw FileNotFound(mainFileName);
 
 			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 
@@ -40,7 +53,8 @@ namespace LibZ.Tool.Tasks
 				}
 
 				Log.Info("Injecting '{0}' into '{1}'", fileName, mainFileName);
-				if (!InjectDll(assembly, sourceAssembly, File.ReadAllBytes(fileName), overwrite)) continue;
+				if (!InjectDll(assembly, sourceAssembly, File.ReadAllBytes(fileName), overwrite))
+					continue;
 
 				injectedFileNames.Add(fileName);
 			}
@@ -56,8 +70,8 @@ namespace LibZ.Tool.Tasks
 
 				MsilUtilities.SaveAssembly(assembly, mainFileName, keyPair);
 
-				if (move) 
-					foreach (var fn in injectedFileNames) 
+				if (move)
+					foreach (var fn in injectedFileNames)
 						DeleteFile(fn);
 			}
 		}

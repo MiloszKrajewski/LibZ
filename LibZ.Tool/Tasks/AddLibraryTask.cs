@@ -3,28 +3,41 @@ using System.IO;
 using System.Reflection;
 using LibZ.Manager;
 using LibZ.Msil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>
-	/// Adds assemblies to LibZ library.
+	///     Adds assemblies to LibZ library.
 	/// </summary>
 	public class AddLibraryTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		/// <summary>Executes the task.</summary>
 		/// <param name="libzFileName">Name of the libz file.</param>
 		/// <param name="includePatterns">The include patterns.</param>
 		/// <param name="excludePatterns">The exclude patterns.</param>
 		/// <param name="codecName">Name of the codec.</param>
-		/// <param name="move">if set to <c>true</c> moves files (deletes soure files).</param>
-		/// <param name="overwrite">if set to <c>true</c> overwrites existing resources.</param>
+		/// <param name="move">
+		///     if set to <c>true</c> moves files (deletes soure files).
+		/// </param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> overwrites existing resources.
+		/// </param>
 		public virtual void Execute(
 			string libzFileName,
 			string[] includePatterns, string[] excludePatterns,
 			string codecName, bool move, bool overwrite)
 		{
 			var injectedFileNames = new List<string>();
-			if (string.IsNullOrEmpty(codecName)) codecName = "deflate";
+			if (string.IsNullOrEmpty(codecName))
+				codecName = "deflate";
 
 			using (var container = new LibZContainer(libzFileName, true))
 			{
@@ -44,7 +57,7 @@ namespace LibZ.Tool.Tasks
 					var assemblyInfo = new AssemblyInfo {
 						AssemblyName = new AssemblyName(assemblyName.FullName),
 						AnyCPU = architecture == AssemblyArchitecture.AnyCPU,
-						AMD64 = architecture == AssemblyArchitecture.X64,
+						X64 = architecture == AssemblyArchitecture.X64,
 						Unmanaged = !managed,
 						Portable = portable,
 						Bytes = File.ReadAllBytes(fileName),
@@ -54,7 +67,7 @@ namespace LibZ.Tool.Tasks
 
 					container.Append(
 						assemblyInfo,
-						new AppendOptions {CodecName = codecName, Overwrite = overwrite,});
+						new AppendOptions { CodecName = codecName, Overwrite = overwrite, });
 
 					injectedFileNames.Add(fileName);
 				}
@@ -65,7 +78,9 @@ namespace LibZ.Tool.Tasks
 				}
 				else
 				{
-					if (move) foreach (var fn in injectedFileNames) DeleteFile(fn);
+					if (move)
+						foreach (var fn in injectedFileNames)
+							DeleteFile(fn);
 				}
 			}
 		}

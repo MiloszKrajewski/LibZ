@@ -1,18 +1,25 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using LibZ.Msil;
 using LibZ.Tool.InjectIL;
 using Mono.Cecil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>
-	/// Instruments the assembly with LibZ initialization.
+	///     Instruments the assembly with LibZ initialization.
 	/// </summary>
 	public class InstrumentLibZTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		#region fields
 
 		/// <summary>The instrumentation helper</summary>
@@ -24,7 +31,9 @@ namespace LibZ.Tool.Tasks
 
 		/// <summary>Executes the task.</summary>
 		/// <param name="mainFileName">Name of the main file.</param>
-		/// <param name="allLibZResources">if set to <c>true</c> loads all LibZ files in resources on startup.</param>
+		/// <param name="allLibZResources">
+		///     if set to <c>true</c> loads all LibZ files in resources on startup.
+		/// </param>
 		/// <param name="libzFiles">The LibZ files to be loaded on startup.</param>
 		/// <param name="libzPatterns">The libz file patterns to be loaded on startup.</param>
 		/// <param name="keyFileName">Name of the key file.</param>
@@ -48,7 +57,7 @@ namespace LibZ.Tool.Tasks
 			var keyPair = MsilUtilities.LoadKeyPair(keyFileName, keyFilePassword);
 			var requiresAsmZResolver = false;
 
-			var bootstrapAssembly = 
+			var bootstrapAssembly =
 				FindBootstrapAssembly(targetAssembly, mainFileName);
 
 			if (bootstrapAssembly == null)
@@ -136,7 +145,8 @@ namespace LibZ.Tool.Tasks
 		private static byte[] TryLoadAssembly(EmbeddedResource resource, string guid)
 		{
 			var match = ResourceNameRx.Match(resource.Name);
-			if (!match.Success || match.Groups["guid"].Value != guid) return null;
+			if (!match.Success || match.Groups["guid"].Value != guid)
+				return null;
 
 			try
 			{
@@ -148,7 +158,8 @@ namespace LibZ.Tool.Tasks
 
 				using (var rstream = resource.GetResourceStream())
 				{
-					if (rstream == null) return null;
+					if (rstream == null)
+						return null;
 					using (var zstream = compressed ? new DeflateStream(rstream, CompressionMode.Decompress) : rstream)
 					{
 						zstream.Read(buffer, 0, size);

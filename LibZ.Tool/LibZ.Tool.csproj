@@ -13,6 +13,8 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -38,9 +40,6 @@
     <DocumentationFile>bin\Release\LibZ.Tool.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ILMerge">
-      <HintPath>..\packages\ilmerge.2.13.0307\ILMerge.exe</HintPath>
-    </Reference>
     <Reference Include="Ionic.Zlib">
       <HintPath>..\external\Ionic.Zlib.dll</HintPath>
     </Reference>
@@ -63,6 +62,9 @@
     <Reference Include="NDesk.Options">
       <HintPath>..\packages\NDesk.Options.0.2.1\lib\NDesk.Options.dll</HintPath>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\packages\NLog.2.1.0\lib\net40\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -79,7 +81,6 @@
     <Compile Include="Commands\ListLibraryCommand.cs" />
     <Compile Include="Commands\RebuildCommand.cs" />
     <Compile Include="Commands\SignAndFixCommand.cs" />
-    <Compile Include="Commands\MergeBootstrapCommand.cs" />
     <Compile Include="Tasks\InstrumentLibZTask.cs" />
     <Compile Include="Tasks\InjectDllTask.cs" />
     <Compile Include="Tasks\ListLibraryContentTask.cs" />
@@ -90,8 +91,6 @@
     <Compile Include="Tasks\AddLibraryTask.cs" />
     <Compile Include="Commands\InjectLibZCommand.cs" />
     <Compile Include="Tasks\InjectLibZTask.cs" />
-    <Compile Include="Log.cs" />
-    <Compile Include="Tasks\MergeBootstrapTask.cs" />
     <Compile Include="Tasks\TaskBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -102,7 +101,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LibZ.Bootstrap\LibZ.Bootstrap.csproj">
+    <ProjectReference Include="..\LibZ.Bootstrap.40\LibZ.Bootstrap.40.csproj">
       <Project>{66762F06-D368-4A1D-91AD-D5B0300CB879}</Project>
       <Name>LibZ.Bootstrap</Name>
     </ProjectReference>
@@ -129,6 +128,7 @@
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

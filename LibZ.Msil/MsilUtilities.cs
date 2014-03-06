@@ -1,19 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Mono.Cecil;
 using NLog;
 
 namespace LibZ.Msil
 {
-    public static class MsilUtilities
-    {
-	    private static readonly Logger Log = LogManager.GetLogger("MsilUtilities");
+	public static class MsilUtilities
+	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
 
 		/// <summary>Ignore case constant.</summary>
 		private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
@@ -22,13 +25,14 @@ namespace LibZ.Msil
 		/// <param name="fileName">Name of the file.</param>
 		private static void DeleteFile(string fileName)
 		{
-			if (!File.Exists(fileName)) return;
+			if (!File.Exists(fileName))
+				return;
 
 			try
 			{
 				File.Delete(fileName);
 			}
-			// ReSharper disable EmptyGeneralCatchClause
+				// ReSharper disable EmptyGeneralCatchClause
 			catch
 			{
 				Log.Warn("File '{0}' could not be deleted", fileName);
@@ -42,7 +46,8 @@ namespace LibZ.Msil
 		/// <returns>Key pair.</returns>
 		public static StrongNameKeyPair LoadKeyPair(string keyFileName, string password)
 		{
-			if (String.IsNullOrWhiteSpace(keyFileName)) return null;
+			if (String.IsNullOrWhiteSpace(keyFileName))
+				return null;
 
 			Log.Info("Loading singing key from '{0}'", keyFileName);
 			// do not use constructor with filename it does not really load the key (?)
@@ -157,12 +162,12 @@ namespace LibZ.Msil
 				// TODO:MAK pdb may also be merged, but it's not a priority for me. 
 				// I need to deleted in though as it no longer matches assembly
 				var pdbFileName = Path.ChangeExtension(assemblyFileName, "pdb");
-				if (File.Exists(pdbFileName)) 
+				if (File.Exists(pdbFileName))
 					DeleteFile(pdbFileName);
 			}
 			catch
 			{
-				if (File.Exists(tempFileName)) 
+				if (File.Exists(tempFileName))
 					DeleteFile(tempFileName);
 				throw;
 			}
@@ -179,16 +184,22 @@ namespace LibZ.Msil
 
 		/// <summary>Determines whether the specified assembly is managed.</summary>
 		/// <param name="assembly">The assembly.</param>
-		/// <returns><c>true</c> if the specified assembly is managed; otherwise, <c>false</c>.</returns>
+		/// <returns>
+		///     <c>true</c> if the specified assembly is managed; otherwise, <c>false</c>.
+		/// </returns>
 		public static bool IsManaged(AssemblyDefinition assembly)
 		{
 			return assembly.Modules.All(m => (m.Attributes & ModuleAttributes.ILOnly) != 0);
 		}
 
-		/// <summary>Determines whether the specified assembly is portable.
-		/// It uses probably very simplified method of finding retargetable references.</summary>
+		/// <summary>
+		///     Determines whether the specified assembly is portable.
+		///     It uses probably very simplified method of finding retargetable references.
+		/// </summary>
 		/// <param name="assembly">The assembly.</param>
-		/// <returns><c>true</c> if the specified assembly is portable; otherwise, <c>false</c>.</returns>
+		/// <returns>
+		///     <c>true</c> if the specified assembly is portable; otherwise, <c>false</c>.
+		/// </returns>
 		public static bool IsPortable(AssemblyDefinition assembly)
 		{
 			return assembly.Modules
@@ -198,7 +209,9 @@ namespace LibZ.Msil
 
 		/// <summary>Determines whether the specified assembly is signed.</summary>
 		/// <param name="assembly">The assembly.</param>
-		/// <returns><c>true</c> if the specified assembly is signed; otherwise, <c>false</c>.</returns>
+		/// <returns>
+		///     <c>true</c> if the specified assembly is signed; otherwise, <c>false</c>.
+		/// </returns>
 		public static bool IsSigned(AssemblyDefinition assembly)
 		{
 			return assembly.Modules.Any(m => (m.Attributes & ModuleAttributes.StrongNameSigned) != 0);
@@ -234,5 +247,5 @@ namespace LibZ.Msil
 
 			return systemReference.Version;
 		}
-    }
+	}
 }

@@ -37,10 +37,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\LibZ.Injected\AsmZResolver.cs">
+    <Compile Include="..\LibZ.Injected.40\AsmZResolver.cs">
       <Link>AsmZResolver.cs</Link>
     </Compile>
-    <Compile Include="..\LibZ.Injected\LibZInitializer.cs">
+    <Compile Include="..\LibZ.Injected.40\LibZInitializer.cs">
       <Link>LibZInitializer.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

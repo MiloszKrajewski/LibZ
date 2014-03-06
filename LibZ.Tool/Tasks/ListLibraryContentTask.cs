@@ -2,12 +2,20 @@
 using System.Linq;
 using LibZ.Manager;
 using LibZ.Manager.Internal;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>Lists content of .libz container.</summary>
 	public class ListLibraryContentTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		/// <summary>Executes the task.</summary>
 		/// <param name="libzFileName">Name of the libz file.</param>
 		public virtual void Execute(string libzFileName)
@@ -22,7 +30,7 @@ namespace LibZ.Tool.Tasks
 				foreach (var entry in orderedEnties)
 				{
 					var ratio = entry.OriginalLength != 0
-						? entry.StorageLength*100/entry.OriginalLength
+						? entry.StorageLength * 100 / entry.OriginalLength
 						: 100;
 
 					Log.Info(entry.AssemblyName.FullName);
@@ -46,7 +54,7 @@ namespace LibZ.Tool.Tasks
 
 			if ((entryFlags & LibZEntry.EntryFlags.AnyCPU) != 0)
 				yield return "AnyCPU";
-			else if ((entryFlags & LibZEntry.EntryFlags.AMD64) != 0)
+			else if ((entryFlags & LibZEntry.EntryFlags.X64) != 0)
 				yield return "x64";
 			else
 				yield return "x86";

@@ -2,18 +2,28 @@
 using System.IO;
 using LibZ.Msil;
 using Mono.Cecil;
+using NLog;
 
 namespace LibZ.Tool.Tasks
 {
 	/// <summary>Injects LibZ container into assembly.</summary>
 	public class InjectLibZTask: TaskBase
 	{
+		#region consts
+
+		/// <summary>Logger for this class.</summary>
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+		#endregion
+
 		/// <summary>Executes the task.</summary>
 		/// <param name="mainFileName">Name of the main file.</param>
 		/// <param name="libzFileNames">The libz file names.</param>
 		/// <param name="keyFileName">Name of the key file.</param>
 		/// <param name="keyFilePassword">The key file password.</param>
-		/// <param name="move">if set to <c>true</c> moves injected file (deletes the source file).</param>
+		/// <param name="move">
+		///     if set to <c>true</c> moves injected file (deletes the source file).
+		/// </param>
 		public virtual void Execute(
 			string mainFileName, string[] libzFileNames,
 			string keyFileName, string keyFilePassword,
@@ -26,11 +36,11 @@ namespace LibZ.Tool.Tasks
 			// TODO:MAK exclude?
 			foreach (var libzFileName in FindFiles(libzFileNames))
 			{
-				if (libzFileName == null) 
+				if (libzFileName == null)
 					throw ArgumentNull("libzFileName");
-				if (!File.Exists(libzFileName)) 
+				if (!File.Exists(libzFileName))
 					throw FileNotFound(libzFileName);
-				if (!File.Exists(mainFileName)) 
+				if (!File.Exists(mainFileName))
 					throw FileNotFound(mainFileName);
 
 				var fileName = Path.GetFileName(libzFileName); // TODO:MAK relative path?
@@ -52,8 +62,8 @@ namespace LibZ.Tool.Tasks
 			else
 			{
 				MsilUtilities.SaveAssembly(assembly, mainFileName, keyPair);
-				if (move) 
-					foreach (var fn in injectedFileNames) 
+				if (move)
+					foreach (var fn in injectedFileNames)
 						DeleteFile(fn);
 			}
 		}
