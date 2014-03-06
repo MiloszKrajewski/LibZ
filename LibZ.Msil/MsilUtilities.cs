@@ -226,7 +226,7 @@ namespace LibZ.Msil
 		public static Version GetFrameworkVersion(AssemblyDefinition assembly)
 		{
 			var systemReference = assembly.MainModule.AssemblyReferences
-				.FirstOrDefault(r => string.Compare(r.Name, "System", StringComparison.InvariantCultureIgnoreCase) == 0);
+				.FirstOrDefault(r => string.Compare(r.Name, "mscorlib", StringComparison.InvariantCultureIgnoreCase) == 0);
 
 			if (systemReference == null)
 				throw new ArgumentException(string.Format(

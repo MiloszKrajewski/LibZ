@@ -1,1 +1,1 @@
-@call ..\packages\psake.4.2.0.1\tools\psake.cmd .\default.ps1 %*
+@call ..\packages\psake.4.3.1.0\tools\psake.cmd .\default.ps1 %*
