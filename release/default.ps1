@@ -1,5 +1,5 @@
 Properties {
-	$release = "1.0.3.8"
+	$release = "1.1.0.0"
 	$src = "..\"
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
@@ -17,6 +17,8 @@ Task Dist -depends Release {
 
 Task Release -depends Rebuild {
 	Create-Folder lib
+	Create-Folder lib\net35
+	Create-Folder lib\net40
 	Create-Folder tool
 	Create-Folder temp
 	Create-Folder temp\lz4
@@ -24,9 +26,10 @@ Task Release -depends Rebuild {
 	
 	copy-item "$src\libz\bin\Release\*.exe" tool\
 	copy-item "$src\libz\bin\Release\*.dll" tool\
-	copy-item tool\LibZ.Bootstrap.dll lib\
 	copy-item tool\LibZ.Tool.Interfaces.dll lib\
-	copy-item "$src\LibZ.Bootstrap\LibZResolver.cs" lib\
+	copy-item "$src\LibZ.Bootstrap.40\LibZResolver.cs" lib
+	copy-item "$src\LibZ.Bootstrap.35\bin\Release\LibZ.Bootstrap.dll" lib\net35
+	copy-item "$src\LibZ.Bootstrap.40\bin\Release\LibZ.Bootstrap.dll" lib\net40
 	copy-item tool\* temp\
 	copy-item "$src\LibZ.Codec.LZ4\bin\Release\*.dll" temp\lz4\
 	copy-item "$src\LibZ.Codec.Doboz\bin\Release\*.dll" temp\doboz\

@@ -1,8 +1,6 @@
 ﻿using System;
 using ModuleArchitecture;
 using ModuleBetween;
-using ModuleLZ4;
-
 namespace TestApp
 {
 	internal class Program
@@ -11,7 +9,6 @@ namespace TestApp
 		{
 			try
 			{
-				Exec(ModuleLZ4Code.Run);
 				Exec(ModuleArchitectureCode.Run);
 				Exec(ModuleBetweenCode.Run);
 			}

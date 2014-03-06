@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModuleByReference", "Module
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModuleArchitecture", "ModuleArchitecture\ModuleArchitecture.csproj", "{5ADCDA04-88DC-42EB-B047-8B83182A91AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModuleLZ4", "ModuleLZ4\ModuleLZ4.csproj", "{58607761-8BD3-427C-B30D-70D5C47794BF}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -71,14 +69,6 @@ Global
 		{5ADCDA04-88DC-42EB-B047-8B83182A91AD}.Release|x64.Build.0 = Release|x64
 		{5ADCDA04-88DC-42EB-B047-8B83182A91AD}.Release|x86.ActiveCfg = Release|x86
 		{5ADCDA04-88DC-42EB-B047-8B83182A91AD}.Release|x86.Build.0 = Release|x86
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Debug|x64.Build.0 = Debug|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Debug|x86.Build.0 = Debug|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Release|x64.ActiveCfg = Release|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Release|x64.Build.0 = Release|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Release|x86.ActiveCfg = Release|Any CPU
-		{58607761-8BD3-427C-B30D-70D5C47794BF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
