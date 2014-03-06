@@ -33,9 +33,8 @@
     <DocumentationFile>bin\Release\LibZ.Codec.LZ4.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LZ4, Version=1.0.1.93, Culture=neutral, PublicKeyToken=035f6c002b5d3816, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\lz4net.1.0.1.93\lib\net40-client\LZ4.dll</HintPath>
+    <Reference Include="LZ4">
+      <HintPath>..\packages\lz4net.1.0.3.93\lib\net40-client\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -55,6 +54,9 @@
       <Project>{46cec914-26b0-4027-ba64-78154174274e}</Project>
       <Name>LibZ.Tool.Interfaces</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
