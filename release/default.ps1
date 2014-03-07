@@ -3,6 +3,7 @@ Properties {
 	$src = "..\"
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
+	$mcpp = "$src\release\mcpp\mcpp.exe"
 }
 
 Include ".\common.ps1"
