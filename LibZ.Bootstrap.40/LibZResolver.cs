@@ -617,9 +617,9 @@ namespace LibZ.Bootstrap
 			return
 				// try native one first
 				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + assemblyName) ??
-				// ...then AnyCPU
+					// ...then AnyCPU
 					TryLoadAssembly(assemblyName) ??
-				// ...then try the opposite platform (as far as I understand x64 may use x86)
+						// ...then try the opposite platform (as far as I understand x64 may use x86)
 						(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
 		}
 

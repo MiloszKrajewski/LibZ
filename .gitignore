@@ -1,6 +1,8 @@
-# release folder
+# project specific
 release/tool/
 release/lib/
+LibZ.Tool.InjectIL/Resources/*.dll
+
 
 # regular .NET output
 bin/

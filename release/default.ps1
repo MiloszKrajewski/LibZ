@@ -28,7 +28,8 @@ Task Release -depends Rebuild {
 	copy-item "$src\libz\bin\Release\*.exe" tool\
 	copy-item "$src\libz\bin\Release\*.dll" tool\
 	copy-item tool\LibZ.Tool.Interfaces.dll lib\
-	copy-item "$src\LibZ.Bootstrap.40\LibZResolver.cs" lib
+	get-content "$src\LibZ.Bootstrap.35\LibZResolver.header.cs","$src\LibZ.Bootstrap.40\LibZResolver.cs" | out-file "lib\net35\LibZResolver.cs"
+	copy-item "$src\LibZ.Bootstrap.40\LibZResolver.cs" lib\net40
 	copy-item "$src\LibZ.Bootstrap.35\bin\Release\LibZ.Bootstrap.dll" lib\net35
 	copy-item "$src\LibZ.Bootstrap.40\bin\Release\LibZ.Bootstrap.dll" lib\net40
 	copy-item tool\* temp\
