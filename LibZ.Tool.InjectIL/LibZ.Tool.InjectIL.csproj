@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -45,6 +47,10 @@
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
+    <Reference Include="NLog, Version=2.1.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NLog.2.1.0\lib\net40\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Windows.Forms" />
@@ -71,21 +77,28 @@
   <ItemGroup>
     <EmbeddedResource Include="Precompiled.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Precompiled.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Precompiled.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\LibZ.Injected.dll" />
+    <Content Include="Resources\LibZ.Bootstrap.35.dll" />
+    <Content Include="Resources\LibZ.Bootstrap.40.dll" />
+    <Content Include="Resources\LibZ.Injected.35.dll" />
+    <Content Include="Resources\LibZ.Injected.40.dll" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\LibZ.Bootstrap.dll" />
+    <ProjectReference Include="..\LibZ.Msil\LibZ.Msil.csproj">
+      <Project>{68297D08-A36C-4C4D-8E41-2644FD7B3896}</Project>
+      <Name>LibZ.Msil</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

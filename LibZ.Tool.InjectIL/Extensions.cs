@@ -1,7 +1,7 @@
 ﻿#region License
 
 /*
- * Copyright (c) 2013, Milosz Krajewski
+ * Copyright (c) 2013-2014, Milosz Krajewski
  * 
  * Microsoft Public License (Ms-PL)
  * This license governs use of the accompanying software. 
@@ -53,7 +53,7 @@ using Mono.Cecil;
 namespace LibZ.Tool.InjectIL
 {
 	/// <summary>
-	/// Some quick and dirty extension methods.
+	///     Some quick and dirty extension methods.
 	/// </summary>
 	public static class Extensions
 	{
@@ -63,7 +63,8 @@ namespace LibZ.Tool.InjectIL
 		/// <param name="action">The action.</param>
 		public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
 		{
-			foreach (var i in collection) action(i);
+			foreach (var i in collection)
+				action(i);
 		}
 
 		/// <summary>Imports the type.</summary>
@@ -119,7 +120,6 @@ namespace LibZ.Tool.InjectIL
 		}
 
 		// ReSharper restore MethodOverloadWithOptionalParameter
-
 
 		/// <summary>Imports the constructor.</summary>
 		/// <typeparam name="T">Type which declares constructor.</typeparam>

@@ -1,7 +1,7 @@
 ﻿#region License
 
 /*
- * Copyright (c) 2013, Milosz Krajewski
+ * Copyright (c) 2013-2014, Milosz Krajewski
  * 
  * Microsoft Public License (Ms-PL)
  * This license governs use of the accompanying software. 

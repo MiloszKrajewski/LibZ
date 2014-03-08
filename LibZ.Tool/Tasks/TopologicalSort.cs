@@ -1,7 +1,7 @@
 ﻿#region License
 
 /*
- * Copyright (c) 2013, Milosz Krajewski
+ * Copyright (c) 2013-2014, Milosz Krajewski
  * 
  * Microsoft Public License (Ms-PL)
  * This license governs use of the accompanying software. 
@@ -48,6 +48,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LibZ.Tool.Tasks
 {
@@ -70,13 +71,7 @@ namespace LibZ.Tool.Tasks
 			var visited = new HashSet<T>();
 
 			// visit every node
-			foreach (var node in nodes)
-			{
-				foreach (var result in Visit(node, visited, dependencyResolver))
-				{
-					yield return result;
-				}
-			}
+			return nodes.SelectMany(node => Visit(node, visited, dependencyResolver));
 		}
 
 		/// <summary>Visits the specified node.</summary>
@@ -84,7 +79,7 @@ namespace LibZ.Tool.Tasks
 		/// <param name="visited">The visited.</param>
 		/// <param name="dependencyResolver">The dependency resolver.</param>
 		/// <returns>Sorted subset of nodes.</returns>
-		private static IEnumerable<T> Visit(T node, HashSet<T> visited, Func<T, IEnumerable<T>> dependencyResolver)
+		private static IEnumerable<T> Visit(T node, ISet<T> visited, Func<T, IEnumerable<T>> dependencyResolver)
 		{
 			// If we're visiting some place we've already been, then we need go no further
 			if (visited.Contains(node))
@@ -94,13 +89,8 @@ namespace LibZ.Tool.Tasks
 			visited.Add(node);
 
 			// ...and then recursively explore all this dependency's children, looking for the bottom. 
-			foreach (var child in dependencyResolver(node))
-			{
-				foreach (var result in Visit(child, visited, dependencyResolver))
-				{
-					yield return result;
-				}
-			}
+			foreach (var result in dependencyResolver(node).SelectMany(child => Visit(child, visited, dependencyResolver))) 
+				yield return result;
 
 			// As we return back up the stack, we know that all of this dependency's children are taken care of.  
 			// Therefore, this is a "bottom".  Therefore, put it on the list. 

@@ -54,7 +54,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LibZ.Bootstrap\LibZ.Bootstrap.csproj">
+    <ProjectReference Include="..\LibZ.Bootstrap.40\LibZ.Bootstrap.40.csproj">
       <Project>{66762f06-d368-4a1d-91ad-d5b0300cb879}</Project>
       <Name>LibZ.Bootstrap</Name>
     </ProjectReference>

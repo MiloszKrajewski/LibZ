@@ -1,7 +1,7 @@
 ﻿#region License
 
 /*
- * Copyright (c) 2013, Milosz Krajewski
+ * Copyright (c) 2013-2014, Milosz Krajewski
  * 
  * Microsoft Public License (Ms-PL)
  * This license governs use of the accompanying software. 
@@ -53,29 +53,30 @@ using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Mono.Collections.Generic;
 
 namespace LibZ.Tool.InjectIL
 {
 	/// <summary>
-	/// Helper class copying a class from one assembly (actually the tree) to another.
-	/// Please note, initially LibZ was not going to instrument code. This "instrumentation"
-	/// is a an effect of 2-day crash-diving into world of IL manipulation and it's very
-	/// messy. But it works (I hope, at least).
-	/// Lot of those methods use some simplifications which are good enough for LibZ
-	/// but wouldn't stand again 'real' assembly merging.
+	///     Helper class copying a class from one assembly (actually the tree) to another.
+	///     Please note, initially LibZ was not going to instrument code. This "instrumentation"
+	///     is a an effect of 2-day crash-diving into world of IL manipulation and it's very
+	///     messy. But it works (I hope, at least).
+	///     Lot of those methods use some simplifications which are good enough for LibZ
+	///     but wouldn't stand against 'real' assembly merging.
 	/// </summary>
 	public class TemplateCopy
 	{
 		#region static fields
 
-		/// <summary>The Instruction class does not expose all constructors. 
-		/// Unfortunatelly I need the one which is not exposed.</summary>
+		/// <summary>
+		///     The Instruction class does not expose all constructors.
+		///     Unfortunatelly I need the one which is not exposed.
+		/// </summary>
 		private static readonly ConstructorInfo InstructionConstructorInfo =
 			typeof(Instruction).GetConstructor(
 				BindingFlags.NonPublic | BindingFlags.Instance,
 				null,
-				new[] {typeof(OpCode), typeof(object)},
+				new[] { typeof(OpCode), typeof(object) },
 				null);
 
 		#endregion
@@ -95,20 +96,26 @@ namespace LibZ.Tool.InjectIL
 		/// <summary>The set of types which has been cloned.</summary>
 		private readonly HashSet<string> _clonedTypes = new HashSet<string>();
 
-		/// <summary>The flag indicating if existing classes with conflicting
-		/// names should be overwritten.</summary>
+		/// <summary>
+		///     The flag indicating if existing classes with conflicting
+		///     names should be overwritten.
+		/// </summary>
 		private readonly bool _overwrite;
 
 		#endregion
 
 		#region constructor
 
-		/// <summary>Initializes a new instance of the <see cref="TemplateCopy"/> class.</summary>
+		/// <summary>
+		///     Initializes a new instance of the <see cref="TemplateCopy" /> class.
+		/// </summary>
 		/// <param name="from">From.</param>
 		/// <param name="into">The into.</param>
 		/// <param name="type">The type.</param>
-		/// <param name="overwrite">if set to <c>true</c> existing classes with conflicting
-		/// names will be overwritten.</param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> existing classes with conflicting
+		///     names will be overwritten.
+		/// </param>
 		protected TemplateCopy(
 			AssemblyDefinition from, AssemblyDefinition into, TypeReference type,
 			bool overwrite)
@@ -127,8 +134,10 @@ namespace LibZ.Tool.InjectIL
 		/// <param name="from">From.</param>
 		/// <param name="into">The into.</param>
 		/// <param name="type">The type.</param>
-		/// <param name="overwrite">if set to <c>true</c> existing classes with conflicting
-		/// names will be overwritten.</param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> existing classes with conflicting
+		///     names will be overwritten.
+		/// </param>
 		/// <returns>A collection of exceptions.</returns>
 		public static IEnumerable<Exception> Run(
 			AssemblyDefinition from, AssemblyDefinition into, TypeReference type,
@@ -200,11 +209,12 @@ namespace LibZ.Tool.InjectIL
 			return _queue.Select(i => i.Item2).ToArray();
 		}
 
-
 		/// <summary>Checks if type reference belongs to given assembly.</summary>
 		/// <param name="typeref">The type reference.</param>
 		/// <param name="assembly">The assembly.</param>
-		/// <returns><c>true</c> if type belongs to given assembly; <c>false</c> otherwise</returns>
+		/// <returns>
+		///     <c>true</c> if type belongs to given assembly; <c>false</c> otherwise
+		/// </returns>
 		private static bool BelongsTo(TypeReference typeref, AssemblyDefinition assembly)
 		{
 			return typeref.Resolve().Module.Assembly.FullName == assembly.FullName;
@@ -215,7 +225,8 @@ namespace LibZ.Tool.InjectIL
 		/// <returns>New type reference.</returns>
 		private TypeReference Resolve(TypeReference typeref)
 		{
-			if (typeref == null) return null;
+			if (typeref == null)
+				return null;
 
 			return
 				BelongsTo(typeref, _into) ? typeref :
@@ -223,13 +234,16 @@ namespace LibZ.Tool.InjectIL
 						_into.MainModule.Import(typeref);
 		}
 
-		/// <summary>Resolves the specified method reference. 
-		/// Clones the declaring type if needed.</summary>
+		/// <summary>
+		///     Resolves the specified method reference.
+		///     Clones the declaring type if needed.
+		/// </summary>
 		/// <param name="methodref">The method reference.</param>
 		/// <returns>New method reference.</returns>
 		private object Resolve(MethodReference methodref)
 		{
-			if (methodref == null) return null;
+			if (methodref == null)
+				return null;
 
 			if (BelongsTo(methodref.DeclaringType, _into))
 			{
@@ -245,33 +259,45 @@ namespace LibZ.Tool.InjectIL
 			return _into.MainModule.Import(methodref);
 		}
 
-		/// <summary>Determines whether the specified target method matches 
-		/// signature of source method.</summary>
+		/// <summary>
+		///     Determines whether the specified target method matches
+		///     signature of source method.
+		/// </summary>
 		/// <param name="targetMethod">The target method.</param>
 		/// <param name="sourceMethod">The source method.</param>
-		/// <returns><c>true</c> if the specified target method is match; otherwise, <c>false</c>.</returns>
+		/// <returns>
+		///     <c>true</c> if the specified target method is match; otherwise, <c>false</c>.
+		/// </returns>
 		private static bool IsMatch(MethodReference targetMethod, MethodReference sourceMethod)
 		{
-			if (sourceMethod.FullName != targetMethod.FullName) return false;
-			if (sourceMethod.ReturnType.FullName != targetMethod.ReturnType.FullName) return false;
-			if (sourceMethod.Parameters.Count != targetMethod.Parameters.Count) return false;
+			if (sourceMethod.FullName != targetMethod.FullName)
+				return false;
+			if (sourceMethod.ReturnType.FullName != targetMethod.ReturnType.FullName)
+				return false;
+			if (sourceMethod.Parameters.Count != targetMethod.Parameters.Count)
+				return false;
 
+			// ReSharper disable LoopCanBeConvertedToQuery
 			for (var i = 0; i < sourceMethod.Parameters.Count; i++)
 			{
 				if (sourceMethod.Parameters[i].ParameterType.FullName != targetMethod.Parameters[i].ParameterType.FullName)
 					return false;
 			}
+			// ReSharper restore LoopCanBeConvertedToQuery
 
 			return true;
 		}
 
-		/// <summary>Resolves the specified field reference. 
-		/// Clones decaring type if needed.</summary>
+		/// <summary>
+		///     Resolves the specified field reference.
+		///     Clones decaring type if needed.
+		/// </summary>
 		/// <param name="fieldref">The field reference.</param>
 		/// <returns>New field reference.</returns>
 		private FieldReference Resolve(FieldReference fieldref)
 		{
-			if (fieldref == null) return null;
+			if (fieldref == null)
+				return null;
 
 			if (BelongsTo(fieldref.DeclaringType, _into))
 			{
@@ -291,16 +317,20 @@ namespace LibZ.Tool.InjectIL
 		/// <returns>New reference (or not).</returns>
 		private object ResolveAny(object reference)
 		{
-			if (reference == null) return null;
+			if (reference == null)
+				return null;
 
 			var t = reference as TypeReference;
-			if (t != null) return Resolve(t);
+			if (t != null)
+				return Resolve(t);
 
 			var m = reference as MethodReference;
-			if (m != null) return Resolve(m);
+			if (m != null)
+				return Resolve(m);
 
 			var f = reference as FieldReference;
-			if (f != null) return Resolve(f);
+			if (f != null)
+				return Resolve(f);
 
 			return reference;
 		}
@@ -315,7 +345,9 @@ namespace LibZ.Tool.InjectIL
 
 		/// <summary>Finds or clones the type.</summary>
 		/// <param name="sourceType">Type in question.</param>
-		/// <param name="overwrite">if set to <c>true</c> enforces overwritting existing type.</param>
+		/// <param name="overwrite">
+		///     if set to <c>true</c> enforces overwritting existing type.
+		/// </param>
 		/// <returns>New type reference.</returns>
 		private TypeReference FindOrCloneType(TypeDefinition sourceType, bool overwrite)
 		{
@@ -324,7 +356,8 @@ namespace LibZ.Tool.InjectIL
 
 			if (found != null)
 			{
-				if (!overwrite || _clonedTypes.Contains(typeName)) return found;
+				if (!overwrite || _clonedTypes.Contains(typeName))
+					return found;
 				found.Module.Types.Remove(found.Resolve());
 			}
 
@@ -446,9 +479,10 @@ namespace LibZ.Tool.InjectIL
 		/// <param name="sourceIL">The source IL.</param>
 		/// <param name="targetIL">The target IL.</param>
 		private static void CopyExceptionHandler(
-			ExceptionHandler sourceHandler, ExceptionHandler targetHandler,
-			Collection<Instruction> sourceIL,
-			Collection<Instruction> targetIL)
+			ExceptionHandler sourceHandler,
+			ExceptionHandler targetHandler,
+			IList<Instruction> sourceIL,
+			IList<Instruction> targetIL)
 		{
 			if (sourceHandler.TryStart != null)
 			{
@@ -476,29 +510,41 @@ namespace LibZ.Tool.InjectIL
 			}
 		}
 
-		/// <summary>Copies the parameter attributes. 
-		/// NOTE: Not implemented for now because types we clone don't have any.</summary>
+		// ReSharper disable UnusedParameter.Local
+
+		/// <summary>
+		///     Copies the parameter attributes.
+		///     NOTE: Not implemented for now because types we clone don't have any.
+		/// </summary>
 		/// <param name="sourceParameter">The source parameter.</param>
 		/// <param name="targetParameter">The target parameter.</param>
 		private void CopyAttributes(ParameterDefinition sourceParameter, ParameterDefinition targetParameter) { }
 
-		/// <summary>Copies the type attributes.
-		/// NOTE: Not implemented for now because types we clone don't have any.</summary>
+		/// <summary>
+		///     Copies the type attributes.
+		///     NOTE: Not implemented for now because types we clone don't have any.
+		/// </summary>
 		/// <param name="sourceType">Type of the source.</param>
 		/// <param name="targetType">Type of the target.</param>
 		private void CopyAttributes(TypeDefinition sourceType, TypeDefinition targetType) { }
 
-		/// <summary>Copies the field attributes.
-		/// NOTE: Not implemented for now because types we clone don't have any.</summary>
+		/// <summary>
+		///     Copies the field attributes.
+		///     NOTE: Not implemented for now because types we clone don't have any.
+		/// </summary>
 		/// <param name="sourceField">The source field.</param>
 		/// <param name="targetField">The target field.</param>
 		private void CopyAttributes(FieldDefinition sourceField, FieldDefinition targetField) { }
 
-		/// <summary>Copies the method attributes.
-		/// NOTE: Not implemented for now because types we clone don't have any.</summary>
+		/// <summary>
+		///     Copies the method attributes.
+		///     NOTE: Not implemented for now because types we clone don't have any.
+		/// </summary>
 		/// <param name="sourceMethod">The source method.</param>
 		/// <param name="targetMethod">The target method.</param>
 		private void CopyAttributes(MethodDefinition sourceMethod, MethodDefinition targetMethod) { }
+
+		// ReSharper restore UnusedParameter.Local
 
 		#endregion
 	}
