@@ -1,11 +1,20 @@
+# project specific
 release/tool/
 release/lib/
+LibZ.Tool.InjectIL/Resources/*.dll
+
+
+# regular .NET output
 bin/
 obj/
 ipch/
-*.nupkg
 *.opensdf
 *.user
 *.suo
 *.sdf
 *.snk
+
+# NuGet packages
+packages/**
+!packages/repositories.config
+!.nuget/NuGet.exe
