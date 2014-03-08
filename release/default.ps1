@@ -1,6 +1,6 @@
 Properties {
 	$release = "1.1.0.0"
-	$src = "..\"
+	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
 	$mcpp = "$src\release\mcpp\mcpp.exe"
@@ -13,7 +13,7 @@ FormatTaskName (("-"*79) + "`n`n    {0}`n`n" + ("-"*79))
 Task default -depends Release
 
 Task Dist -depends Release {
-	copy-item tool\* d:\bin
+	copy-item tool\* c:\bin\
 }
 
 Task Release -depends Rebuild {
@@ -28,7 +28,8 @@ Task Release -depends Rebuild {
 	copy-item "$src\libz\bin\Release\*.exe" tool\
 	copy-item "$src\libz\bin\Release\*.dll" tool\
 	copy-item tool\LibZ.Tool.Interfaces.dll lib\
-	get-content "$src\LibZ.Bootstrap.35\LibZResolver.header.cs","$src\LibZ.Bootstrap.40\LibZResolver.cs" | out-file "lib\net35\LibZResolver.cs"
+	get-content "$src\LibZ.Bootstrap.35\LibZResolver.header.cs","$src\LibZ.Bootstrap.40\LibZResolver.cs" `
+		| out-file "lib\net35\LibZResolver.cs"
 	copy-item "$src\LibZ.Bootstrap.40\LibZResolver.cs" lib\net40
 	copy-item "$src\LibZ.Bootstrap.35\bin\Release\LibZ.Bootstrap.dll" lib\net35
 	copy-item "$src\LibZ.Bootstrap.40\bin\Release\LibZ.Bootstrap.dll" lib\net40
@@ -41,6 +42,40 @@ Task Release -depends Rebuild {
 	exec { cmd /c temp\libz.exe add --libz tool\doboz.libzcodec -i temp\doboz\*.dll "--codec" deflate "--move" }
 	
 	Remove-Folder temp
+}
+
+function test-injection-asmz([string] $netVersion, [string] $architecture) {
+	$folder = "temp\net$netVersion.$architecture.asmz"
+	create-folder $folder
+	push-location $folder
+	copy-item "$src\Tests\TestApp$netVersion\TestApp\bin\$architecture\Release\*" .\ -include *.exe,*.dll -exclude *.vshost.exe
+	exec { cmd /c "$libz" inject-dll -a TestApp.exe -i *.dll --move }
+	pop-location
+}
+
+function test-injection-libz([string] $netVersion, [string] $architecture) {
+	$folder = "temp\net$netVersion.$architecture.libz"
+	create-folder $folder
+	push-location $folder
+	copy-item "$src\Tests\TestApp$netVersion\TestApp\bin\$architecture\Release\*" .\ -include *.exe,*.dll -exclude *.vshost.exe
+	exec { cmd /c "$libz" add -l TestApp.libz -i *.dll --move }
+	exec { cmd /c "$libz" instrument -a TestApp.exe --libz-file TestApp.libz }
+	pop-location
+}
+
+Task Test {
+	Build-Solution $sln "Any CPU"
+	$libz = "$src\libz\bin\Release\libz.exe"
+	Build-Solution "$src\Tests\TestApp35\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x64"
+	create-folder temp
+	test-injection-asmz "35" "x86"
+	test-injection-libz "35" "x86"
+	test-injection-asmz "40" "x86"
+	test-injection-asmz "40" "x64"
+	test-injection-libz "40" "x86"
+	test-injection-libz "40" "x64"
 }
 
 Task Version {
