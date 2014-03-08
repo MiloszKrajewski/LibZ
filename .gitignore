@@ -1,8 +1,8 @@
 # project specific
 release/tool/
 release/lib/
+release/temp/
 LibZ.Tool.InjectIL/Resources/*.dll
-
 
 # regular .NET output
 bin/
