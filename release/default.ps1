@@ -7,6 +7,7 @@ Properties {
 }
 
 Include ".\common.ps1"
+Include ".\testing.ps1"
 
 FormatTaskName (("-"*79) + "`n`n    {0}`n`n" + ("-"*79))
 
@@ -44,40 +45,6 @@ Task Release -depends Rebuild {
 	Remove-Folder temp
 }
 
-function test-injection-asmz([string] $netVersion, [string] $architecture) {
-	$folder = "temp\net$netVersion.$architecture.asmz"
-	create-folder $folder
-	push-location $folder
-	copy-item "$src\Tests\TestApp$netVersion\TestApp\bin\$architecture\Release\*" .\ -include *.exe,*.dll -exclude *.vshost.exe
-	exec { cmd /c "$libz" inject-dll -a TestApp.exe -i *.dll --move }
-	pop-location
-}
-
-function test-injection-libz([string] $netVersion, [string] $architecture) {
-	$folder = "temp\net$netVersion.$architecture.libz"
-	create-folder $folder
-	push-location $folder
-	copy-item "$src\Tests\TestApp$netVersion\TestApp\bin\$architecture\Release\*" .\ -include *.exe,*.dll -exclude *.vshost.exe
-	exec { cmd /c "$libz" add -l TestApp.libz -i *.dll --move }
-	exec { cmd /c "$libz" instrument -a TestApp.exe --libz-file TestApp.libz }
-	pop-location
-}
-
-Task Test {
-	Build-Solution $sln "Any CPU"
-	$libz = "$src\libz\bin\Release\libz.exe"
-	Build-Solution "$src\Tests\TestApp35\TestApp.sln" "x86"
-	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x86"
-	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x64"
-	create-folder temp
-	test-injection-asmz "35" "x86"
-	test-injection-libz "35" "x86"
-	test-injection-asmz "40" "x86"
-	test-injection-asmz "40" "x64"
-	test-injection-libz "40" "x86"
-	test-injection-libz "40" "x64"
-}
-
 Task Version {
 	Update-AssemblyVersion $src $release 'Tests','LibZ.Tool.Interfaces'
 }
@@ -97,4 +64,25 @@ Task Clean {
 
 Task VsVars {
 	Set-VsVars
+}
+
+Task Test {
+	$libz = "$src\libz\bin\Release\libz.exe"
+	if (-not (test-path $libz)) {
+		Build-Solution $sln "Any CPU"
+	}
+	
+	Build-Solution "$src\Tests\TestApp20\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp35\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x64"
+	create-folder temp
+	test-injection-asmz "20" "x86"
+	test-injection-libz "20" "x86"
+	test-injection-asmz "35" "x86"
+	test-injection-libz "35" "x86"
+	test-injection-asmz "40" "x86"
+	test-injection-asmz "40" "x64"
+	test-injection-libz "40" "x86"
+	test-injection-libz "40" "x64"
 }

@@ -19,8 +19,6 @@ Package contains a tool to create LibZ files and Bootstrapper DLL (optional).</d
         <tags>ILMerge distribute compression jar xap</tags>
     </metadata>
     <files>
-        <file src="lib\LibZ.Bootstrap.dll" target="lib\net40-client\LibZ.Bootstrap.dll" />
-        <file src="lib\LibZResolver.cs" target="src\LibZResolver.cs" />
         <file src="tool\doboz.libzcodec" target="tools\doboz.libzcodec" />
         <file src="tool\libz.exe" target="tools\libz.exe" />
         <file src="tool\lz4.libzcodec" target="tools\lz4.libzcodec" />

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("LibZ.Codec.Doboz")]
-[assembly: AssemblyCopyright("Copyright (c) 2013")]
+[assembly: AssemblyCopyright("Copyright (c) 2013-2014, Milosz Krajewski")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

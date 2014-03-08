@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("LibZ.Bootstrap")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Milosz A. Krajewski")]
+[assembly: AssemblyCompany("Milosz Krajewski")]
 [assembly: AssemblyProduct("LibZ.Bootstrap")]
-[assembly: AssemblyCopyright("Copyright (c) Milosz A. Krajewski 2013")]
+[assembly: AssemblyCopyright("Copyright (c) 2013-2014, Milosz Krajewski")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

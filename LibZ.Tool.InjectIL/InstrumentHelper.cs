@@ -1,7 +1,7 @@
 ﻿#region License
 
 /*
- * Copyright (c) 2013, Milosz Krajewski
+ * Copyright (c) 2013-2014, Milosz Krajewski
  * 
  * Microsoft Public License (Ms-PL)
  * This license governs use of the accompanying software. 
@@ -57,10 +57,10 @@ using Mono.Cecil.Cil;
 namespace LibZ.Tool.InjectIL
 {
 	/// <summary>
-	/// Instrumentation helper.
-	/// Please note, initially LibZ was not going to instrument code. This "instrumentation"
-	/// is a an effect of 2-day crash-diving into world of IL manipulation and it's very
-	/// messy. But it works (I hope, at least).
+	///     Instrumentation helper.
+	///     Please note, initially LibZ was not going to instrument code. This "instrumentation"
+	///     is a an effect of 2-day crash-diving into world of IL manipulation and it's very
+	///     messy. But it works (I hope, at least).
 	/// </summary>
 	public class InstrumentHelper
 	{
@@ -98,7 +98,7 @@ namespace LibZ.Tool.InjectIL
 		#region constructor
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="InstrumentHelper" /> class.
+		///     Initializes a new instance of the <see cref="InstrumentHelper" /> class.
 		/// </summary>
 		/// <param name="targetAssembly">The target assembly.</param>
 		/// <param name="bootstrapAssembly">The bootstrap assembly (optional).</param>
@@ -119,8 +119,12 @@ namespace LibZ.Tool.InjectIL
 			{
 				_bootstrapAssembly = bootstrapAssembly;
 				// TODO:MAK it should not be needed, but it would be nice if it gets populated in the future
-				_bootstrapAssemblyImage = null; 
+				_bootstrapAssemblyImage = null;
 			}
+
+			if (_sourceAssembly == null || _bootstrapAssembly == null)
+				throw new ArgumentException(string.Format(
+					"Instrumentation assembly could not be found for framework version '{0}'", frameworkVersion));
 
 			_targetAssembly = targetAssembly;
 		}
@@ -134,7 +138,8 @@ namespace LibZ.Tool.InjectIL
 		{
 			const string typeName = "LibZ.Injected.LibZInitializer";
 			var targetType = _targetAssembly.MainModule.Types.SingleOrDefault(t => t.FullName == typeName);
-			if (targetType != null) return;
+			if (targetType != null)
+				return;
 
 			var sourceType = _sourceAssembly.MainModule.Types.Single(t => t.FullName == typeName);
 
@@ -185,7 +190,9 @@ namespace LibZ.Tool.InjectIL
 		}
 
 		/// <summary>Injects the LibZ (embedded .libz) startup code.</summary>
-		/// <param name="allResources">if set to <c>true</c> registers all embedded .libz resource.</param>
+		/// <param name="allResources">
+		///     if set to <c>true</c> registers all embedded .libz resource.
+		/// </param>
 		/// <param name="libzFiles">The LibZ files.</param>
 		/// <param name="libzPatterns">The LibZ patterns.</param>
 		public void InjectLibZStartup(bool allResources, ICollection<string> libzFiles, ICollection<string> libzPatterns)
@@ -257,10 +264,10 @@ namespace LibZ.Tool.InjectIL
 		public static byte[] GetInjectedAssemblyImage(Version frameworkVersion)
 		{
 			return
-				frameworkVersion == Version2050 ? null :
-					frameworkVersion < Version2000 ? null :
-						frameworkVersion == Version2000 ? Precompiled.LibZInjected35Assembly :
-							frameworkVersion == Version4000 ? Precompiled.LibZInjected40Assembly :
+				frameworkVersion < Version2000 ? null :
+					frameworkVersion == Version2050 ? null :
+						frameworkVersion >= Version4000 ? Precompiled.LibZInjected40Assembly :
+							frameworkVersion >= Version2000 ? Precompiled.LibZInjected35Assembly :
 								null;
 		}
 
@@ -270,10 +277,10 @@ namespace LibZ.Tool.InjectIL
 		public static byte[] GetBootstrapAssemblyImage(Version frameworkVersion)
 		{
 			return
-				frameworkVersion == Version2050 ? null :
-					frameworkVersion < Version2000 ? null :
-						frameworkVersion == Version2000 ? Precompiled.LibZBootstrap35Assembly :
-							frameworkVersion == Version4000 ? Precompiled.LibZBootstrap40Assembly :
+				frameworkVersion < Version2000 ? null :
+					frameworkVersion == Version2050 ? null :
+						frameworkVersion >= Version4000 ? Precompiled.LibZBootstrap40Assembly :
+							frameworkVersion >= Version2000 ? Precompiled.LibZBootstrap35Assembly :
 								null;
 		}
 
