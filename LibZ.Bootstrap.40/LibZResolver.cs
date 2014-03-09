@@ -828,10 +828,10 @@ namespace LibZ.Bootstrap
 				/// <summary>Indicates unamanged assembly.</summary>
 				Unmanaged = 0x01,
 
-				/// <summary>Set when assembly is targetting AnyCPU architecture.</summary>
+				/// <summary>Set when assembly is targeting AnyCPU architecture.</summary>
 				AnyCPU = 0x02,
 
-				/// <summary>Set when assembly is targetting 64-bit architectule.</summary>
+				/// <summary>Set when assembly is targeting 64-bit architectule.</summary>
 				X64 = 0x04,
 
 				/// <summary>Indicates PCL assembly.</summary>

@@ -321,7 +321,7 @@ namespace LibZ.Tool.Tasks
 
 		/// <summary>Validates if AsmZResolver can be injected.</summary>
 		/// <param name="assembly">The target assembly.</param>
-		/// <exception cref="System.ArgumentException">If assembly is targetting unsupported version.</exception>
+		/// <exception cref="System.ArgumentException">If assembly is targeting unsupported version.</exception>
 		protected static void ValidateAsmZInstrumentation(AssemblyDefinition assembly)
 		{
 			var version = MsilUtilities.GetFrameworkVersion(assembly);
@@ -329,17 +329,17 @@ namespace LibZ.Tool.Tasks
 				return;
 			if (version < new Version("2.0.0.0") || version == new Version("2.0.5.0"))
 				throw new ArgumentException(
-					string.Format("Cannot inject code into assemblies targetting '{0}'", version));
+					string.Format("Cannot inject code into assemblies targeting '{0}'", version));
 			if (version < new Version("3.5.0.0"))
 			{
-				Log.Warn(string.Format("Attempting to inject AsmZResolver into assembly targetting framework '{0}'.", version));
+				Log.Warn(string.Format("Attempting to inject AsmZResolver into assembly targeting framework '{0}'.", version));
 				Log.Warn("AsmZResolver should work but is neither designed nor tested with this framework.");
 			}
 		}
 
 		/// <summary>Validates if LibZResolver can be injected.</summary>
 		/// <param name="assembly">The target assembly.</param>
-		/// <exception cref="System.ArgumentException">If assembly is targetting unsupported version.</exception>
+		/// <exception cref="System.ArgumentException">If assembly is targeting unsupported version.</exception>
 		protected static void ValidateLibZInstrumentation(AssemblyDefinition assembly)
 		{
 			var version = MsilUtilities.GetFrameworkVersion(assembly);
@@ -347,10 +347,10 @@ namespace LibZ.Tool.Tasks
 				return;
 			if (version < new Version("2.0.0.0") || version == new Version("2.0.5.0"))
 				throw new ArgumentException(
-					string.Format("Cannot inject code into assemblies targetting '{0}'", version));
+					string.Format("Cannot inject code into assemblies targeting '{0}'", version));
 			if (version < new Version("3.5.0.0"))
 			{
-				Log.Warn(string.Format("Attempting to inject assemblies into assembly targetting '{0}'.", version));
+				Log.Warn(string.Format("Attempting to inject assemblies into assembly targeting '{0}'.", version));
 				Log.Warn("LibZResolver will work only if .NET 3.5 is also installed on target machine");
 			}
 		}
