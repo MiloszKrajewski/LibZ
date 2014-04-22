@@ -1,5 +1,5 @@
 Properties {
-	$release = "1.1.0.0"
+	$release = "1.1.0.1"
 	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
