@@ -89,7 +89,7 @@ namespace LibZ.Tool
 				Name = "console",
 				Layout = "${message}",
 				UseDefaultRowHighlightingRules = true,
-				ErrorStream = true,
+				ErrorStream = false,
 			};
 			console.RowHighlightingRules.Add(
 				new ConsoleRowHighlightingRule("level == LogLevel.Trace", ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
