@@ -477,7 +477,7 @@ namespace LibZ.Bootstrap
 			{
 				var resourceName =
 					string.Format("libz://{0:N}",
-						Hash.MD5(Path.GetFileName(libzFileName) ?? string.Empty));
+						Hash.Get(Path.GetFileName(libzFileName) ?? string.Empty));
 				Helpers.Debug(string.Format("Opening library '{0}' from '{1}'", libzFileName, resourceName));
 				var stream = assemblyHook.Assembly.GetManifestResourceStream(resourceName);
 
@@ -678,7 +678,7 @@ namespace LibZ.Bootstrap
 		/// </returns>
 		private static Assembly TryLoadAssembly(string resourceName)
 		{
-			var guid = Hash.MD5(resourceName ?? string.Empty);
+			var guid = Hash.Get(resourceName ?? string.Empty);
 			LibZReader[] containers;
 
 			Lock.EnterReadLock();
@@ -807,8 +807,6 @@ namespace LibZ.Bootstrap
 
 	namespace Internal
 	{
-		using MD5Provider = MD5;
-
 		#region class LibZReader
 
 		#region class Entry
@@ -1469,32 +1467,25 @@ namespace LibZ.Bootstrap
 
 		#region class Hash
 
-		/// <summary>MD5 and CRC32 calculator.</summary>
+		/// <summary>MD5 calculator.</summary>
 		internal class Hash
 		{
-			#region fields
-
-			/// <summary>MD5 provider.</summary>
-			private static readonly MD5 MD5Provider = MD5Provider.Create();
-
-			#endregion
-
 			#region public interface
 
 			/// <summary>Computes the MD5 for specified byte array.</summary>
 			/// <param name="bytes">The bytes.</param>
 			/// <returns>MD5.</returns>
-			public static Guid MD5(byte[] bytes)
+			public static Guid Get(byte[] bytes)
 			{
-				return new Guid(MD5Provider.ComputeHash(bytes));
+				return new Guid(MD5.Create().ComputeHash(bytes));
 			}
 
 			/// <summary>Computes MD5 for the specified text (case insensitive).</summary>
 			/// <param name="text">The text.</param>
 			/// <returns>MD5.</returns>
-			public static Guid MD5(string text)
+			public static Guid Get(string text)
 			{
-				return MD5(Encoding.UTF8.GetBytes(text.ToLowerInvariant()));
+				return Get(Encoding.UTF8.GetBytes(text.ToLowerInvariant()));
 			}
 
 			#endregion
@@ -1561,7 +1552,7 @@ namespace LibZ.Bootstrap
 			{
 				if (message == null || !UseTrace)
 					return;
-				Trace.TraceInformation(string.Format("INFO (LibZ/{0}) {1}", ThisAssemblyName, message));
+				Trace.TraceInformation("INFO (LibZ/{0}) {1}", ThisAssemblyName, message);
 			}
 
 			/// <summary>Sends warning message.</summary>
@@ -1570,7 +1561,7 @@ namespace LibZ.Bootstrap
 			{
 				if (message == null || !UseTrace)
 					return;
-				Trace.TraceWarning(string.Format("WARN (LibZ/{0}) {1}", ThisAssemblyName, message));
+				Trace.TraceWarning("WARN (LibZ/{0}) {1}", ThisAssemblyName, message);
 			}
 
 			/// <summary>Sends error message.</summary>

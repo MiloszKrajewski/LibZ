@@ -385,8 +385,8 @@ namespace LibZ.Manager
 			{
 				// prepare entry
 				var entry = new LibZEntry {
-					Id = Hash.MD5(resourceName),
-					Hash = Hash.MD5(input),
+					Id = Hash.Get(resourceName),
+					Hash = Hash.Get(input),
 					AssemblyName = assemblyName,
 					Offset = _magicOffset,
 					Flags = flags,

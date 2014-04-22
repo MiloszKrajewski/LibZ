@@ -67,9 +67,6 @@ namespace LibZ.Injected
 	{
 		#region consts
 
-		/// <summary>The hash provider.</summary>
-		private static readonly MD5 HashProvider = MD5.Create();
-
 		/// <summary>The resource name regular expression.</summary>
 		private static readonly Regex ResourceNameRx = new Regex(
 			@"asmz://(?<guid>[0-9a-fA-F]{32})/(?<size>[0-9]+)(/(?<flags>[a-zA-Z0-9]*))?",
@@ -274,7 +271,7 @@ namespace LibZ.Injected
 		private static Guid Hash(string text)
 		{
 			return new Guid(
-				HashProvider.ComputeHash(
+				MD5.Create().ComputeHash(
 					Encoding.UTF8.GetBytes(
 						text.ToLowerInvariant())));
 		}
@@ -282,19 +279,19 @@ namespace LibZ.Injected
 		private static void Debug(string message)
 		{
 			if (message != null && UseTrace)
-				Trace.TraceInformation(string.Format("INFO (AsmZ/{0}) {1}", ThisAssemblyName, message));
+				Trace.TraceInformation("INFO (AsmZ/{0}) {1}", ThisAssemblyName, message);
 		}
 
 		private static void Warn(string message)
 		{
 			if (message != null && UseTrace)
-				Trace.TraceWarning(string.Format("WARN (AsmZ/{0}) {1}", ThisAssemblyName, message));
+				Trace.TraceWarning("WARN (AsmZ/{0}) {1}", ThisAssemblyName, message);
 		}
 
 		private static void Error(string message)
 		{
 			if (message != null && UseTrace)
-				Trace.TraceError(string.Format("ERROR (AsmZ/{0}) {1}", ThisAssemblyName, message));
+				Trace.TraceError("ERROR (AsmZ/{0}) {1}", ThisAssemblyName, message);
 		}
 
 		#endregion
