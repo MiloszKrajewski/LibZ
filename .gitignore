@@ -2,6 +2,8 @@
 release/tool/
 release/lib/
 release/temp/
+release/dist/
+release/*.nupkg
 LibZ.Tool.InjectIL/Resources/*.dll
 
 # regular .NET output

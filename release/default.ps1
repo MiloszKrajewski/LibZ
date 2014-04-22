@@ -3,7 +3,7 @@ Properties {
 	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
-	$mcpp = "$src\release\mcpp\mcpp.exe"
+	$zip = "7za.exe"
 }
 
 Include ".\common.ps1"
@@ -25,6 +25,7 @@ Task Release -depends Rebuild {
 	Create-Folder temp
 	Create-Folder temp\lz4
 	Create-Folder temp\doboz
+	Create-Folder dist
 	
 	copy-item "$src\libz\bin\Release\*.exe" tool\
 	copy-item "$src\libz\bin\Release\*.dll" tool\
@@ -41,6 +42,9 @@ Task Release -depends Rebuild {
 	exec { cmd /c temp\libz.exe inject-dll -a tool\libz.exe -i tool\*.dll -i tool\ILMerge.exe "--move" }
 	exec { cmd /c temp\libz.exe add --libz tool\lz4.libzcodec -i temp\lz4\*.dll "--codec" deflate "--move" }
 	exec { cmd /c temp\libz.exe add --libz tool\doboz.libzcodec -i temp\doboz\*.dll "--codec" deflate "--move" }
+	
+	exec { cmd /c $zip a -tzip "dist\libz-$release-lib.zip" "lib\" }
+	exec { cmd /c $zip a -tzip "dist\libz-$release-tool.zip" "tool\" }
 	
 	Remove-Folder temp
 }
