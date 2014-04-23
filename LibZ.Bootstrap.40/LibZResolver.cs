@@ -228,15 +228,6 @@ namespace LibZ.Bootstrap
 
 		#region static constructor
 
-		private static bool IsEmptyString(string text)
-		{
-#if !NET35
-			return string.IsNullOrWhiteSpace(text);
-#else
-			return string.IsNullOrEmpty(text) || text.All(char.IsWhiteSpace);
-#endif
-		}
-
 		/// <summary>
 		///     Initializes the <see cref="LibZResolver" /> class.
 		/// </summary>
@@ -592,6 +583,15 @@ namespace LibZ.Bootstrap
 		#endregion
 
 		#region private implementation
+
+		private static bool IsEmptyString(string text)
+		{
+#if !NET35
+			return string.IsNullOrWhiteSpace(text);
+#else
+			return string.IsNullOrEmpty(text) || text.All(char.IsWhiteSpace);
+#endif
+		}
 
 		#region resolve
 
@@ -1038,7 +1038,8 @@ namespace LibZ.Bootstrap
 						throw new ArgumentException("Invalid LibZ file header");
 					_version = _reader.ReadInt32();
 					if (_version != CurrentVersion)
-						throw new NotSupportedException(string.Format("Unsupported LibZ file version ({0})", _version));
+						throw new NotSupportedException(
+							string.Format("Unsupported LibZ file version ({0})", _version));
 					_stream.Position = _stream.Length - GuidLength - sizeof(long);
 					_magicOffset = _reader.ReadInt64();
 					guid = new Guid(_reader.ReadBytes(GuidLength));
@@ -1147,7 +1148,8 @@ namespace LibZ.Bootstrap
 				lock (decoders)
 				{
 					if (!decoders.TryGetValue(codecName, out decoder))
-						throw Helpers.Error(new ArgumentException(string.Format("Codec '{0}' is not registered", codecName)));
+						throw Helpers.Error(new ArgumentException(
+							string.Format("Codec '{0}' is not registered", codecName)));
 				}
 				return decoder(data, outputLength);
 			}
@@ -1534,16 +1536,22 @@ namespace LibZ.Bootstrap
 			/// <returns>Value of given... value.</returns>
 			private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
 			{
-				// ReSharper disable PossibleNullReferenceException
+				var key = root.OpenSubKey(path, false);
+				if (key == null) 
+					return null;
+
+				var value = key.GetValue(name);
+				if (value == null) 
+					return null;
+
 				try
 				{
-					return Convert.ToUInt32(root.OpenSubKey(path, false).GetValue(name));
+					return Convert.ToUInt32(value);
 				}
 				catch
 				{
 					return null;
 				}
-				// ReSharper restore PossibleNullReferenceException
 			}
 
 			/// <summary>Sends debug message.</summary>
@@ -1580,7 +1588,7 @@ namespace LibZ.Bootstrap
 				}
 				else
 				{
-					Trace.TraceError(string.Format("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message));
+					Trace.TraceError("ERROR (LibZ/{0}) {1}", ThisAssemblyName, message);
 				}
 			}
 

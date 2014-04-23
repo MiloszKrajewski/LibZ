@@ -153,16 +153,22 @@ namespace LibZ.Injected
 		/// <returns>Value of given... value.</returns>
 		private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
 		{
-			// ReSharper disable PossibleNullReferenceException
+			var key = root.OpenSubKey(path, false);
+			if (key == null)
+				return null;
+
+			var value = key.GetValue(name);
+			if (value == null)
+				return null;
+
 			try
 			{
-				return Convert.ToUInt32(root.OpenSubKey(path, false).GetValue(name));
+				return Convert.ToUInt32(value);
 			}
 			catch
 			{
 				return null;
 			}
-			// ReSharper restore PossibleNullReferenceException
 		}
 
 		/// <summary>Assembly resolver.</summary>
