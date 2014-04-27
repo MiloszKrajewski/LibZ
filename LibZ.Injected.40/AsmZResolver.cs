@@ -122,7 +122,8 @@ namespace LibZ.Injected
 		/// <summary>Initializes resolver.</summary>
 		public static void Initialize()
 		{
-			if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) return;
+			if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0) 
+				return;
 
 			foreach (var rn in ThisAssembly.GetManifestResourceNames())
 			{
