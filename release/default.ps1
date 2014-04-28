@@ -1,5 +1,5 @@
 Properties {
-	$release = "1.1.0.2"
+	$release = "1.1.0.3"
 	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
@@ -31,7 +31,7 @@ Task Release -depends Rebuild {
 	copy-item "$src\libz\bin\Release\*.dll" tool\
 	copy-item tool\LibZ.Tool.Interfaces.dll lib\
 	get-content "$src\LibZ.Bootstrap.35\LibZResolver.header.cs","$src\LibZ.Bootstrap.40\LibZResolver.cs" `
-		| out-file "lib\net35\LibZResolver.cs"
+		| out-file "lib\net35\LibZResolver.cs" -encoding utf8
 	copy-item "$src\LibZ.Bootstrap.40\LibZResolver.cs" lib\net40
 	copy-item "$src\LibZ.Bootstrap.35\bin\Release\LibZ.Bootstrap.dll" lib\net35
 	copy-item "$src\LibZ.Bootstrap.40\bin\Release\LibZ.Bootstrap.dll" lib\net40
