@@ -9,7 +9,7 @@ function Clean-BinObj([string] $src) {
 		}
 	}
 	$folders = get-childitem -recurse -force $src -include bin,obj
-	$files = $folders | % { get-childitem $_.fullname * -recurse -file }
+	$files = $folders | % { get-childitem $_.fullname * -recurse | where { ! $_.PSIsContainer } } 
 	$files | % { 
 		try {
 			remove-item $_.fullname 
