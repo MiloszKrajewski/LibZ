@@ -26,7 +26,8 @@ function Create-Folder([string] $path) {
 }
 
 function Remove-Folder([string] $path) {
-	remove-item -recurse -force $path
+	write-host "remove: $path"
+	remove-item "$path" -recurse -force
 }
 
 function Set-VsVars() {
