@@ -227,7 +227,7 @@ namespace LibZ.Msil
 		/// <summary>Compares assembly names.</summary>
 		/// <param name="valueA">The value A.</param>
 		/// <param name="valueB">The value B.</param>
-		/// <returns></returns>
+		/// <returns><c>true</c> if assembly names are equal.</returns>
 		public static bool EqualAssemblyNames(string valueA, string valueB)
 		{
 			return String.Compare(valueA, valueB, IgnoreCase) == 0;

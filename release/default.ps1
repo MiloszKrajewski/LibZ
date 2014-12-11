@@ -1,5 +1,5 @@
 Properties {
-	$release = "1.1.0.3"
+	$release = "1.1.0.4"
 	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
 	$snk = "$src\LibZ.snk"
@@ -27,7 +27,7 @@ Task Release -depends Rebuild {
 	Create-Folder temp\doboz
 	Create-Folder dist
 	
-	copy-item "$src\libz\bin\Release\*.exe" tool\
+	copy-item "$src\libz\bin\Release\*.exe" tool\ -exclude *.vshost.*
 	copy-item "$src\libz\bin\Release\*.dll" tool\
 	copy-item tool\LibZ.Tool.Interfaces.dll lib\
 	get-content "$src\LibZ.Bootstrap.35\LibZResolver.header.cs","$src\LibZ.Bootstrap.40\LibZResolver.cs" `

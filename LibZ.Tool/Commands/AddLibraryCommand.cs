@@ -61,6 +61,7 @@ namespace LibZ.Tool.Commands
 
 		private string _libzFileName;
 		private string _codecName;
+		private bool _safeLoad;
 		private bool _move;
 		private bool _overwrite;
 		private readonly List<string> _include = new List<string>();
@@ -78,6 +79,7 @@ namespace LibZ.Tool.Commands
 			HasRequiredOption("i|include=", "assembly file name to include (wildcards allowed)", s => _include.Add(s));
 			HasOption("c|codec=", "codec name (optional, default: deflate)", s => _codecName = s);
 			HasOption("e|exclude=", "assembly file name to exclude (wildcards allowed, optional)", s => _exclude.Add(s));
+			HasOption("safe-load", "indicates that assembly needs to be loaded from disk", _ => _safeLoad = true);
 			HasOption("overwrite", "overwrite resources (optional, default: false)", _ => _overwrite = true);
 			HasOption("move", "move files (optional, default: false)", _ => _move = true);
 		}
@@ -92,7 +94,11 @@ namespace LibZ.Tool.Commands
 		public override int Run(string[] remainingArguments)
 		{
 			var task = new AddLibraryTask();
-			task.Execute(_libzFileName, _include.ToArray(), _exclude.ToArray(), _codecName, _move, _overwrite);
+			task.Execute(
+				_libzFileName, 
+				_include.ToArray(), _exclude.ToArray(), 
+				_codecName, 
+				_safeLoad, _move, _overwrite);
 			return 0;
 		}
 

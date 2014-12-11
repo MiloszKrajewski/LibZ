@@ -665,9 +665,9 @@ namespace LibZ.Bootstrap
 			return
 				// try native one first
 				TryLoadAssembly((IntPtr.Size == 4 ? "x86:" : "x64:") + assemblyName) ??
-					// ...then AnyCPU
+				// ...then AnyCPU
 					TryLoadAssembly(assemblyName) ??
-						// ...then try the opposite platform (as far as I understand x64 may use x86)
+				// ...then try the opposite platform (as far as I understand x64 may use x86)
 						(IntPtr.Size == 8 ? TryLoadAssembly("x86:" + assemblyName) : null);
 		}
 
@@ -717,7 +717,7 @@ namespace LibZ.Bootstrap
 					var data = container.GetBytes(entry, Decoders);
 
 					// managed assemblies can be loaded straight from memory
-					return entry.Unmanaged || entry.Portable
+					return entry.Unmanaged || entry.Portable || entry.SafeLoad
 						? LoadUnmanagedAssembly(container.ContainerId, guid, data)
 						: Assembly.Load(data);
 				});
@@ -834,6 +834,9 @@ namespace LibZ.Bootstrap
 
 				/// <summary>Indicates PCL assembly.</summary>
 				Portable = 0x08,
+
+				/// <summary>The flag indicating the 'safe load' should be used.</summary>
+				SafeLoad = 0x10,
 			}
 
 			#endregion
@@ -877,22 +880,16 @@ namespace LibZ.Bootstrap
 			#region derived properties
 
 			/// <summary>Gets a value indicating whether assembly is unmanaged.</summary>
-			/// <value>
-			///     <c>true</c> if unmanaged; otherwise, <c>false</c>.
-			/// </value>
-			public bool Unmanaged
-			{
-				get { return (Flags & EntryFlags.Unmanaged) != 0; }
-			}
+			/// <value><c>true</c> if unmanaged; otherwise, <c>false</c>.</value>
+			public bool Unmanaged { get { return (Flags & EntryFlags.Unmanaged) != 0; } }
 
 			/// <summary>Gets a value indicating whether assembly is portable.</summary>
-			/// <value>
-			///     <c>true</c> if portable; otherwise, <c>false</c>.
-			/// </value>
-			public bool Portable
-			{
-				get { return (Flags & EntryFlags.Portable) != 0; }
-			}
+			/// <value><c>true</c> if portable; otherwise, <c>false</c>.</value>
+			public bool Portable { get { return (Flags & EntryFlags.Portable) != 0; } }
+
+			/// <summary>Gets a value indicating whether 'safe load' have to be forced.</summary>
+			/// <value><c>true</c> if 'safe load' is required; otherwise, <c>false</c>.</value>
+			public bool SafeLoad { get { return (Flags & EntryFlags.SafeLoad) != 0; } }
 
 			#endregion
 
@@ -1537,11 +1534,11 @@ namespace LibZ.Bootstrap
 			private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
 			{
 				var key = root.OpenSubKey(path, false);
-				if (key == null) 
+				if (key == null)
 					return null;
 
 				var value = key.GetValue(name);
-				if (value == null) 
+				if (value == null)
 					return null;
 
 				try

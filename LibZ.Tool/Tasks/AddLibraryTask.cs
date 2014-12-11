@@ -72,16 +72,13 @@ namespace LibZ.Tool.Tasks
 		/// <param name="includePatterns">The include patterns.</param>
 		/// <param name="excludePatterns">The exclude patterns.</param>
 		/// <param name="codecName">Name of the codec.</param>
-		/// <param name="move">
-		///     if set to <c>true</c> moves files (deletes soure files).
-		/// </param>
-		/// <param name="overwrite">
-		///     if set to <c>true</c> overwrites existing resources.
-		/// </param>
+		/// <param name="safeLoad">if set to <c>true</c> 'safe load' if requested.</param>
+		/// <param name="move">if set to <c>true</c> moves files (deletes soure files).</param>
+		/// <param name="overwrite">if set to <c>true</c> overwrites existing resources.</param>
 		public virtual void Execute(
 			string libzFileName,
 			string[] includePatterns, string[] excludePatterns,
-			string codecName, bool move, bool overwrite)
+			string codecName, bool safeLoad, bool move, bool overwrite)
 		{
 			var injectedFileNames = new List<string>();
 			if (string.IsNullOrEmpty(codecName))
@@ -106,6 +103,7 @@ namespace LibZ.Tool.Tasks
 						AssemblyName = new AssemblyName(assemblyName.FullName),
 						AnyCPU = architecture == AssemblyArchitecture.AnyCPU,
 						X64 = architecture == AssemblyArchitecture.X64,
+						SafeLoad = safeLoad,
 						Unmanaged = !managed,
 						Portable = portable,
 						Bytes = File.ReadAllBytes(fileName),

@@ -19,4 +19,4 @@ ipch/
 # NuGet packages
 packages/**
 !packages/repositories.config
-!.nuget/NuGet.exe
+!packages/NuGet.exe

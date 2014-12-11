@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{617E7125-F13A-43BF-89A5-62D89FE4C8F9}"
 EndProject
@@ -32,9 +32,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Codec.Doboz", "LibZ.Co
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{F6FF5D6F-D549-470D-9730-B64DD5A4C81F}"
 	ProjectSection(SolutionItems) = preProject
-		.nuget\NuGet.Config = .nuget\NuGet.Config
-		.nuget\NuGet.exe = .nuget\NuGet.exe
-		.nuget\NuGet.targets = .nuget\NuGet.targets
+		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibZ.Injected.35", "LibZ.Injected.35\LibZ.Injected.35.csproj", "{3588BF3E-909B-44BB-8906-591D4CF2C21F}"
@@ -108,9 +106,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{DC6CFABD-2B97-481B-8334-4DECDAF289EA} = {36F7AAFB-9EF7-4351-B5F5-0FC24E9534D4}
 		{66762F06-D368-4A1D-91AD-D5B0300CB879} = {36F7AAFB-9EF7-4351-B5F5-0FC24E9534D4}
-		{04643AB0-DB34-429E-93A2-6D2BFE1C7EFD} = {92763536-F8DE-4095-9D07-5B7246F62DB2}
 		{3588BF3E-909B-44BB-8906-591D4CF2C21F} = {92763536-F8DE-4095-9D07-5B7246F62DB2}
+		{DC6CFABD-2B97-481B-8334-4DECDAF289EA} = {36F7AAFB-9EF7-4351-B5F5-0FC24E9534D4}
+		{04643AB0-DB34-429E-93A2-6D2BFE1C7EFD} = {92763536-F8DE-4095-9D07-5B7246F62DB2}
 	EndGlobalSection
 EndGlobal

@@ -65,6 +65,9 @@ namespace LibZ.Manager
 		/// <summary>Is portable.</summary>
 		public bool Portable;
 
+		/// <summary>The 'safe load' flag.</summary>
+		public bool SafeLoad;
+
 		/// <summary>Is AnyCPU</summary>
 		public bool AnyCPU;
 

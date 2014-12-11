@@ -154,10 +154,16 @@ namespace LibZ.Manager
 			AppendOptions options)
 		{
 			var flags = LibZEntry.EntryFlags.None;
-			if (assemblyInfo.Unmanaged) flags |= LibZEntry.EntryFlags.Unmanaged;
-			if (assemblyInfo.AnyCPU) flags |= LibZEntry.EntryFlags.AnyCPU;
-			if (assemblyInfo.X64) flags |= LibZEntry.EntryFlags.X64;
-			if (assemblyInfo.Portable) flags |= LibZEntry.EntryFlags.Portable;
+			if (assemblyInfo.Unmanaged)
+				flags |= LibZEntry.EntryFlags.Unmanaged;
+			if (assemblyInfo.AnyCPU)
+				flags |= LibZEntry.EntryFlags.AnyCPU;
+			if (assemblyInfo.X64)
+				flags |= LibZEntry.EntryFlags.X64;
+			if (assemblyInfo.Portable)
+				flags |= LibZEntry.EntryFlags.Portable;
+			if (assemblyInfo.SafeLoad)
+				flags |= LibZEntry.EntryFlags.SafeLoad;
 
 			var platformId =
 				assemblyInfo.AnyCPU ? string.Empty :
@@ -246,7 +252,7 @@ namespace LibZ.Manager
 						_stream.Position = oldEntry.Offset;
 						buffer = _reader.ReadBytes(oldEntry.StorageLength);
 					}
-					var newEntry = new LibZEntry(oldEntry) {Offset = stream.Position};
+					var newEntry = new LibZEntry(oldEntry) { Offset = stream.Position };
 					writer.Write(buffer);
 					newEntries.Add(newEntry);
 				}

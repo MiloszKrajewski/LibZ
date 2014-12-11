@@ -109,6 +109,8 @@ namespace LibZ.Tool.Tasks
 
 			if ((entryFlags & LibZEntry.EntryFlags.Portable) != 0)
 				yield return "Portable";
+			if ((entryFlags & LibZEntry.EntryFlags.SafeLoad) != 0)
+				yield return "SafeLoad";
 		}
 	}
 }
