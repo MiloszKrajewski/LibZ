@@ -46,7 +46,7 @@ Task Release -depends Rebuild {
 	exec { cmd /c $zip a -tzip "dist\libz-$release-lib.zip" "lib\" }
 	exec { cmd /c $zip a -tzip "dist\libz-$release-tool.zip" "tool\" }
 	
-	Remove-Folder temp
+	Remove-Folder .\temp
 }
 
 Task Version {
@@ -63,7 +63,9 @@ Task KeyGen -depends VsVars -precondition { return !(test-path $snk) } {
 
 Task Clean {
 	Clean-BinObj $src
-	remove-item * -recurse -force -include lib,tool,temp
+	Remove-Folder .\lib
+	Remove-Folder .\tool
+	Remove-Folder .\temp
 }
 
 Task VsVars {

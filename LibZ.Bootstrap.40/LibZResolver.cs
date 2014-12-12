@@ -610,7 +610,7 @@ namespace LibZ.Bootstrap
 				Helpers.Debug(string.Format("Resolving: '{0}'", name));
 				var result =
 					TryLoadAssembly3(name) ??
-						MatchByShortName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
+						MatchByPartialName(name).Select(TryLoadAssembly3).FirstOrDefault(a => a != null);
 
 				if (result != null)
 					Helpers.Debug(string.Format("Found: '{0}'", name));
@@ -630,11 +630,13 @@ namespace LibZ.Bootstrap
 		/// <summary>Finds all assemblies which match given short name.</summary>
 		/// <param name="shortAssemblyName">The short name.</param>
 		/// <returns>Collection of full assembly names.</returns>
-		private static IEnumerable<string> MatchByShortName(string shortAssemblyName)
+		private static IEnumerable<string> MatchByPartialName(string shortAssemblyName)
 		{
 			Lock.EnterReadLock();
 			try
 			{
+				var expectedAssemblyName = new AssemblyName(shortAssemblyName);
+
 				// from all containers return assemblyNames matching given string by short name
 				// please note, the container is not returned, so when looking for this name
 				// it will check all the containers again, waste of time but for hard to explain reason
@@ -643,7 +645,7 @@ namespace LibZ.Bootstrap
 					.SelectMany(c => c
 						.Entries
 						.Select(e => e.AssemblyName)
-						.Where(an => string.Compare(an.Name, shortAssemblyName, IgnoreCase) == 0))
+						.Where(n => IsMatchByPartialName(n, expectedAssemblyName)))
 					.Distinct()
 					.OrderByDescending(an => an.Version)
 					.Select(an => an.FullName)
@@ -655,11 +657,60 @@ namespace LibZ.Bootstrap
 			}
 		}
 
+		/// <summary>
+		/// Determines whether assembly name matches expected (usually partial) name.
+		/// </summary>
+		/// <param name="actualAssemblyName">Actual name of the assembly.</param>
+		/// <param name="expectedAssemblyName">Expected name of the assembly.</param>
+		/// <returns></returns>
+		private static bool IsMatchByPartialName(
+			AssemblyName actualAssemblyName, AssemblyName expectedAssemblyName)
+		{
+			if (string.IsNullOrEmpty(expectedAssemblyName.Name))
+				return false;
+
+			if (string.Compare(expectedAssemblyName.Name, actualAssemblyName.Name, IgnoreCase) != 0)
+				return false;
+
+			if (expectedAssemblyName.CultureInfo != null)
+				if (expectedAssemblyName.CultureInfo.LCID != actualAssemblyName.CultureInfo.LCID)
+					return false;
+
+			if (expectedAssemblyName.Version != null)
+				if (expectedAssemblyName.Version != actualAssemblyName.Version)
+					return false;
+
+			var expectedToken = expectedAssemblyName.GetPublicKeyToken();
+			if (expectedToken != null)
+				if (!EqualTokens(expectedToken, actualAssemblyName.GetPublicKeyToken()))
+					return false;
+
+			return true;
+		}
+
+		/// <summary>Checks if two tokens are the same.</summary>
+		/// <param name="expectedToken">The expected token.</param>
+		/// <param name="actualToken">The actual token.</param>
+		/// <returns><c>true</c> if tokens are the same, <c>false</c> otherwise.</returns>
+		private static bool EqualTokens(byte[] expectedToken, byte[] actualToken)
+		{
+			if (expectedToken == actualToken)
+				return true;
+			if (expectedToken == null || actualToken == null)
+				return false;
+
+			var expectedLength = expectedToken.Length;
+			if (expectedLength != actualToken.Length)
+				return false;
+			for (var i = 0; i < expectedLength; i++)
+				if (expectedToken[i] != actualToken[i])
+					return false;
+			return true;
+		}
+
 		/// <summary>Tries the load assembly for 3 platforms, native, any cpu, then "opossite".</summary>
 		/// <param name="assemblyName">Name of the assembly.</param>
-		/// <returns>
-		///     Loaded assembly or <c>null</c>.
-		/// </returns>
+		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly TryLoadAssembly3(string assemblyName)
 		{
 			return
@@ -673,9 +724,7 @@ namespace LibZ.Bootstrap
 
 		/// <summary>Tries to load assembly by its resource name.</summary>
 		/// <param name="resourceName">Name of the resource.</param>
-		/// <returns>
-		///     Loaded assembly or <c>null</c>.
-		/// </returns>
+		/// <returns>Loaded assembly or <c>null</c>.</returns>
 		private static Assembly TryLoadAssembly(string resourceName)
 		{
 			var guid = Hash.Get(resourceName ?? string.Empty);

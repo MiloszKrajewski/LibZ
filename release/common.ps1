@@ -1,5 +1,7 @@
 function Clean-BinObj([string] $src) {
-	$folders = get-childitem -recurse -force $src -include bin,obj
+	$folders = get-childitem $src -recurse -force -include bin,obj
+	if ($folders -eq $null) { return }
+	
 	$folders | % {
 		try {
 			remove-item $_.fullname -recurse -force
@@ -8,8 +10,13 @@ function Clean-BinObj([string] $src) {
 			write-host -fore yellow $_
 		}
 	}
-	$folders = get-childitem -recurse -force $src -include bin,obj
-	$files = $folders | % { get-childitem $_.fullname * -recurse -file }
+
+	$folders = get-childitem $src -recurse -force -include bin,obj
+	if ($folders -eq $null) { return }
+	
+	$files = $folders | % { get-childitem $_.fullname -recurse | where { ! $_.PSIsContainer } } 
+	if ($files -eq $null) { return }
+
 	$files | % { 
 		try {
 			remove-item $_.fullname 
@@ -26,7 +33,7 @@ function Create-Folder([string] $path) {
 }
 
 function Remove-Folder([string] $path) {
-	remove-item -recurse -force $path
+	remove-item "$path" -recurse -force
 }
 
 function Set-VsVars() {
