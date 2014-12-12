@@ -1,28 +1,37 @@
 function Clean-BinObj([string] $src) {
-	$folders = get-childitem $src -recurse -force -include bin,obj
-	if ($folders -eq $null) { return }
-	
-	$folders | % {
-		try {
-			remove-item $_.fullname -recurse -force
-		}
-		catch {
-			write-host -fore yellow $_
-		}
-	}
+	$folders = get-childitem $src -recurse -include bin,obj
+	$folders | ? { $_ -ne $null } | % { Remove-Folder $_.FullName }
+}
 
-	$folders = get-childitem $src -recurse -force -include bin,obj
-	if ($folders -eq $null) { return }
-	
-	$files = $folders | % { get-childitem $_.fullname -recurse | where { ! $_.PSIsContainer } } 
-	if ($files -eq $null) { return }
-
-	$files | % { 
-		try {
-			remove-item $_.fullname 
+function Remove-Folder([string] $path) {
+	if (test-path $path) {
+		$folder = get-item $path
+		$folderName = $folder.FullName
+		try
+		{
+			remove-item $folderName -recurse -force
 		}
-		catch {
-			write-host -fore yellow $_
+		catch
+		{
+			$files = get-childitem $folderName -recurse | ? { ! $_.PsIsContainer } 
+			$files | ? { $_ -ne $null } | % {
+				$fileName = $_.FullName
+				try
+				{
+					remove-item "$fileName" -force
+				}
+				catch
+				{
+					write-host -fore yellow $fileName
+				}
+			}
+			
+			try { 
+				remove-item $folderName -recurse -force 
+			} 
+			catch { 
+				write-host -fore yellow $folderName
+			}
 		}
 	}
 }
@@ -30,10 +39,6 @@ function Clean-BinObj([string] $src) {
 function Create-Folder([string] $path) {
 	if (test-path -path $path) { remove-item -recurse -force $path }
 	new-item $path -itemtype directory
-}
-
-function Remove-Folder([string] $path) {
-	remove-item "$path" -recurse -force
 }
 
 function Set-VsVars() {
