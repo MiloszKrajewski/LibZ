@@ -84,6 +84,8 @@ Task Test {
 	Build-Solution "$src\Tests\TestApp35\TestApp.sln" "x86"
 	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x86"
 	Build-Solution "$src\Tests\TestApp40\TestApp.sln" "x64"
+	Build-Solution "$src\Tests\TestApp45\TestApp.sln" "x86"
+	Build-Solution "$src\Tests\TestApp45\TestApp.sln" "x64"
 	create-folder temp
 	test-injection-asmz "20" "x86"
 	test-injection-libz "20" "x86"
@@ -93,4 +95,8 @@ Task Test {
 	test-injection-asmz "40" "x64"
 	test-injection-libz "40" "x86"
 	test-injection-libz "40" "x64"
+	test-injection-asmz "45" "x86"
+	test-injection-asmz "45" "x64"
+	test-injection-libz "45" "x86"
+	test-injection-libz "45" "x64"
 }
