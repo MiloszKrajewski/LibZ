@@ -35,7 +35,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\LibZ.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\LibZ.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

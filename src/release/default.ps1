@@ -2,7 +2,7 @@ Properties {
 	$release = "1.1.0.4"
 	$src = (get-item "..\").fullname
 	$sln = "$src\LibZ.sln"
-	$snk = "$src\LibZ.snk"
+	$snk = "$src\..\LibZ.snk"
 	$zip = "7za.exe"
 }
 
