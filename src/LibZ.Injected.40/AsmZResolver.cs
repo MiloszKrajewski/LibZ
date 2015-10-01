@@ -99,7 +99,8 @@ namespace LibZ.Injected
 			= new Dictionary<Guid, Match>();
 
 		/// <summary>The loaded assemblies cache.</summary>
-		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies = new Dictionary<Guid, Assembly>();
+		private static readonly Dictionary<Guid, Assembly> LoadedAssemblies = 
+			new Dictionary<Guid, Assembly>();
 
 		/// <summary>Flag indicating if Trace should be used.</summary>
 		private static readonly bool UseTrace;
@@ -110,8 +111,8 @@ namespace LibZ.Injected
 		static AsmZResolver()
 		{
 			var value =
-				GetRegistryDWORD(Registry.CurrentUser, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
-					GetRegistryDWORD(Registry.LocalMachine, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+				SafeGetRegistryDWORD(false, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
+					SafeGetRegistryDWORD(true, REGISTRY_KEY_PATH, REGISTRY_KEY_NAME) ??
 						0;
 			UseTrace = value != 0;
 		}
@@ -147,13 +148,35 @@ namespace LibZ.Injected
 
 		#region private implementation
 
-		/// <summary>Gets bool value from registry.</summary>
-		/// <param name="root">The root key.</param>
+		/// <summary>Gets bool value from registry. Note this is a wropper to
+		/// isolate access to Registry class which might be a problem on Mono.</summary>
+		/// <param name="machine">if set to <c>true</c> "local machine" registry root is used; 
+		/// "current user" otherwise.</param>
 		/// <param name="path">The path to key.</param>
 		/// <param name="name">The name of value.</param>
 		/// <returns>Value of given... value.</returns>
-		private static uint? GetRegistryDWORD(RegistryKey root, string path, string name)
+		private static uint? SafeGetRegistryDWORD(bool machine, string path, string name)
 		{
+			try
+			{
+				return GetRegistryDWORD(machine, path, name);
+			}
+			catch
+			{
+				return null;
+			}
+		}
+
+		/// <summary>Gets bool value from registry.</summary>
+		/// <param name="machine">if set to <c>true</c> "local machine" registry root is used; 
+		/// "current user" otherwise.</param>
+		/// <param name="path">The path to key.</param>
+		/// <param name="name">The name of value.</param>
+		/// <returns>Value of given... value.</returns>
+		private static uint? GetRegistryDWORD(bool machine, string path, string name)
+		{
+			var root = machine ? Registry.LocalMachine : Registry.CurrentUser;
+
 			var key = root.OpenSubKey(path, false);
 			if (key == null)
 				return null;

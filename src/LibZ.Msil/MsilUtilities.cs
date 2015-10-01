@@ -289,7 +289,8 @@ namespace LibZ.Msil
 		/// <exception cref="System.ArgumentException">Thrown if 'System' is not referenced.</exception>
 		public static Version GetFrameworkVersion(AssemblyDefinition assembly)
 		{
-			var assemblyNames = new[] { "mscorlib", "System", "System.Core" }.Select(n => n.ToLower()).ToList();
+			var assemblyNames = 
+				new[] { "mscorlib", "System", "System.Core" }.Select(n => n.ToLower()).ToList();
 
 			var references = assembly.MainModule.AssemblyReferences
 				.Where(r => assemblyNames.Contains(r.Name.ToLower()))
