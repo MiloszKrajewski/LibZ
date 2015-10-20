@@ -20,3 +20,6 @@ ipch/
 /src/packages/**
 !/src/packages/repositories.config
 !/src/packages/NuGet.exe
+out/
+src/.paket/paket.exe
+src/.fake/
