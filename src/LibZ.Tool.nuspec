@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>LibZ.Bootstrap</id>
+        <version>1.1.0.2</version>
+        <title>LibZ.Bootstrap</title>
+        <authors>Milosz Krajewski</authors>
+        <owners>Milosz Krajewski</owners>
+        <licenseUrl>https://libz.codeplex.com/license</licenseUrl>
+        <projectUrl>https://libz.codeplex.com/</projectUrl>
+        <iconUrl>https://www.codeplex.com/Download?ProjectName=libz&amp;DownloadId=658860</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>LibZ is an alternative to ILMerge. It allows to distribute your applications or libraries embedded into main assembly or distributed alongside it in single container.
+Package contains a tool to create LibZ files and Bootstrapper DLL (optional).</description>
+        <summary>LibZ is an alternative to ILMerge. It allows to distribute your applications or libraries embedded into main assembly or distributed alongside it in single container.</summary>
+        <releaseNotes>fix for unknown exception in static constructor</releaseNotes>
+        <copyright>Milosz Krajewski</copyright>
+        <language>en-GB</language>
+        <tags>ILMerge distribute compression jar xap</tags>
+    </metadata>
+    <files>
+        <file src="lib\net35\LibZ.Bootstrap.dll" target="lib\net35-client\LibZ.Bootstrap.dll" />
+        <file src="lib\net40\LibZ.Bootstrap.dll" target="lib\net40-client\LibZ.Bootstrap.dll" />
+        <file src="lib\net40\LibZResolver.cs" target="src\LibZResolver.cs" />
+        <file src="tool\doboz.libzcodec" target="tools\doboz.libzcodec" />
+        <file src="tool\libz.exe" target="tools\libz.exe" />
+        <file src="tool\lz4.libzcodec" target="tools\lz4.libzcodec" />
+    </files>
+</package>

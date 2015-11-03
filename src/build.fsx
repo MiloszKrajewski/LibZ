@@ -116,7 +116,38 @@ Target "Release" (fun _ ->
         WorkingDirectory = "./../out/tool";
         CommandLine = " inject-dll -a libz.exe -i *.dll --move " }
     |> shellExec |> ignore
+    
+    let zipName suffix = sprintf "libz-%s-%s.zip" releaseNotes.AssemblyVersion suffix
+    let zipDir suffix dirName =
+        !! ("./../out" @@ dirName @@ "**/*")
+        |> Zip ("./../out" @@ dirName) ("./../out" @@ (zipName suffix))
+    "lib" |> zipDir "lib"
+    "tool" |> zipDir "tool"
 )
+
+!!!!!
+Target "Nuget" (fun _ ->
+    let apiKey = getSecret "nuget" None
+    let libDir spec = spec |> sprintf @"lib\%s" |> Some
+    NuGet (fun p ->
+        { p with
+            Version = releaseNotes.AssemblyVersion
+            WorkingDir = @"../out/release"
+            OutputPath = @"../out/release"
+            ReleaseNotes = releaseNotes.Notes |> toLines
+            References = [@"LZ4.dll"]
+            AccessKey = apiKey
+            Files =
+                [
+                    ("net2\\*.dll", libDir "net2", None)
+                    ("net4\\*.dll", libDir "net4-client", None)
+                    ("portable\\*.dll", libDir portableSpec, None)
+                    ("silverlight\\*.dll", libDir silverlightSpec, None)
+                ]
+        }
+    ) "lz4net.nuspec"
+)
+
 
 Target "TestApps" (fun _ ->
     let build sln platform =
