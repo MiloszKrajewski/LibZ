@@ -112,8 +112,8 @@ Target "Release" (fun _ ->
     !! "./../out/tool/**/*" |> Copy temp
 
     { defaultParams with
-        Program = temp @@ "libz.exe";
-        WorkingDirectory = "./../out/tool";
+        Program = temp @@ "libz.exe"
+        WorkingDirectory = "./../out/tool"
         CommandLine = " inject-dll -a libz.exe -i *.dll --move " }
     |> shellExec |> ignore
 
@@ -125,15 +125,14 @@ Target "Release" (fun _ ->
     "tool" |> zipDir "tool"
 )
 
-Target "Nuget" (fun _ ->
+Target "NuGet" (fun _ ->
     let apiKey = getSecret "nuget" None
-    let libDir spec = spec |> sprintf @"lib\%s" |> Some
 
     let composeNuSpec suffix items =
-        let nuspecFileName = sprintf "../out/LibZ.%s.nuspec" suffix
-        "LibZ.nuspec" |> CopyFile nuspecFileName
+        let mode m = items |> Seq.exists (fun c -> c = m)
+        let cond m v = if mode m then Some v else None
 
-        let description =
+        let componentList =
             items
             |> Seq.map (fun i ->
                 match i with
@@ -143,33 +142,51 @@ Target "Nuget" (fun _ ->
                 | _ -> None)
             |> Seq.choose id
             |> (fun list -> System.String.Join(", ", list))
-            |> sprintf "LibZ is an alternative to ILMerge. It allows to distribute your applications or libraries embedded into main assembly or distributed alongside it using container files. This package contains: %s."
+
+        let deprecationTemplate = 
+            "THIS PACKAGE IS DEPRECATED. Use LibZ.Tool (most likely) and optionally LibZ.Library or LibZ.Source instead."
+
+        let descriptionTemplate =
+            sprintf ("\
+                LibZ is an alternative to ILMerge. \
+                It allows to distribute your applications or libraries as single file \
+                with assemblies embedded into it or combined together into container file. \
+                This package contains: %s. Please refer to project homepage if unsure which packages you need.")
+
+        let description = 
+            if mode 'd' then deprecationTemplate else componentList |> descriptionTemplate
 
         NuGet (fun p ->
             { p with
+                Project = sprintf "LibZ.%s" suffix
+                Title = sprintf "LibZ.%s%s" suffix (if mode 'd' then " (DEPRECATED)" else "")
+                AccessKey = apiKey
                 Description = description
                 Version = releaseNotes.AssemblyVersion
                 WorkingDir = @"../out"
                 OutputPath = @"../out"
                 ReleaseNotes = releaseNotes.Notes |> toLines
-                //References = [@"LZ4.dll"]
-                AccessKey = apiKey
-                //Files =
-                //    [
-                //        ("net2\\*.dll", libDir "net2", None)
-                //        ("net4\\*.dll", libDir "net4-client", None)
-                //        ("portable\\*.dll", libDir portableSpec, None)
-                //        ("silverlight\\*.dll", libDir silverlightSpec, None)
-                //    ]
+                References = [@"LibZ.Bootstrap.dll" |> cond 'l'] |> List.choose id
+                FrameworkAssemblies = 
+                    [
+                        { AssemblyName = "System.ComponentModel.Composition"; FrameworkVersions = ["net4"] } |> cond 's'
+                    ] |> List.choose id
+                Files = 
+                    [
+                        (@"lib\net35\*.cs", Some @"content\net35", None) |> cond 's'
+                        (@"lib\net40\*.cs", Some @"content\net4-client", None) |> cond 's' 
+                        (@"lib\net35\*.dll", Some @"lib\net35", None) |> cond 'l' 
+                        (@"lib\net40\*.dll", Some @"lib\net4-client", None) |> cond 'l' 
+                        (@"tool\libz.exe", Some @"tools\", None) |> cond 't' 
+                    ] |> List.choose id
             }
-        ) nuspecFileName
+        ) "LibZ.nuspec"
 
     composeNuSpec "Tool" "t"
-    composeNuSpec "Source" "ts"
-    composeNuSpec "Library" "tl"
-    composeNuSpec "Bootstrap" "td"
+    composeNuSpec "Source" "s"
+    composeNuSpec "Library" "l"
+    composeNuSpec "Bootstrap" "tsld"
 )
-
 
 Target "TestApps" (fun _ ->
     let build sln platform =
@@ -204,5 +221,6 @@ Target "Dist" ignore
 "Version" ==> "Build"
 "Build" ==> "TestApps"
 "Build" ==> "Release"
+"Release" ==> "NuGet"
 
 RunTargetOrDefault "Build"
