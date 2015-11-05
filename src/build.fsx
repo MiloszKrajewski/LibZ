@@ -97,26 +97,26 @@ Target "Release" (fun _ ->
     ++ "./libz/bin/Release/*.dll"
     -- "**/*.vshost.*"
     |> Copy "./../out/tool"
-    
-    !! "./../out/tool/LibZ.Tool.Interfaces.dll" 
+
+    !! "./../out/tool/LibZ.Tool.Interfaces.dll"
     |> Copy "./../out/lib"
-    
+
     [ "./LibZ.Bootstrap.35/LibZResolver.header.cs"; "./LibZ.Bootstrap.40/LibZResolver.cs" ]
     |> AppendTextFiles "./../out/lib/net35/LibZResolver.cs"
-    
+
     !! "./LibZ.Bootstrap.40/LibZResolver.cs" |> Copy "./../out/lib/net40"
     !! "./LibZ.Bootstrap.35/bin/Release/LibZ.Bootstrap.dll" |> Copy "./../out/lib/net35"
     !! "./LibZ.Bootstrap.40/bin/Release/LibZ.Bootstrap.dll" |> Copy "./../out/lib/net40"
-    
+
     let temp = (environVarOrDefault "TEMP" "./../out/temp") @@ "libz"
     !! "./../out/tool/**/*" |> Copy temp
-    
+
     { defaultParams with
         Program = temp @@ "libz.exe";
         WorkingDirectory = "./../out/tool";
         CommandLine = " inject-dll -a libz.exe -i *.dll --move " }
     |> shellExec |> ignore
-    
+
     let zipName suffix = sprintf "libz-%s-%s.zip" releaseNotes.AssemblyVersion suffix
     let zipDir suffix dirName =
         !! ("./../out" @@ dirName @@ "**/*")
@@ -125,27 +125,49 @@ Target "Release" (fun _ ->
     "tool" |> zipDir "tool"
 )
 
-!!!!!
 Target "Nuget" (fun _ ->
     let apiKey = getSecret "nuget" None
     let libDir spec = spec |> sprintf @"lib\%s" |> Some
-    NuGet (fun p ->
-        { p with
-            Version = releaseNotes.AssemblyVersion
-            WorkingDir = @"../out/release"
-            OutputPath = @"../out/release"
-            ReleaseNotes = releaseNotes.Notes |> toLines
-            References = [@"LZ4.dll"]
-            AccessKey = apiKey
-            Files =
-                [
-                    ("net2\\*.dll", libDir "net2", None)
-                    ("net4\\*.dll", libDir "net4-client", None)
-                    ("portable\\*.dll", libDir portableSpec, None)
-                    ("silverlight\\*.dll", libDir silverlightSpec, None)
-                ]
-        }
-    ) "lz4net.nuspec"
+
+    let composeNuSpec suffix items =
+        let nuspecFileName = sprintf "../out/LibZ.%s.nuspec" suffix
+        "LibZ.nuspec" |> CopyFile nuspecFileName
+
+        let description =
+            items
+            |> Seq.map (fun i ->
+                match i with
+                | 't' -> Some "command-line tool"
+                | 'l' -> Some "precompiled bootstrapper assembly"
+                | 's' -> Some "embeddable bootstrapper source in C#"
+                | _ -> None)
+            |> Seq.choose id
+            |> (fun list -> System.String.Join(", ", list))
+            |> sprintf "LibZ is an alternative to ILMerge. It allows to distribute your applications or libraries embedded into main assembly or distributed alongside it using container files. This package contains: %s."
+
+        NuGet (fun p ->
+            { p with
+                Description = description
+                Version = releaseNotes.AssemblyVersion
+                WorkingDir = @"../out"
+                OutputPath = @"../out"
+                ReleaseNotes = releaseNotes.Notes |> toLines
+                //References = [@"LZ4.dll"]
+                AccessKey = apiKey
+                //Files =
+                //    [
+                //        ("net2\\*.dll", libDir "net2", None)
+                //        ("net4\\*.dll", libDir "net4-client", None)
+                //        ("portable\\*.dll", libDir portableSpec, None)
+                //        ("silverlight\\*.dll", libDir silverlightSpec, None)
+                //    ]
+            }
+        ) nuspecFileName
+
+    composeNuSpec "Tool" "t"
+    composeNuSpec "Source" "ts"
+    composeNuSpec "Library" "tl"
+    composeNuSpec "Bootstrap" "td"
 )
 
 
@@ -161,7 +183,7 @@ Target "TestApps" (fun _ ->
     build "TestApp40" "x64"
     build "TestApp45" "x86"
     build "TestApp45" "x64"
-    
+
     // test-injection-asmz "20" "x86"
     // test-injection-libz "20" "x86"
     // test-injection-asmz "35" "x86"
