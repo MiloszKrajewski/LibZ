@@ -8,7 +8,7 @@
         <owners>Milosz Krajewski</owners>
         <licenseUrl>https://github.com/MiloszKrajewski/LibZ/blob/master/LICENSE.md</licenseUrl>
         <projectUrl>https://github.com/MiloszKrajewski/LibZ</projectUrl>
-        <iconUrl>https://raw.githubusercontent.com/MiloszKrajewski/LibZ/master/libz-icon.png</iconUrl>
+        <iconUrl>https://raw.githubusercontent.com/MiloszKrajewski/LibZ/master/doc/libz-icon.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <summary>LibZ - alternative to ILMerge</summary>
         <description>@description@</description>
