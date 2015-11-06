@@ -126,8 +126,6 @@ Target "Release" (fun _ ->
 )
 
 Target "NuGet" (fun _ ->
-    let apiKey = getSecret "nuget" None
-
     let composeNuSpec suffix items =
         let mode m = items |> Seq.exists (fun c -> c = m)
         let cond m v = if mode m then Some v else None
@@ -159,10 +157,9 @@ Target "NuGet" (fun _ ->
         NuGet (fun p ->
             { p with
                 Project = sprintf "LibZ.%s" suffix
-                Title = sprintf "LibZ.%s%s" suffix (if mode 'd' then " (DEPRECATED)" else "")
-                AccessKey = apiKey
-                Description = description
                 Version = releaseNotes.AssemblyVersion
+                Title = sprintf "LibZ.%s%s" suffix (if mode 'd' then " (DEPRECATED)" else "")
+                Description = description
                 WorkingDir = @"../out"
                 OutputPath = @"../out"
                 ReleaseNotes = releaseNotes.Notes |> toLines
@@ -186,6 +183,22 @@ Target "NuGet" (fun _ ->
     composeNuSpec "Source" "s"
     composeNuSpec "Library" "l"
     composeNuSpec "Bootstrap" "tsld"
+)
+
+Target "Publish" (fun _ ->
+    let apiKey = getSecret "nuget" None
+    ["Bootstrap"; "Tool"; "Source"; "Library"]
+    |> Seq.iter (fun suffix -> 
+        NuGetPublish (fun p -> 
+            { p with
+                Project = sprintf "LibZ.%s" suffix
+                Version = releaseNotes.AssemblyVersion
+                AccessKey = apiKey
+                WorkingDir = @"../out"
+                OutputPath = @"../out"
+            }
+        )
+    )
 )
 
 Target "TestApps" (fun _ ->
@@ -222,5 +235,6 @@ Target "Dist" ignore
 "Build" ==> "TestApps"
 "Build" ==> "Release"
 "Release" ==> "NuGet"
+"NuGet" ==> "Publish"
 
 RunTargetOrDefault "Build"
