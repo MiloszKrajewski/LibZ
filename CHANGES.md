@@ -1,8 +1,9 @@
-## 1.1.0.4
+## 1.2.0.0
 - --safe-load option forcing assemblies to be loaded from disk
 - fixes for mono compatibility (still work in progress)
 - removed plugabble compressor (configuration pain with no major benefit)
 - minor bugfixes
+- changed structure of NuGet packages
 
 ## 1.1.0.2
 - safer static constructor (underlying problem is still unknown, but this fix seems to work)

@@ -89,7 +89,7 @@ Target "Version" (fun _ ->
 )
 
 Target "Release" (fun _ ->
-    [ "lib"; "lib/net35"; "lib/net40"; "tool"; "dist" ]
+    [ ""; "lib"; "lib/net35"; "lib/net40"; "tool" ]
     |> Seq.map (sprintf "./../out/%s")
     |> CleanDirs
 
