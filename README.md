@@ -15,7 +15,7 @@ ILMerge in many cases is the first thing you tried and it does what it does just
 Jeffrey Richter described this technique on his [blog](http://blogs.msdn.com/b/microsoft_press/archive/2010/02/03/jeffrey-richter-excerpt-2-from-clr-via-c-third-edition.aspx) (and in his book) few years ago. I think the best recommendation is the comment from Mike Barnett, author of ILMerge: "As the author of ILMerge, I think this is fantastic! If I had known about this, I never would have written ILMerge. Many people have run into problems using ILMerge for WPF applications because WPF encodes assembly identities in binary resources that ILMerge is unable to modify. But this should work great for them."
 
 ## Download
-Probably the best way to download it is to use [NuGet](https://nuget.org/packages/LibZ.Bootstrap).
+Probably the best way to download it is to use [NuGet](https://nuget.org/packages/LibZ.Tool). For advanced use (see: [Scenarios](doc/scenarios.md)) you may consider using other packages (```LibZ.Library``` or ```LibZ.Sources```) but only if you really know why (therefore, I'm not linking to them from here).
 
 ## Before you start
 LibZ Container is not better than [ILMerge](https://nuget.org/packages/ilmerge), [IL-Repack](https://github.com/gluck/il-repack), [Costura.Fody](http://nuget.org/packages/Costura.Fody), etc. They do what they do well, they just lacked some features I needed (so I implemented them in LibZ). They also had some features which I didn't need (so I didn't implement them in LibZ).
