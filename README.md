@@ -22,7 +22,6 @@ LibZ Container is not better than [ILMerge](https://nuget.org/packages/ilmerge),
 Read carefully what LibZ does and doesn't do before making a call.
 Some things I didn't like are just bugs (so they can be fixed sooner of later) some of them are just by design (and let me repeat, not bad design, just design for different purpose).
 
-----
 ## Motivation
 There are multiple things which motivated me to write this library / tool.
 * First of all I do like small single-purpose assemblies, so they can be composed in many different ways and not introduce too much unused code. Frequently, when looking for some libraries (github, codeplex) I find them interesting, I'm just put off by the fact that 90% of that library is something I've already written for myself (and I prefer mine). I just won't use a library saying "many utilities doing many things". Sorry. Be specific. Do one thing. Do it well. With all the respect for the author of [Json.NET](|https://json.codeplex.com/] I just don't think his [Utilities.NET](https://utilities.codeplex.com) should be distributed as one assembly. I've implemented 90% of it myself already, why can't I just pick parts which I need.
