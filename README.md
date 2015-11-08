@@ -2,13 +2,13 @@
 LibZ is an alternative to ILMerge. It allows to distribute your applications or libraries as single file with assemblies embedded into it or combined together into container file.
 
 ## Migration from codeplex
-As source has been fully migrated some documentation and older releases are still available [here](http://libz.codeplex.com)
+I believe sources and documentation have been fully migrated but you can still access old website on [here](http://libz.codeplex.com)
 
 ## License
 Lib is license under [Ms-PL](LICENSE.md). Long story short - you can use it, you can modify it as long as you don't claim you wrote it.
 
 ## Change log
-Changed can found [here](CHANGES.md)
+Changes can found [here](CHANGES.md)
 
 ## Why not ILMerge?
 ILMerge in many cases is the first thing you tried and it does what it does just fine, sometimes you just don't want it to do what it does, you just don't know that yet. Problems start to appear when you application uses reflection, or even worse, when 3rd part libraries use reflection. The alternative is "embedding" instead of "merging".
