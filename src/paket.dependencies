@@ -1,10 +1,9 @@
 source https://www.nuget.org/api/v2/
+framework net40
 
-nuget doboz4net framework: >= net40
-nuget lz4net framework: >= net40
-nuget ManyConsole framework: >= net40
-nuget Mono.Cecil 0.9.5.4 framework: >= net40
-nuget NDesk.Options framework: >= net40
-nuget NLog framework: >= net40
-
-nuget FAKE
+nuget doboz4net
+nuget lz4net
+nuget ManyConsole
+nuget Mono.Cecil 0.9.5.4
+nuget NDesk.Options
+nuget NLog

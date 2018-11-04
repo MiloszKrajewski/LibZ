@@ -1,11 +1,15 @@
 @echo off
+
 setlocal
-call %~dp0\paket.cmd restore
-if not "%VS90COMNTOOLS%"=="" set VSTOOLKIT=%VS90COMNTOOLS%
-if not "%VS100COMNTOOLS%"=="" set VSTOOLKIT=%VS100COMNTOOLS%
-if not "%VS110COMNTOOLS%"=="" set VSTOOLKIT=%VS110COMNTOOLS%
-if not "%VS120COMNTOOLS%"=="" set VSTOOLKIT=%VS120COMNTOOLS%
-call "%VSTOOLKIT%"\vsvars32.bat
-set
-%~dp0\packages\FAKE\tools\FAKE.exe build.fsx %*
+set target=%~dp0\.fake
+set fake=%target%\fake.exe
+
+if not exist %fake% (
+    rmdir /q /s %temp%\nuget\fake 2> nul
+    call %~dp0\nuget install -out %temp%\nuget -excludeversion fake -version 4.64.13
+    xcopy %temp%\nuget\fake\tools\* %target%\
+	rmdir /q /s %temp%\nuget\fake 2> nul
+)
+
+%fake% %*
 endlocal

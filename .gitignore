@@ -17,9 +17,11 @@ ipch/
 *.snk
 
 # NuGet packages
-/src/packages/**
-!/src/packages/repositories.config
-!/src/packages/NuGet.exe
-out/
-src/.paket/paket.exe
-src/.fake/
+/out/
+/src/.idea/
+/src/.paket/
+/src/.fake/
+/src/.tools/
+/src/packages/
+/src/paket-files/
+
